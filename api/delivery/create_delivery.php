@@ -40,7 +40,7 @@ $delivery_ID = 'DEL' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
 $otp = rand(100000, 999999);
 
 // insert delivery
-$stmt = $pdo->prepare("INSERT INTO delivery (delivery_ID, job_ID, sender_ID, delivery_type, pickup_address, delivery_address, distance, otp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt = $pdo->prepare("INSERT INTO delivery (delivery_ID, job_ID, sender_std_ID, delivery_type, pickup_address, delivery_address, distance, otp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 $stmt->execute([
     $delivery_ID,
     $job_ID,
