@@ -38,10 +38,24 @@ if($action === 'disable') {
     $stmt = $pdo->prepare("UPDATE users SET status = 'banned' WHERE user_ID = ?");
     $stmt->execute([$user_ID]);
     echo json_encode(["success" => "User disabled successfully!"]);
+
 } else if($action === 'enable') {
     $stmt = $pdo->prepare("UPDATE users SET status = 'active' WHERE user_ID = ?");
     $stmt->execute([$user_ID]);
     echo json_encode(["success" => "User enabled successfully!"]);
+
+} else if($action === 'approve') {
+    $stmt = $pdo->prepare("UPDATE users SET status = 'active' WHERE user_ID = ?");
+    $stmt->execute([$user_ID]);
+
+    // send approval email
+    include '../../config/mail.php';
+    include '../../config/email_templates.php';
+    $approval_body = approvalEmail($target_user['name'], $target_user['role']);
+    sendEmail($target_user['email'], "GigConnect - Account Approved!", $approval_body);
+
+    echo json_encode(["success" => "User approved successfully!"]);
+
 } else {
     echo json_encode(["error" => "Invalid action!"]);
 }

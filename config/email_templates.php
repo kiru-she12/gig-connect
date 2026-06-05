@@ -94,4 +94,26 @@ function deliveryOtpEmail($name, $otp, $job_title) {
         </div>
     </div>";
 }
+
+function approvalEmail($name, $role) {
+    return "
+    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+        <div style='background-color: #4F46E5; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
+            <h1 style='color: white; margin: 0;'>GigConnect</h1>
+            <p style='color: #C7D2FE; margin: 5px 0;'>Uva Wellassa University</p>
+        </div>
+        <div style='background-color: #ffffff; padding: 30px; border: 1px solid #E5E7EB;'>
+            <h2 style='color: #10B981;'>Account Approved! ✅</h2>
+            <p>Dear $name,</p>
+            <p>Your GigConnect account has been approved by our admin team!</p>
+            <p>You can now login and start using the platform as a <strong>$role</strong>.</p>
+            <div style='background-color: #F3F4F6; padding: 15px; border-radius: 8px; margin: 20px 0;'>
+                <p style='margin: 0; color: #6B7280;'>Login at: <a href='http://localhost/gigConnect'>GigConnect</a></p>
+            </div>
+        </div>
+        <div style='background-color: #F9FAFB; padding: 15px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #E5E7EB;'>
+            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect UWU &copy; 2026 | Badulla, Sri Lanka</p>
+        </div>
+    </div>";
+}
 ?>

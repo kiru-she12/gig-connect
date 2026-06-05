@@ -32,6 +32,11 @@ if(!password_verify($password, $user['password'])) {
     exit();
 }
 
+if($user['status'] === 'pending') {
+    echo json_encode(["error" => "Your account is pending approval!"]);
+    exit();
+}
+
 // check if user is disabled
 if($user['status'] === 'disabled') {
     echo json_encode(["error" => "Your account has been disabled!"]);

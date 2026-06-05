@@ -38,7 +38,7 @@ $user_ID = $pre . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
 $hashed = password_hash($password, PASSWORD_BCRYPT);
 
 // insert into users table
-$stmt = $pdo->prepare("INSERT INTO users (user_ID, name, email, password, role) VALUES (?, ?, ?, ?, ?)");
+$stmt = $pdo->prepare("INSERT INTO users (user_ID, name, email, password, role, status) VALUES (?, ?, ?, ?, ?, 'pending')");
 $stmt->execute([$user_ID, $name, $email, $hashed, $role]);
 
 // if student insert into student table

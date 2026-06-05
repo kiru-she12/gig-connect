@@ -4,6 +4,8 @@ header("Content-Type: application/json");
 
 include '../../config/db.php';
 include '../../middleware/auth.php';
+include '../../config/mail.php';
+include '../../config/email_templates.php';
 
 $user = authenticate();
 
@@ -66,6 +68,24 @@ if($action === 'accept') {
     $stmt = $pdo->prepare("UPDATE job SET status = 'in_progress', assigned_time = NOW() WHERE job_ID = ?");
     $stmt->execute([$application['job_ID']]);
 }
+// send email to student
+$stmt = $pdo->prepare("
+    SELECT u.email, u.name, j.title 
+    FROM application a
+    JOIN student s ON a.student_ID = s.student_ID
+    JOIN users u ON s.user_ID = u.user_ID
+    JOIN job j ON a.job_ID = j.job_ID
+    WHERE a.application_ID = ?
+");
+$stmt->execute([$application_ID]);
+$student_info = $stmt->fetch(PDO::FETCH_ASSOC);
+
+$email_body = applicationStatusEmail(
+    $student_info['name'],
+    $student_info['title'],
+    $new_status
+);
+sendEmail($student_info['email'], "GigConnect - Application Update", $email_body);
 
 echo json_encode([
     "success" => "Application " . $new_status . " successfully!",
