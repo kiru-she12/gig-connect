@@ -3,7 +3,8 @@ header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 
 include '../../config/db.php';
-
+include '../../config/mail.php';
+include '../../config/email_templates.php';
 $data = json_decode(file_get_contents("php://input"), true);
 
 $name = $data['name'];
@@ -55,6 +56,9 @@ if($role === 'job_provider') {
     $stmt = $pdo->prepare("INSERT INTO job_provider (provider_ID, user_ID, nic, business_reg_no) VALUES (?, ?, ?, ?)");
     $stmt->execute([$provider_ID, $user_ID, $nic, $business_reg_no]);
 }
+// send welcome email
+$email_body = welcomeEmail($name);
+sendEmail($email, "Welcome to GigConnect!", $email_body);
 
 echo json_encode(["success" => "User registered successfully!", "user_ID" => $user_ID]);
 ?>
