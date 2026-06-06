@@ -5,29 +5,40 @@ header("Content-Type: application/json");
 include '../../config/db.php';
 include '../../middleware/auth.php';
 
-$user = authenticate();
+class Notification {
+    private $pdo;
 
-// get notifications for logged in user
-$stmt = $pdo->prepare("
-    SELECT notification_ID, message, type, status, created_at 
-    FROM notification 
-    WHERE user_ID = ?
-    ORDER BY created_at DESC
-");
-$stmt->execute([$user->user_ID]);
-$notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    public function __construct($pdo) {
+        $this->pdo = $pdo;
+    }
 
-if(!$notifications) {
-    echo json_encode(["message" => "No notifications found!"]);
-    exit();
+    public function getNotifications($user) {
+        $stmt = $this->pdo->prepare("
+            SELECT notification_ID, message, type, status, created_at
+            FROM notification
+            WHERE user_ID = ?
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([$user->user_ID]);
+        $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if(!$notifications) {
+            return ["message" => "No notifications found!"];
+        }
+
+        $stmt = $this->pdo->prepare("UPDATE notification SET status = 'read' WHERE user_ID = ?");
+        $stmt->execute([$user->user_ID]);
+
+        return [
+            "success" => true,
+            "notifications" => $notifications
+        ];
+    }
 }
 
-// mark all as read
-$stmt = $pdo->prepare("UPDATE notification SET status = 'read' WHERE user_ID = ?");
-$stmt->execute([$user->user_ID]);
-
-echo json_encode([
-    "success" => true,
-    "notifications" => $notifications
-]);
+// run
+$user = authenticate();
+$notification = new Notification($pdo);
+$result = $notification->getNotifications($user);
+echo json_encode($result);
 ?>
