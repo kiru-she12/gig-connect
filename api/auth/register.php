@@ -12,6 +12,12 @@ $email = $data['email'];
 $password = $data['password'];
 $role = $data['role'];
 
+// prevent admin, manager and delivery staff registration
+if($role === 'admin' || $role === 'manager' || $role === 'delivery_staff') {
+    echo json_encode(["error" => "Unauthorized registration!"]);
+    exit();
+}
+
 // validate student email
 if($role === 'student') {
     if(!preg_match('/^[a-z0-9]+@std\.uwu\.ac\.lk$/', $email)) {
@@ -23,10 +29,7 @@ if($role === 'student') {
 // generate user ID
 $prefix = [
     'student' => 'STU',
-    'job_provider' => 'CLI',
-    'admin' => 'ADM',
-    'manager' => 'MNG',
-    'delivery_staff' => 'DEL'
+    'job_provider' => 'CLI'
 ];
 
 $pre = $prefix[$role];
