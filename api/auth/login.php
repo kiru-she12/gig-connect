@@ -7,57 +7,66 @@ require '../../vendor/autoload.php';
 
 use Firebase\JWT\JWT;
 
-$secret_key = "gigconnect_super_secret_key_uwu_2026_cst05";
+class Auth {
+    private $pdo;
+    private $secret_key = "gigconnect_super_secret_key_uwu_2026_cst05";
 
+    public function __construct($pdo) {
+        $this->pdo = $pdo;
+    }
+
+    public function login($data) {
+        $email = $data['email'];
+        $password = $data['password'];
+
+        // find user by email
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // check if user exists
+        if(!$user) {
+            return ["error" => "User not found!"];
+        }
+
+        // check password
+        if(!password_verify($password, $user['password'])) {
+            return ["error" => "Wrong password!"];
+        }
+
+        // check if pending
+        if($user['status'] === 'pending') {
+            return ["error" => "Your account is pending approval!"];
+        }
+
+        // check if banned
+        if($user['status'] === 'banned') {
+            return ["error" => "Your account has been banned!"];
+        }
+
+        // generate JWT token
+        $payload = [
+            "user_ID" => $user['user_ID'],
+            "name" => $user['name'],
+            "role" => $user['role'],
+            "exp" => time() + (60 * 60 * 24)
+        ];
+
+        $token = JWT::encode($payload, $this->secret_key, 'HS256');
+
+        return [
+            "success" => "Login successful!",
+            "token" => $token,
+            "user_ID" => $user['user_ID'],
+            "name" => $user['name'],
+            "role" => $user['role']
+        ];
+    }
+}
+
+// run
 $data = json_decode(file_get_contents("php://input"), true);
-
-$email = $data['email'];
-$password = $data['password'];
-
-// find user by email
-$stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
-$stmt->execute([$email]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-
-// check if user exists
-if(!$user) {
-    echo json_encode(["error" => "User not found!"]);
-    exit();
-}
-
-// check password
-if(!password_verify($password, $user['password'])) {
-    echo json_encode(["error" => "Wrong password!"]);
-    exit();
-}
-
-if($user['status'] === 'pending') {
-    echo json_encode(["error" => "Your account is pending approval!"]);
-    exit();
-}
-
-// check if user is disabled
-if($user['status'] === 'disabled') {
-    echo json_encode(["error" => "Your account has been disabled!"]);
-    exit();
-}
-
-// generate JWT token
-$payload = [
-    "user_ID" => $user['user_ID'],
-    "name" => $user['name'],
-    "role" => $user['role'],
-    "exp" => time() + (60 * 60 * 24)
-];
-
-$token = JWT::encode($payload, $secret_key, 'HS256');
-
-echo json_encode([
-    "success" => "Login successful!",
-    "token" => $token,
-    "user_ID" => $user['user_ID'],
-    "name" => $user['name'],
-    "role" => $user['role']
-]);
+$auth = new Auth($pdo);
+$result = $auth->login($data);
+echo json_encode($result);
 ?>
