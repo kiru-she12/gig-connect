@@ -5,6 +5,7 @@ header("Content-Type: application/json");
 include '../../config/db.php';
 include '../../config/mail.php';
 include '../../config/email_templates.php';
+include '../../config/sms.php';
 
 class User {
     private $pdo;
@@ -74,11 +75,25 @@ class User {
             $stmt->execute([$provider_ID, $user_ID, $nic, $business_reg_no]);
         }
 
-        // send welcome email
-        $email_body = welcomeEmail($name);
-        sendEmail($email, "Welcome to GigConnect!", $email_body);
+        // generate OTP
+        $otp = rand(100000, 999999);
+        $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
 
-        return ["success" => "User registered successfully!", "user_ID" => $user_ID];
+        // save OTP to users table
+        $stmt = $this->pdo->prepare("UPDATE users SET otp = ?, otp_expiry = ?, phone = ? WHERE user_ID = ?");
+        $stmt->execute([$otp, $otp_expiry, $data['phone'], $user_ID]);
+
+        // send OTP via email
+        $email_body = otpEmail($name, $otp);
+        sendEmail($email, "GigConnect - OTP Verification", $email_body);
+
+        // send OTP via SMS
+        sendSMS($data['phone'], "Your GigConnect OTP is: " . $otp . ". Valid for 5 minutes.");
+
+        return [
+            "success" => "Registration successful! Please verify your OTP.",
+            "user_ID" => $user_ID
+        ];
     }
 }
 

@@ -16,7 +16,7 @@ function welcomeEmail($name) {
             </div>
         </div>
         <div style='background-color: #F9FAFB; padding: 15px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #E5E7EB;'>
-            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect UWU &copy; 2026 | Badulla, Sri Lanka</p>
+            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect System &copy; 2026 | Sri Lanka</p>
         </div>
     </div>";
 }
@@ -38,7 +38,7 @@ function otpEmail($name, $otp) {
             <p style='color: #6B7280;'>This code is valid for 5 minutes. If you did not request this, please ignore this email.</p>
         </div>
         <div style='background-color: #F9FAFB; padding: 15px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #E5E7EB;'>
-            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect UWU &copy; 2026 | Badulla, Sri Lanka</p>
+            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect System &copy; 2026 | Sri Lanka</p>
         </div>
     </div>";
 }
@@ -68,7 +68,7 @@ function applicationStatusEmail($name, $job_title, $status) {
             <p style='color: #6B7280;'>Login to GigConnect to view more details.</p>
         </div>
         <div style='background-color: #F9FAFB; padding: 15px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #E5E7EB;'>
-            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect UWU &copy; 2026 | Badulla, Sri Lanka</p>
+            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect System &copy; 2026 | Sri Lanka</p>
         </div>
     </div>";
 }
@@ -90,7 +90,7 @@ function deliveryOtpEmail($name, $otp, $job_title) {
             <p style='color: #6B7280;'>Share this OTP with the delivery staff to confirm pickup. If you did not request this, please contact support.</p>
         </div>
         <div style='background-color: #F9FAFB; padding: 15px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #E5E7EB;'>
-            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect UWU &copy; 2026 | Badulla, Sri Lanka</p>
+            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect System &copy; 2026 | Sri Lanka</p>
         </div>
     </div>";
 }
@@ -112,7 +112,7 @@ function approvalEmail($name, $role) {
             </div>
         </div>
         <div style='background-color: #F9FAFB; padding: 15px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #E5E7EB;'>
-            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect UWU &copy; 2026 | Badulla, Sri Lanka</p>
+            <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect System &copy; 2026 | Sri Lanka</p>
         </div>
     </div>";
 }
