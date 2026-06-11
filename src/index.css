@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1e40af;
+    --primary-light: #eff6ff;
+    --accent: #10b981;
+    --surface: #ffffff;
+    --background: #f8fafc;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --danger: #ef4444;
+  }
+
+  body {
+    @apply antialiased text-text-primary bg-background font-sans selection:bg-primary/10 selection:text-primary;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary-dark active:scale-[0.98] transition-all duration-200 font-semibold shadow-lg shadow-primary/20 flex items-center justify-center gap-2;
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-2.5 bg-white text-text-primary border border-border rounded-xl hover:bg-slate-50 active:scale-[0.98] transition-all duration-200 font-semibold flex items-center justify-center gap-2;
+  }
+
+  .btn-accent {
+    @apply px-6 py-2.5 bg-accent text-white rounded-xl hover:opacity-90 active:scale-[0.98] transition-all duration-200 font-semibold shadow-lg shadow-accent/20 flex items-center justify-center gap-2;
+  }
+  
+  .card {
+    @apply bg-white border border-slate-200/60 rounded-[2rem] shadow-xl shadow-slate-200/40 overflow-hidden;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 font-medium text-text-primary placeholder:text-text-muted;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3.5 rounded-2xl text-text-secondary hover:bg-primary-light hover:text-primary transition-all duration-200 font-medium;
+  }
+
+  .sidebar-link-active {
+    @apply bg-primary-light text-primary shadow-sm;
+  }
+
+  .badge {
+    @apply px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider;
+  }
+
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-2xl;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

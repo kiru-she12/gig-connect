@@ -1,0 +1,358 @@
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Building, Mail, Phone, Lock, FileText, Loader2, X, ShieldCheck, ArrowLeft, ArrowRight, Briefcase } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import logo from '../logo.svg';
+
+const RegisterClient = () => {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    businessName: '',
+    email: '',
+    phone: '',
+    nic: '',
+    businessReg: '',
+    password: '',
+    confirmPassword: '',
+    jobType: 'Both',
+    terms: false
+  });
+  const [error, setError] = useState('');
+  const { register, loading, setIsLoginModalOpen } = useAuth();
+  const navigate = useNavigate();
+
+  const nextStep = () => {
+    if (step === 1) {
+      if (!formData.fullName || !formData.email || !formData.phone) {
+        setError('Please complete the essential contact information');
+        return;
+      }
+    }
+    setError('');
+    setStep(step + 1);
+  };
+
+  const prevStep = () => {
+    setError('');
+    setStep(step - 1);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Security keys do not match');
+      return;
+    }
+
+    if (formData.jobType !== 'Remote' && !formData.businessReg) {
+      setError('Registration Number is mandatory for on-site or hybrid collaboration');
+      return;
+    }
+
+    if (!formData.terms) {
+      setError('Agreement to terms and conditions is required');
+      return;
+    }
+
+    try {
+      await register({ ...formData, role: 'client' });
+      navigate('/dashboard/client');
+    } catch (err) {
+      setError('Submission failed. Our team has been notified.');
+    }
+  };
+
+  const progress = (step / 3) * 100;
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-emerald-500/10 selection:text-emerald-600">
+      {/* Navigation */}
+      <div className="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center">
+        <Link to="/" className="flex items-center gap-3 no-underline group">
+          <div className="w-10 h-10 bg-white shadow-lg shadow-slate-200/50 rounded-xl flex items-center justify-center p-2 group-hover:scale-110 transition-transform">
+            <img src={logo} alt="GigConnect" className="w-full h-full object-contain" />
+          </div>
+          <span className="text-xl font-heading font-black text-slate-900 tracking-tight">GigConnect</span>
+        </Link>
+        <button 
+          onClick={() => setIsLoginModalOpen(true)}
+          className="text-sm font-bold text-slate-500 hover:text-emerald-600 transition-colors"
+        >
+          Manage existing account? <span className="text-emerald-600">Login</span>
+        </button>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-6 pb-24">
+        {/* Header */}
+        <div className="mb-12">
+          <div className="flex justify-between items-end mb-4">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 mb-1">Business Registration</h2>
+              <p className="text-slate-500 font-medium">Stage {step} of 3: {step === 1 ? 'Representative Info' : step === 2 ? 'Business Verification' : 'Access Security'}</p>
+            </div>
+            <span className="text-sm font-black text-emerald-600">{Math.round(progress)}% Complete</span>
+          </div>
+          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+            <motion.div 
+              className="h-full bg-emerald-500"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mx-8 mt-8 p-4 bg-rose-50 border border-rose-100 text-rose-600 text-sm rounded-2xl flex items-center gap-3 font-semibold"
+            >
+              <div className="w-2 h-2 bg-rose-500 rounded-full flex-shrink-0" />
+              {error}
+            </motion.div>
+          )}
+
+          <div className="p-10 md:p-12">
+            <AnimatePresence mode="wait">
+              {step === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-8"
+                >
+                  <div>
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-4 block">Operation Model</label>
+                    <div className="grid grid-cols-3 gap-3 p-1.5 bg-slate-50 rounded-[1.5rem] border border-slate-100">
+                      {['On-site', 'Remote', 'Both'].map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, jobType: type })}
+                          className={`py-3.5 text-sm font-bold rounded-2xl transition-all ${
+                            formData.jobType === type
+                            ? 'bg-white text-emerald-600 shadow-md shadow-slate-200/50 scale-[1.02] ring-1 ring-slate-100'
+                            : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                      <div className="relative group">
+                        <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="Representative Name"
+                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          value={formData.fullName}
+                          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Name (Optional)</label>
+                      <div className="relative group">
+                        <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <input 
+                          type="text" 
+                          placeholder="Company or Brand"
+                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          value={formData.businessName}
+                          onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Corporate Email</label>
+                      <div className="relative group">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <input 
+                          type="email" 
+                          required
+                          placeholder="name@business.com"
+                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Number</label>
+                      <div className="relative group">
+                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <input 
+                          type="tel" 
+                          required
+                          placeholder="+94 XX XXX XXXX"
+                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={nextStep}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-600/20 group"
+                  >
+                    Continue to Verification
+                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </motion.div>
+              )}
+
+              {step === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-8"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">National Identity Card (NIC)</label>
+                      <div className="relative group">
+                        <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="NIC Number"
+                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          value={formData.nic}
+                          onChange={(e) => setFormData({ ...formData, nic: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Registration Number</label>
+                      <div className="relative group">
+                        <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <input 
+                          type="text" 
+                          required={formData.jobType !== 'Remote'}
+                          placeholder="BR Number"
+                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          value={formData.businessReg}
+                          onChange={(e) => setFormData({ ...formData, businessReg: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100 flex gap-4 items-start">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm flex-shrink-0">
+                      <ShieldCheck size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 mb-1">Trust & Safety</h4>
+                      <p className="text-xs text-slate-500 leading-relaxed">Verified businesses receive higher engagement from students. All registration data is processed securely and kept confidential.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button onClick={prevStep} className="flex-1 btn-secondary py-4">Back</button>
+                    <button onClick={nextStep} className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-600/20 group">
+                      Security Setup
+                      <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {step === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-8"
+                >
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Access Password</label>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <input 
+                          type="password" 
+                          required
+                          placeholder="••••••••"
+                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Access Key</label>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <input 
+                          type="password" 
+                          required
+                          placeholder="••••••••"
+                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          value={formData.confirmPassword}
+                          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                    <label className="flex items-start gap-4 cursor-pointer group p-4 bg-slate-50 rounded-3xl border border-slate-100 hover:bg-slate-100/50 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        className="mt-1 w-5 h-5 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500/20"
+                        checked={formData.terms}
+                        onChange={(e) => setFormData({ ...formData, terms: e.target.checked })}
+                      />
+                      <span className="text-xs text-slate-500 leading-relaxed font-medium">
+                        I agree to the <Link to="#" className="text-emerald-600 font-bold hover:underline">Terms of Service</Link> and <Link to="#" className="text-emerald-600 font-bold hover:underline">Privacy Policy</Link> for business entities on GigConnect.
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button onClick={prevStep} className="flex-1 btn-secondary py-4">Back</button>
+                    <button 
+                      onClick={handleSubmit} 
+                      disabled={loading}
+                      className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-emerald-600/20 disabled:opacity-70 transition-all"
+                    >
+                      {loading ? <Loader2 className="animate-spin" /> : 'Register Business'}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <p className="mt-12 text-center text-slate-400 text-xs font-medium max-w-sm mx-auto leading-relaxed">
+          Trusted by over 200 businesses. GigConnect is the most reliable way to hire specialized student talent from UWU.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default RegisterClient;
