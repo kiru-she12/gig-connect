@@ -1,0 +1,16 @@
+# Frontend
+gig-connect-front-end/node_modules/
+gig-connect-front-end/dist/
+gig-connect-front-end/build/
+gig-connect-front-end/.env
+
+# Backend
+backend/vendor/
+backend/.env
+backend/config/db.php
+
+# IDEs / OS / Logs
+.DS_Store
+.vscode/
+.idea/
+*.log
