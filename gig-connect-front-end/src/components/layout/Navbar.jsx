@@ -52,7 +52,7 @@ const Navbar = ({ dashboard = false }) => {
 
   const dashboardLinks = getLinksByRole(user?.role);
   const unreadCount = notifications.filter(n => !n.read).length;
-  const isScrolledOrDashboard = isScrolled || dashboard;
+  const showScrolledStyle = isScrolled || dashboard || (user !== null);
 
   const handleLogout = () => {
     logout();
@@ -62,7 +62,7 @@ const Navbar = ({ dashboard = false }) => {
   return (
     <nav 
       className={`fixed top-0 left-0 w-full z-[100] transition-all duration-500 ${
-        isScrolledOrDashboard 
+        showScrolledStyle 
           ? 'py-2 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-md' 
           : 'py-5 bg-transparent border-b border-transparent'
       }`}
@@ -79,7 +79,9 @@ const Navbar = ({ dashboard = false }) => {
           >
             <Link to="/" onClick={(e) => scrollToSection(e, '')} className="flex items-center gap-2.5 group">
               <span className={`font-heading font-black tracking-tight transition-all duration-300 ${
-                isScrolledOrDashboard ? 'text-xl md:text-2xl text-slate-800' : 'text-2xl md:text-3xl text-white drop-shadow-md'
+                user?.role === 'student'
+                  ? 'text-xl md:text-2xl text-slate-900'
+                  : showScrolledStyle ? 'text-xl md:text-2xl text-slate-800' : 'text-2xl md:text-3xl text-white drop-shadow-md'
               }`}>
                 GigConnect
               </span>
@@ -119,15 +121,17 @@ const Navbar = ({ dashboard = false }) => {
                     <Link
                       key={link.name}
                       to={link.to}
-                      className={`group relative font-medium transition-all duration-300 flex items-center gap-1 ${
-                        isScrolledOrDashboard 
-                          ? 'text-sm lg:text-base text-slate-600 hover:text-primary' 
-                          : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
+                      className={`group relative transition-all duration-300 flex items-center gap-1 ${
+                        user?.role === 'student'
+                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-[#8fa89b]'
+                          : showScrolledStyle 
+                            ? 'text-sm lg:text-base text-slate-600 hover:text-primary' 
+                            : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
                       }`}
                     >
                       {link.name}
                       <span className={`absolute -bottom-1 left-0 w-0 h-[2px] rounded-full transition-all duration-300 group-hover:w-full ${
-                        isScrolledOrDashboard ? 'bg-primary' : 'bg-white'
+                        user?.role === 'student' ? 'bg-[#8fa89b]' : showScrolledStyle ? 'bg-primary' : 'bg-white'
                       }`}></span>
                     </Link>
                   ) : (
@@ -139,15 +143,17 @@ const Navbar = ({ dashboard = false }) => {
                       key={link.name}
                       href={link.id || '/'}
                       onClick={(e) => scrollToSection(e, link.id)}
-                      className={`group relative font-medium transition-all duration-300 flex items-center gap-1 ${
-                        isScrolledOrDashboard 
-                          ? 'text-sm lg:text-base text-slate-600 hover:text-primary' 
-                          : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
+                      className={`group relative transition-all duration-300 flex items-center gap-1 ${
+                        user?.role === 'student'
+                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-[#8fa89b]'
+                          : showScrolledStyle 
+                            ? 'text-sm lg:text-base text-slate-600 hover:text-primary' 
+                            : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
                       }`}
                     >
                       {link.name}
                       <span className={`absolute -bottom-1 left-0 w-0 h-[2px] rounded-full transition-all duration-300 group-hover:w-full ${
-                        isScrolledOrDashboard ? 'bg-primary' : 'bg-white'
+                        user?.role === 'student' ? 'bg-[#8fa89b]' : showScrolledStyle ? 'bg-primary' : 'bg-white'
                       }`}></span>
                     </motion.a>
                   )
@@ -162,7 +168,9 @@ const Navbar = ({ dashboard = false }) => {
                   <button 
                     onClick={() => setShowNotifications(!showNotifications)}
                     className={`p-2.5 rounded-full relative transition-all duration-300 ${
-                      isScrolledOrDashboard ? 'text-text-secondary hover:bg-slate-100' : 'text-white/80 hover:bg-white/10'
+                      user?.role === 'student'
+                        ? 'text-slate-800 hover:text-[#8fa89b] hover:bg-slate-100'
+                        : showScrolledStyle ? 'text-text-secondary hover:bg-slate-100' : 'text-white/80 hover:bg-white/10'
                     }`}
                   >
                     <Bell size={20} />
@@ -248,15 +256,19 @@ const Navbar = ({ dashboard = false }) => {
                   <button 
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className={`flex items-center gap-2 p-1 rounded-full transition-all border ${
-                      isScrolledOrDashboard 
-                        ? 'bg-slate-50 border-slate-200 hover:bg-white hover:shadow-md' 
-                        : 'bg-white/10 border-white/20 hover:bg-white/20'
+                      user?.role === 'student'
+                        ? 'bg-slate-50 border-slate-200 hover:bg-white hover:shadow-md'
+                        : showScrolledStyle 
+                          ? 'bg-slate-50 border-slate-200 hover:bg-white hover:shadow-md' 
+                          : 'bg-white/10 border-white/20 hover:bg-white/20'
                     }`}
                   >
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                      user?.role === 'student' ? 'bg-[#8fa89b]' : 'bg-primary'
+                    }`}>
                       {user.name[0]}
                     </div>
-                    <ChevronDown size={14} className={isScrolledOrDashboard ? 'text-text-secondary' : 'text-white'} />
+                    <ChevronDown size={14} className={user?.role === 'student' || showScrolledStyle ? 'text-text-secondary' : 'text-white'} />
                   </button>
 
                   <AnimatePresence>
@@ -325,7 +337,7 @@ const Navbar = ({ dashboard = false }) => {
                 <button 
                   onClick={() => setIsLoginModalOpen(true)}
                   className={`px-6 rounded-full font-semibold transition-all duration-300 ${
-                    isScrolledOrDashboard 
+                    showScrolledStyle 
                       ? 'py-2 text-sm text-slate-600 hover:text-primary bg-slate-100/50 hover:bg-slate-100' 
                       : 'py-2.5 text-base text-white/90 hover:text-white border border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-md'
                   }`}
@@ -335,18 +347,18 @@ const Navbar = ({ dashboard = false }) => {
                 <button 
                   onClick={() => setIsRegisterModalOpen(true)}
                   className={`group pl-6 pr-2 rounded-full font-semibold flex items-center gap-3 transition-all duration-300 active:scale-95 ${
-                    isScrolledOrDashboard
+                    showScrolledStyle
                       ? 'py-1.5 text-sm bg-primary text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5'
                       : 'py-2.5 text-base bg-white text-slate-900 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:-translate-y-0.5'
                   }`}
                 >
                   <span>Sign Up</span>
                   <div className={`rounded-full flex items-center justify-center transition-all duration-300 ${
-                    isScrolledOrDashboard 
+                    showScrolledStyle 
                       ? 'w-7 h-7 bg-white/20 group-hover:bg-white/30 group-hover:translate-x-1' 
                       : 'w-8 h-8 bg-slate-100 group-hover:bg-slate-200 group-hover:translate-x-1'
                   }`}>
-                    <ArrowRight size={14} className={isScrolledOrDashboard ? 'text-white' : 'text-slate-900'} />
+                    <ArrowRight size={14} className={showScrolledStyle ? 'text-white' : 'text-slate-900'} />
                   </div>
                 </button>
               </motion.div>
@@ -356,7 +368,9 @@ const Navbar = ({ dashboard = false }) => {
             <button 
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className={`lg:hidden p-2 rounded-xl transition-colors ${
-                isScrolledOrDashboard ? 'text-text-secondary hover:bg-slate-100' : 'text-white hover:bg-white/10'
+                user?.role === 'student'
+                  ? 'text-slate-900 hover:bg-slate-100'
+                  : showScrolledStyle ? 'text-text-secondary hover:bg-slate-100' : 'text-white hover:bg-white/10'
               }`}
             >
               {showMobileMenu ? <X size={24} /> : <Menu size={24} />}

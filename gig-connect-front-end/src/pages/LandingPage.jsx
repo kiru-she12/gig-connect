@@ -134,18 +134,9 @@ const LandingPage = () => {
     }));
   }, []);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
   const [activeSection, setActiveSection] = useState('home');
   const [warningMessage, setWarningMessage] = useState(null);
   const [recsMetadata, setRecsMetadata] = useState(null);
-
-  // Student specific filter states
-  const [filterJobType, setFilterJobType] = useState('');
-  const [filterDuration, setFilterDuration] = useState('');
-  const [filterMinPay, setFilterMinPay] = useState('');
-  const [filterMaxPay, setFilterMaxPay] = useState('');
-  const [filterSkill, setFilterSkill] = useState('');
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [backendRecs, setBackendRecs] = useState([]);
 
   useEffect(() => {
@@ -254,6 +245,21 @@ const LandingPage = () => {
     mouseY.set(0);
   };
 
+  const isStudent = user && user.role === 'student';
+
+  const sectionLabels = isStudent
+    ? {
+        home: 'Launch',
+        browse: 'Gigs',
+        'how-it-works': 'Guide'
+      }
+    : {
+        home: 'Launch',
+        about: 'Heritage',
+        jobs: 'Opportunities',
+        collaboration: 'Process'
+      };
+
   // Section Tracking Logic
   useEffect(() => {
     const observerOptions = {
@@ -271,21 +277,17 @@ const LandingPage = () => {
     };
 
     const observer = new IntersectionObserver(handleIntersect, observerOptions);
-    const sections = ['home', 'about', 'jobs', 'collaboration'];
+    const sections = isStudent
+      ? ['home', 'browse', 'how-it-works']
+      : ['home', 'about', 'jobs', 'collaboration'];
+
     sections.forEach(id => {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
     });
 
     return () => observer.disconnect();
-  }, []);
-
-  const sectionLabels = {
-    home: 'Launch',
-    about: 'Heritage',
-    jobs: 'Opportunities',
-    collaboration: 'Process'
-  };
+  }, [isStudent]);
 
   useEffect(() => {
     if (location.hash) {
@@ -299,11 +301,6 @@ const LandingPage = () => {
     }
   }, [location]);
 
-  const filteredJobs = jobs.filter(job => 
-    job.status === 'Active' && 
-    (searchTerm === '' || job.title.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (categoryFilter === 'All' || job.category === categoryFilter)
-  );
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -355,43 +352,7 @@ const LandingPage = () => {
       return Math.max(0, score);
     };
 
-    const studentFilteredJobs = jobs.filter(job => {
-      if (job.status !== 'Active') return false;
-      
-      if (searchTerm.trim() !== '') {
-        const term = searchTerm.toLowerCase();
-        const matchTitle = job.title.toLowerCase().includes(term);
-        const matchDesc = job.description.toLowerCase().includes(term);
-        if (!matchTitle && !matchDesc) return false;
-      }
-      
-      if (categoryFilter !== 'All') {
-        if (job.category !== categoryFilter) return false;
-      }
-      
-      if (filterJobType !== '') {
-        if (job.type.toLowerCase() !== filterJobType.toLowerCase()) return false;
-      }
-      
-      if (filterDuration !== '') {
-        if (job.duration !== filterDuration) return false;
-      }
-      
-      if (filterMinPay !== '') {
-        if (job.pay < parseFloat(filterMinPay)) return false;
-      }
-      
-      if (filterMaxPay !== '') {
-        if (job.pay > parseFloat(filterMaxPay)) return false;
-      }
-      
-      if (filterSkill !== '') {
-        const hasSkill = job.skills.some(s => s.toLowerCase().includes(filterSkill.toLowerCase()));
-        if (!hasSkill) return false;
-      }
-      
-      return true;
-    });
+    const studentFilteredJobs = jobs.filter(job => job.status === 'Active' || job.status === 'active');
 
     const scoredJobs = studentFilteredJobs.map(job => {
       const rawScore = getJobMatchScore(job);
@@ -407,207 +368,165 @@ const LandingPage = () => {
       .filter(j => j.score === 0)
       .sort((a, b) => b.id - a.id);
 
+    const handleSearchSubmit = () => {
+      navigate('/jobs', {
+        state: {
+          search: searchTerm
+        }
+      });
+    };
+
+    const CATEGORY_IMAGES = {
+      'Design': 'https://images.unsplash.com/photo-1541462608141-2ff01dd914e0?auto=format&fit=crop&w=400&q=80',
+      'Data Entry': 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=400&q=80',
+      'Photography': 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80',
+      'Web Dev': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80',
+      'Translation': 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=400&q=80',
+      'Academic & Tutoring': 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=400&q=80',
+      'Local Services': 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=400&q=80',
+      'Default': 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=400&q=80'
+    };
+
     return (
       <div className="flex-1 flex flex-col overflow-x-hidden bg-[#f8faf9] min-h-screen pt-20">
         <Navbar />
 
-        {/* Banner Section */}
-        <section id="home" className="bg-[#ecf1ee] py-16 px-6 sm:px-10 lg:px-16 relative overflow-hidden border-b border-[#e2e8e5]">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.03] pointer-events-none"></div>
-          <div className="absolute -top-10 -right-10 w-80 h-80 bg-[#8fa89b]/10 rounded-full blur-[100px]"></div>
-          <div className="absolute -bottom-10 -left-10 w-80 h-80 bg-[#8fa89b]/10 rounded-full blur-[100px]"></div>
-
-          <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="max-w-2xl">
-              <h1 className="text-4xl sm:text-5xl font-heading font-black tracking-tight leading-none mb-4 text-[#1a2320]">
-                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8fa89b] to-[#5e6b63] font-serif italic font-normal">{user.name.split(' ')[0]}</span>! 👋
+        {/* Hero Section Container */}
+        <section id="home" className="max-w-7xl mx-auto w-full px-6 sm:px-10 lg:px-16 py-8 relative">
+          <div className="bg-[#a6bcb0] rounded-[2.5rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden text-slate-900 flex flex-col lg:flex-row items-center gap-12 min-h-[550px] shadow-lg border border-[#8fa89b]/25">
+            {/* Outlined text in background */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+              <span className="text-[12vw] font-black text-white/10 uppercase tracking-widest font-sans leading-none">
+                STUDENT
+              </span>
+            </div>
+            
+            {/* Left Content Column */}
+            <div className="relative z-10 flex-1 w-full lg:max-w-2xl text-left">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-black tracking-tight leading-none mb-4 uppercase text-slate-955">
+                Welcome back, <br />
+                <span className="font-serif italic font-normal text-white">{user.name.split(' ')[0]}</span>! 👋
               </h1>
-              <p className="text-[#5e6b63] text-lg font-light max-w-xl">
+              <p className="text-[#1a2320]/80 text-base sm:text-lg font-medium max-w-xl">
                 Find high-quality campus opportunities matching your skill set and study schedule.
               </p>
-            </div>
 
-            <div className="bg-white border border-[#e2e8e5] rounded-3xl p-6 w-full md:w-80 shadow-md">
-              <h3 className="font-bold text-sm text-[#2b4436] mb-3 uppercase tracking-wider">My Standing</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-[#5e6b63] font-medium">Platform Rating:</span>
-                  {(studentRating === 0) ? (
-                    <span className="text-xs bg-[#8fa89b]/10 text-[#2b4436] px-2 py-0.5 rounded-full font-bold border border-[#8fa89b]/20">
-                      🆕 New Student
-                    </span>
-                  ) : (
-                    <span className="text-xs text-[#2b4436] font-black flex items-center gap-1">
-                      ⭐ {studentRating.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-[#5e6b63] font-medium">Completed Gigs:</span>
-                  <span className="text-xs text-[#1a2320] font-bold">{completedCount}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-[#5e6b63] font-medium">No-Shows Penalty:</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${noShows > 0 ? 'bg-rose-500/10 text-rose-700 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20'}`}>
-                    {noShows > 0 ? `-${noShows * 1.5} (Penalty)` : 'None'}
-                  </span>
+              {/* Integrated Search Input */}
+              <div className="w-full max-w-xl bg-white rounded-2xl p-2.5 flex items-center shadow-xl border border-slate-200/50 mt-8 mb-4">
+                <Search className="ml-4 text-slate-400 flex-shrink-0" size={18} />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearchSubmit();
+                    }
+                  }}
+                  placeholder="Search for any service or gig..."
+                  className="w-full bg-transparent border-0 outline-none text-slate-800 px-3 text-xs sm:text-sm placeholder:text-slate-400 font-medium"
+                />
+                <div className="flex items-center gap-2 pr-1">
+                  <button
+                    onClick={handleSearchSubmit}
+                    className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap"
+                  >
+                    Search
+                  </button>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Search & Category pills Section */}
-        <section className="py-8 bg-[#f8faf9] border-b border-[#e2e8e5] sticky top-[72px] z-40 shadow-sm">
-          <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto scrollbar-thin">
-                {['All', 'Design', 'Data Entry', 'Photography', 'Web Dev', 'Translation', 'Academic & Tutoring', 'Local Services'].map((cat) => (
+              {/* Popular tags list */}
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/90">
+                <span className="font-bold opacity-90 mr-1 text-slate-950">Popular skills:</span>
+                {['All', 'Design', 'Data Entry', 'Photography', 'Web Dev', 'Translation'].map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => setCategoryFilter(cat)}
-                    className={`px-4 py-2 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${
-                      categoryFilter === cat
-                        ? 'bg-[#8fa89b] text-white border-[#8fa89b] shadow-sm'
-                        : 'bg-[#f0f4f2] text-[#4e5853] border-transparent hover:bg-[#e2e8e5]'
-                    }`}
+                    onClick={() => {
+                      navigate('/jobs', { state: { category: cat } });
+                    }}
+                    className="px-3 py-1 rounded-full border text-[11px] font-bold transition-all whitespace-nowrap bg-white/10 text-white border-white/20 hover:bg-white/20"
                   >
                     {cat}
                   </button>
                 ))}
               </div>
-
-              <div className="w-full md:w-96 flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5e6b63]" size={16} />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search gigs by title or keywords..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#f0f4f2] border border-transparent rounded-xl outline-none focus:border-[#8fa89b]/50 focus:bg-white transition-all text-xs font-medium text-slate-800"
-                  />
-                </div>
-                <button
-                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                  className={`p-2.5 rounded-xl border flex items-center justify-center transition-all ${
-                    showAdvancedFilters || filterJobType || filterDuration || filterMinPay || filterMaxPay || filterSkill
-                      ? 'bg-[#ecf1ee] border-[#8fa89b] text-[#2b4436]'
-                      : 'bg-white border-[#e2e8e5] text-slate-600 hover:border-slate-300'
-                  }`}
-                >
-                  <Filter size={18} />
-                </button>
-              </div>
             </div>
 
-            <AnimatePresence>
-              {showAdvancedFilters && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden border-t border-slate-100 mt-4 pt-4"
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Job Type</label>
-                      <select
-                        value={filterJobType}
-                        onChange={(e) => setFilterJobType(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-primary/50 focus:bg-white text-xs font-bold text-slate-700 cursor-pointer"
-                      >
-                        <option value="">Any Type</option>
-                        <option value="Remote">Remote</option>
-                        <option value="On-site">On-site</option>
-                      </select>
-                    </div>
+            {/* Right Student Image & Floating Cards Column */}
+            <div className="relative z-10 flex-shrink-0 w-full lg:w-96 flex items-center justify-center lg:justify-end mt-8 lg:mt-0">
+              <div className="relative w-64 h-64 sm:w-80 sm:h-80 rounded-[3rem] overflow-hidden border-4 border-white/80 shadow-2xl">
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80"
+                  alt="Student working"
+                  className="w-full h-full object-cover"
+                />
+              </div>
 
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Duration</label>
-                      <select
-                        value={filterDuration}
-                        onChange={(e) => setFilterDuration(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-primary/50 focus:bg-white text-xs font-bold text-slate-700 cursor-pointer"
-                      >
-                        <option value="">Any Duration</option>
-                        <option value="Few Hours">Few Hours</option>
-                        <option value="1 Day">1 Day</option>
-                        <option value="3 Days">3 Days</option>
-                        <option value="1 Week">1 Week</option>
-                      </select>
-                    </div>
+              {/* Floating Pill 1: Student Tag */}
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-4 -left-4 bg-white border border-slate-100 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 animate-float"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#8fa89b] text-white flex items-center justify-center font-bold text-xs">
+                  {user.name.charAt(0)}
+                </div>
+                <div>
+                  <h4 className="text-[11px] font-black text-slate-900 leading-none">{user.name.split(' ')[0]}</h4>
+                  <p className="text-[9px] text-slate-400 font-bold mt-1">UWU Student</p>
+                </div>
+              </motion.div>
 
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Skill Needed</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Design, PHP..."
-                        value={filterSkill}
-                        onChange={(e) => setFilterSkill(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-primary/50 focus:bg-white text-xs font-medium text-slate-700"
-                      />
-                    </div>
+              {/* Floating Pill 2: Gigs completed */}
+              <motion.div
+                animate={{ y: [0, 8, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                className="absolute top-24 -right-4 bg-white border border-slate-100 rounded-2xl p-3 shadow-xl flex items-center gap-2 animate-float-delayed"
+              >
+                <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
+                  ✓
+                </div>
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-900 leading-none">{completedCount}+ Gigs</h4>
+                  <p className="text-[8px] text-slate-400 font-bold mt-0.5">Completed</p>
+                </div>
+              </motion.div>
 
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Min Pay (LKR)</label>
-                      <input
-                        type="number"
-                        placeholder="0"
-                        value={filterMinPay}
-                        onChange={(e) => setFilterMinPay(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-primary/50 focus:bg-white text-xs font-medium text-slate-700"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Max Pay (LKR)</label>
-                      <input
-                        type="number"
-                        placeholder="Any"
-                        value={filterMaxPay}
-                        onChange={(e) => setFilterMaxPay(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-primary/50 focus:bg-white text-xs font-medium text-slate-700"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
-                    <button
-                      onClick={() => {
-                        setFilterJobType('');
-                        setFilterDuration('');
-                        setFilterMinPay('');
-                        setFilterMaxPay('');
-                        setFilterSkill('');
-                      }}
-                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all"
-                    >
-                      Reset Filters
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              {/* Floating Pill 3: Standing/Rating */}
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="absolute -bottom-4 left-6 bg-white border border-slate-100 rounded-2xl p-3 shadow-xl flex items-center gap-2"
+              >
+                <div className="w-6 h-6 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-[10px]">
+                  ★
+                </div>
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-900 leading-none">
+                    {studentRating === 0 ? 'New' : studentRating.toFixed(2)} Rating
+                  </h4>
+                  <p className="text-[8px] text-slate-400 font-bold mt-0.5">
+                    {noShows > 0 ? `-${noShows * 1.5} Penalty` : 'Top Standing'}
+                  </p>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </section>
 
-        <main className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-12 flex-1 space-y-12">
-
-          {/* ── SMART RECOMMENDED GIGS SECTION ── */}
+        {/* Main Content Area */}
+        <main className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-12 flex-1 space-y-16">
+          
+          {/* ── RECOMMENDED GIGS SECTION ── */}
           <section id="browse">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-8">
               <div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#8fa89b]/10 border border-[#8fa89b]/20 flex items-center justify-center text-[#2b4436] shadow-sm">
-                    <Sparkles size={16} />
-                  </div>
-                  <h2 className="text-2xl font-heading font-black text-slate-900 tracking-tight">
-                    Recommended Gigs For You
-                  </h2>
-                </div>
+                <h2 className="text-3xl font-heading font-black text-slate-900 tracking-tight uppercase leading-none">
+                  Recommended Gigs
+                </h2>
                 {recsMetadata && (
-                  <p className="text-xs text-slate-400 font-medium mt-1 ml-10">
+                  <p className="text-xs text-slate-400 font-medium mt-2">
                     {recsMetadata.algo_label}
                     {recsMetadata.student_rating > 0 && (
                       <span className="ml-2 text-amber-500 font-bold">★ {parseFloat(recsMetadata.student_rating).toFixed(1)}</span>
@@ -638,115 +557,236 @@ const LandingPage = () => {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {backendRecs.slice(0, 8).map(job => {
                   const matchPct = job.match_score || 0;
-                  const matchRing = matchPct >= 70 ? 'border-[#8fa89b]'
-                                  : matchPct >= 45 ? 'border-amber-400'
-                                  : 'border-[#e2e8e5]';
                   const alreadyApplied = (applications || []).some(a => a.job_ID === job.job_ID);
 
                   return (
                     <div
                       key={job.job_ID}
-                      className={`bg-white rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300 group overflow-hidden relative ${
-                        job.is_boosted === 1 ? 'border-[#8fa89b] bg-[#f8faf9]' : 'border-[#e2e8e5]'
-                      }`}
+                      className="bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group"
                     >
-                      {/* Match % ring */}
-                      <div className="absolute top-4 right-4 flex flex-col items-center">
-                        <div className={`w-14 h-14 rounded-full border-4 ${matchRing} flex items-center justify-center bg-white shadow-sm`}>
-                          <span className="text-xs font-black text-slate-800 leading-none">{matchPct}%</span>
-                        </div>
-                        <span className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">Match</span>
-                      </div>
-
-                      <div className="p-5 pr-20">
-                        {/* Badges */}
-                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                          {job.is_boosted === 1 && (
-                            <span className="text-[9px] font-black uppercase tracking-wider bg-[#8fa89b]/25 text-[#1e2f25] border border-[#8fa89b]/35 px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <span className="w-1 h-1 bg-[#8fa89b] rounded-full animate-pulse"></span>Featured
+                      {/* Card Content */}
+                      <div className="p-6 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#2b4436] bg-[#8fa89b]/15 px-2.5 py-1 rounded-full">
+                              {job.job_type}
                             </span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] font-black text-slate-800 bg-[#ecf1ee] border border-slate-200 px-2 py-0.5 rounded-full">{matchPct}% Match</span>
+                            </div>
+                          </div>
+
+                          <h3 className="font-heading font-black text-base text-slate-900 group-hover:text-[#8fa89b] transition-colors leading-snug line-clamp-2">
+                            {job.title}
+                          </h3>
+
+                          <p className="text-emerald-600 font-extrabold text-sm mt-2">
+                            LKR {parseFloat(job.payment || 0).toLocaleString()}
+                          </p>
+
+                          {/* Reason tags */}
+                          {job.match_reasons && (
+                            <div className="flex flex-wrap gap-1 mt-3">
+                              {job.match_reasons.slice(0, 2).map((reason, i) => (
+                                <span key={i} className="text-[9px] font-bold bg-[#f0f4f2] text-[#2b4436] border border-[#8fa89b]/25 px-2 py-0.5 rounded-full">
+                                  {reason}
+                                </span>
+                              ))}
+                            </div>
                           )}
-                          <span className="text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full">
-                            {job.job_type}
-                          </span>
-                        </div>
 
-                        {/* Title */}
-                        <h4 className="font-heading font-black text-base text-slate-900 group-hover:text-[#8fa89b] transition-colors leading-snug mb-1.5">
-                          {job.title}
-                        </h4>
-
-                        {/* Pay */}
-                        <p className="text-xs font-bold text-emerald-600 mb-2">
-                          LKR {parseFloat(job.payment || 0).toLocaleString()}
-                        </p>
-
-                        {/* Reason tags */}
-                        {job.match_reasons && (
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            {job.match_reasons.map((reason, i) => (
-                              <span key={i} className="text-[9px] font-bold bg-[#f0f4f2] text-[#2b4436] border border-[#8fa89b]/20 px-2 py-0.5 rounded-full">
-                                {reason}
+                          {/* Skills */}
+                          <div className="flex flex-wrap gap-1 mt-3">
+                            {(job.skills ? job.skills.split(',').slice(0, 3) : []).map((s, i) => (
+                              <span key={i} className="text-[9px] font-bold bg-slate-50 text-slate-500 px-2 py-0.5 rounded border border-slate-100">
+                                {s.trim()}
                               </span>
                             ))}
                           </div>
-                        )}
-
-                        {/* Skills */}
-                        <div className="flex flex-wrap gap-1 mb-4">
-                          {(job.skills ? job.skills.split(',').slice(0, 3) : []).map((s, i) => (
-                            <span key={i} className="text-[9px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
-                              {s.trim()}
-                            </span>
-                          ))}
                         </div>
 
-                        <button
-                          onClick={() => handleApplyJobClick()}
-                          disabled={alreadyApplied}
-                          className={`w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-xs transition-all ${
-                            alreadyApplied
-                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                              : 'bg-[#8fa89b] text-white hover:bg-[#788e80] shadow-sm hover:scale-[1.02] active:scale-[0.98]'
-                          }`}
-                        >
-                          {alreadyApplied ? 'Application Sent' : <><span>Quick Apply</span><ArrowRight size={12} /></>}
-                        </button>
+                        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                          <button
+                            onClick={() => handleApplyJobClick()}
+                            disabled={alreadyApplied}
+                            className={`flex items-center gap-1 text-[11px] font-black uppercase tracking-wider transition-all ${
+                              alreadyApplied
+                                ? 'text-slate-400 cursor-not-allowed'
+                                : 'text-slate-900 hover:text-[#8fa89b] group-hover:translate-x-1'
+                            }`}
+                          >
+                            {alreadyApplied ? 'Applied' : <><span>Quick Apply</span><ArrowRight size={12} className="inline ml-1" /></>}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
             )}
-
-            {backendRecs.length > 8 && (
-              <div className="text-center pt-4">
-                <Link
-                  to="/jobs"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-[#e2e8e5] text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
-                >
-                  View {backendRecs.length - 8} more gigs <ArrowRight size={12} />
-                </Link>
-              </div>
-            )}
           </section>
 
-          {/* ALL OTHER JOBS SECTION */}
-          <section className="pt-6 border-t border-[#e2e8e5]">
-            <div className="flex items-center gap-2.5 mb-6">
-              <div className="w-8 h-8 rounded-xl bg-[#f0f4f2] border border-[#e2e8e5] flex items-center justify-center text-[#2b4436] shadow-sm">
+          {/* ── MID-PAGE BANNER (Outstanding Workmanship) ── */}
+          <section className="relative rounded-[2.5rem] overflow-hidden bg-slate-900 min-h-[400px] flex items-end shadow-lg">
+            <img
+              src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80"
+              alt="Students collaborating"
+              className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-luminosity"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-955/90 via-slate-955/30 to-transparent"></div>
+            
+            <div className="relative z-10 m-6 sm:m-10 bg-[#a6bcb0] rounded-3xl p-8 max-w-2xl text-slate-900 shadow-2xl border border-white/20">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#2b4436] bg-white/45 px-2.5 py-1 rounded-full">
+                For Talent
+              </span>
+              <h3 className="font-heading font-black text-2xl sm:text-3xl lg:text-4xl text-slate-900 tracking-tight mt-4 mb-3 uppercase">
+                Find Outstanding Workmanship.
+              </h3>
+              <p className="text-[#1e2f25] text-sm sm:text-base leading-relaxed font-semibold">
+                Our platform fosters outstanding cooperation between local employers and students. Work on projects tailored to your classes, prove your skills, and earn income.
+              </p>
+            </div>
+          </section>
+
+          {/* ── WHY CHOOSE US (Why GigConnect?) ── */}
+          <section className="py-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Image Column */}
+            <div className="lg:col-span-5 relative flex justify-center">
+              <div className="relative w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-lg border border-slate-200">
+                <img
+                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80"
+                  alt="Student collaborating"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-slate-900/10"></div>
+              </div>
+              {/* Guarantee Seal */}
+              <div className="absolute -bottom-6 -right-4 w-28 h-28 bg-[#a6bcb0] rounded-full border-4 border-white shadow-xl flex items-center justify-center text-center p-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-900 leading-tight">
+                  100% Verified
+                </span>
+              </div>
+            </div>
+
+            {/* Right Features Column */}
+            <div className="lg:col-span-7 space-y-6">
+              <div>
+                <h3 className="font-heading font-black text-3xl sm:text-4xl text-slate-900 tracking-tight uppercase mb-2">
+                  Why Choose Us?
+                </h3>
+                <p className="text-slate-500 text-sm leading-relaxed max-w-xl font-light">
+                  Choose us for unmatched flexibility, verified opportunities, and a reliable platform designed specifically for students.
+                </p>
+              </div>
+
+              <div className="space-y-4 max-w-xl">
+                {[
+                  {
+                    title: 'Flexible Around Your Studies',
+                    desc: 'One-day and part-time jobs that fit your timetable, not the other way around.'
+                  },
+                  {
+                    title: 'Verified Clients Only',
+                    desc: 'Every client is verified with NIC and OTP, so you know who you\'re working with.'
+                  },
+                  {
+                    title: 'Safe, Monitored Chats & Deals',
+                    desc: 'All chats happen inside the platform — no sketchy off-platform deals.'
+                  }
+                ].map((item, idx) => (
+                  <div key={idx} className="bg-white border border-slate-200/60 p-5 rounded-2xl flex gap-4 hover:border-[#8fa89b] transition-all">
+                    <div className="w-8 h-8 rounded-full bg-[#ecf1ee] border border-slate-200 flex items-center justify-center text-slate-800 text-xs font-black flex-shrink-0">
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.title}</h4>
+                      <p className="text-slate-500 text-xs mt-1 leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── TESTIMONIALS (What Our Customers Say) ── */}
+          <section className="bg-[#a6bcb0] rounded-[2.5rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 text-[#2b4436] shadow-md border border-[#8fa89b]/20">
+            <div className="max-w-2xl">
+              <span className="text-5xl font-serif italic opacity-30">“</span>
+              <p className="text-lg sm:text-xl font-bold leading-relaxed -mt-4 text-slate-900">
+                I hired a student tour guide through GigConnect for my trip to Ella. She was incredibly knowledgeable, showing us hidden waterfalls and viewpoints we never would have found otherwise. It was a truly unforgettable experience!
+              </p>
+              
+              <div className="flex items-center gap-3 mt-8">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold text-slate-900">
+                  O
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 leading-none">Oliver Bennett</h4>
+                  <p className="text-[10px] text-slate-700 font-bold mt-1">Tourist from United Kingdom</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex-shrink-0">
+              <h3 className="font-heading font-black text-2xl sm:text-3xl text-slate-950 tracking-tight max-w-[200px] uppercase leading-none text-right md:text-left">
+                What our customers say
+              </h3>
+            </div>
+          </section>
+
+          {/* ── TOP RATED STUDENTS / EXPERIENCED FREELANCE ── */}
+          <section className="flex flex-col lg:flex-row items-center justify-between gap-12 py-6">
+            <div className="max-w-md">
+              <div className="text-yellow-500 text-sm font-bold mb-2">★★★★★</div>
+              <h3 className="font-heading font-black text-3xl sm:text-4xl text-slate-900 tracking-tight uppercase leading-none mb-4">
+                Experienced Gigs
+              </h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-6 font-light">
+                Our platform features talented student freelancers who possess a deep understanding of their craft, delivering top-quality work that exceeds expectations.
+              </p>
+              <button
+                onClick={() => document.getElementById('browse').scrollIntoView({ behavior: 'smooth' })}
+                className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-full text-xs font-bold transition-all"
+              >
+                Start Finding
+              </button>
+            </div>
+            
+            {/* Grid of student avatars */}
+            <div className="grid grid-cols-4 gap-4 sm:gap-6 flex-shrink-0">
+              {[
+                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
+                'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+                'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80',
+                'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+                'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
+                'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80'
+              ].map((url, idx) => (
+                <div key={idx} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-white shadow-md hover:scale-110 transition-transform">
+                  <img src={url} alt="Student Profile" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── GENERAL OPPORTUNITIES SECTION ── */}
+          <section className="pt-8 border-t border-slate-200">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800 shadow-sm">
                 <Briefcase size={16} />
               </div>
-              <h2 className="text-2xl font-heading font-black text-slate-900 tracking-tight">
+              <h2 className="text-2xl font-heading font-black text-slate-900 tracking-tight uppercase">
                 Explore General Opportunities
               </h2>
             </div>
 
             {generalGigs.length === 0 ? (
-              <div className="text-center py-12 text-[#5e6b63] font-medium">
+              <div className="text-center py-12 text-[#5e6b63] font-medium bg-white rounded-3xl border border-slate-200 shadow-sm">
                 No general gigs match your filters.
               </div>
             ) : (
@@ -767,44 +807,26 @@ const LandingPage = () => {
 
         </main>
 
-        {/* How It Works & Benefits Section */}
+        {/* Timeline / Guide Section */}
         <section id="how-it-works" className="py-24 bg-[#f0f4f2] border-t border-b border-[#e2e8e5] relative overflow-hidden">
-          
-          {/* Subtle grid pattern overlay */}
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.02] pointer-events-none"></div>
 
           <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
-            
             {/* Header */}
             <div className="text-center mb-20 flex flex-col items-center">
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="inline-flex items-center gap-3 mb-4"
-              >
+              <div className="inline-flex items-center gap-3 mb-4">
                 <div className="w-8 md:w-12 h-[1px] bg-[#8fa89b]/50"></div>
                 <span className="text-[#8fa89b] text-xs font-black uppercase tracking-[0.3em]">Student Portal Guide</span>
                 <div className="w-8 md:w-12 h-[1px] bg-[#8fa89b]/50"></div>
-              </motion.div>
+              </div>
               
-              <motion.h2 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-4xl md:text-5xl lg:text-6xl font-heading font-black text-[#1a2320] mb-6 leading-tight tracking-tight"
-              >
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-heading font-black text-[#1a2320] mb-6 leading-tight tracking-tight uppercase">
                 How It <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8fa89b] to-[#5e6b63] font-serif italic font-normal">Works</span>
-              </motion.h2>
+              </h2>
 
-              <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-[#4e5853] max-w-2xl mx-auto text-lg font-light leading-relaxed"
-              >
+              <p className="text-[#4e5853] max-w-2xl mx-auto text-lg font-light leading-relaxed">
                 Your journey from registering with your university credentials to completing gigs, building your reputation, and getting paid.
-              </motion.p>
+              </p>
             </div>
 
             {/* Steps Timeline Grid */}
@@ -841,12 +863,8 @@ const LandingPage = () => {
                   desc: 'Receive payment, leave a review for the client, and build your rating for future opportunities.'
                 }
               ].map((item, idx) => (
-                <motion.div
+                <div
                   key={idx}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
                   className="bg-white border border-[#e2e8e5] rounded-3xl p-8 hover:border-[#8fa89b] hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
                 >
                   <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#8fa89b]/10 to-transparent rounded-bl-full opacity-55"></div>
@@ -866,103 +884,57 @@ const LandingPage = () => {
                   <p className="text-[#4e5853] text-sm leading-relaxed font-light">
                     {item.desc}
                   </p>
-                </motion.div>
+                </div>
               ))}
             </div>
-
-            {/* Benefits Header */}
-            <div className="text-center mb-16 flex flex-col items-center">
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="inline-flex items-center gap-3 mb-4"
-              >
-                <div className="w-8 md:w-12 h-[1px] bg-[#8fa89b]/50"></div>
-                <span className="text-[#8fa89b] text-xs font-black uppercase tracking-[0.3em]">Why Choose Us</span>
-                <div className="w-8 md:w-12 h-[1px] bg-[#8fa89b]/50"></div>
-              </motion.div>
-              
-              <h2 className="text-3xl md:text-4xl font-heading font-black text-[#1a2320] tracking-tight uppercase">
-                Why GigConnect?
-              </h2>
-            </div>
-
-            {/* Benefits Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[
-                {
-                  icon: Clock,
-                  title: 'Flexible Around Your Studies',
-                  desc: 'One-day and part-time jobs that fit your timetable, not the other way around.'
-                },
-                {
-                  icon: Shield,
-                  title: 'Verified Clients Only',
-                  desc: 'Every client is verified with NIC and OTP, so you know who you\'re working with.'
-                },
-                {
-                  icon: MessageSquare,
-                  title: 'Safe, Monitored Chats',
-                  desc: 'All chats happen inside the platform — no sketchy off-platform deals.'
-                },
-                {
-                  icon: Percent,
-                  title: 'Low-Commission Earnings',
-                  desc: 'Keep more of what you earn compared to other freelance platforms.'
-                },
-                {
-                  icon: Star,
-                  title: 'Build Your Reputation',
-                  desc: 'Every completed job adds to your rating, unlocking better opportunities over time.'
-                },
-                {
-                  icon: MapPin,
-                  title: 'Local Gigs in Badulla',
-                  desc: 'Jobs from clients right around UWU, no long commutes needed.'
-                },
-                {
-                  icon: Truck,
-                  title: 'Delivery Support Included',
-                  desc: 'For product-based gigs, our delivery network handles pickup and drop-off for you.'
-                }
-              ].map((benefit, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: idx * 0.05 }}
-                  whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                  className="bg-white border border-[#e2e8e5] rounded-2xl p-6 hover:border-[#8fa89b] transition-all duration-300 flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center border mb-6 text-[#2b4436] bg-[#8fa89b]/10 border-[#8fa89b]/25">
-                      <benefit.icon size={22} />
-                    </div>
-                    <h4 className="text-lg font-bold text-[#1a2320] mb-2 tracking-tight">
-                      {benefit.title}
-                    </h4>
-                    <p className="text-[#4e5853] text-sm leading-relaxed font-light">
-                      {benefit.desc}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
           </div>
         </section>
 
-        {/* Luxury Light Footer */}
-        <footer className="bg-[#f0f4f2] border-t border-[#e2e8e5] pt-20 pb-10 relative overflow-hidden">
-          {/* Subtle background texture */}
+        {/* Global Vertical Nav UI */}
+        <div className="hidden lg:flex fixed top-1/2 right-12 -translate-y-1/2 h-[70vh] flex-col justify-center items-center z-[90]">
+          <div className="absolute inset-y-0 right-[7px] w-[2px] border-r-2 border-dashed border-slate-300/30 pointer-events-none"></div>
+          
+          <div className="flex flex-col justify-between h-full py-10 relative z-10">
+            {Object.keys(sectionLabels).map((id) => (
+              <button
+                key={id}
+                onClick={() => {
+                  const el = document.getElementById(id);
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="relative flex items-center justify-center h-12 focus:outline-none cursor-pointer group pointer-events-auto bg-transparent border-0 p-0"
+              >
+                <AnimatePresence mode="wait">
+                  {activeSection === id ? (
+                    <motion.div 
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      className="absolute right-8 flex items-center"
+                    >
+                      <div className="bg-[#0a192f]/95 backdrop-blur-md border-l-4 border-[#8fa89b] px-6 py-2.5 shadow-2xl">
+                        <span className="text-white text-[11px] font-black uppercase tracking-[0.4em] whitespace-nowrap">
+                          {sectionLabels[id]}
+                        </span>
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 w-10 h-[2px] bg-[#8fa89b]"></div>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <div className="w-2 h-2 rounded-full bg-slate-400/50 border border-slate-300 group-hover:bg-slate-500/80 transition-colors"></div>
+                  )}
+                </AnimatePresence>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Light Footer */}
+        <footer className="bg-[#f0f4f2] border-t border-[#e2e8e5] pt-16 pb-8 relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.02] pointer-events-none"></div>
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#8fa89b]/5 rounded-full blur-[120px] pointer-events-none"></div>
 
           <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-16">
-              {/* Brand */}
               <div className="col-span-1 md:col-span-2">
                 <div className="flex items-center gap-3 mb-6">
                   <span className="text-2xl font-heading font-black text-slate-900 tracking-tight">GigConnect</span>
@@ -972,7 +944,6 @@ const LandingPage = () => {
                 </p>
               </div>
               
-              {/* Quick Links */}
               <div>
                 <h4 className="text-slate-900 font-black mb-6 tracking-wide">Platform</h4>
                 <ul className="space-y-4 text-sm text-[#4e5853] font-light">
@@ -982,7 +953,6 @@ const LandingPage = () => {
                 </ul>
               </div>
               
-              {/* Legal / Contact */}
               <div>
                 <h4 className="text-slate-900 font-black mb-6 tracking-wide">Legal</h4>
                 <ul className="space-y-4 text-sm text-[#4e5853] font-light">
@@ -996,9 +966,6 @@ const LandingPage = () => {
             <div className="pt-8 border-t border-[#e2e8e5] flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-[#5e6b63] text-sm font-light">
                 &copy; {new Date().getFullYear()} GigConnect. All rights reserved.
-              </p>
-              <p className="text-[#5e6b63] text-sm flex items-center gap-1.5 font-light">
-                Built with <span className="text-rose-500">❤️</span> for Uva Wellassa University
               </p>
             </div>
           </div>

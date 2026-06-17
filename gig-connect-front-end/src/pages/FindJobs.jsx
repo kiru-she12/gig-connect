@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, Clock, MapPin, DollarSign, ArrowRight, Sparkles, ChevronDown, X, Briefcase, CheckCircle, Package, Truck, User } from 'lucide-react';
 import { useJobs } from '../context/JobsContext';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../components/layout/Navbar';
 
@@ -19,15 +19,63 @@ const FindJobs = () => {
   const { jobs, applyForJob, refreshJobs } = useJobs();
   const { user, setIsLoginModalOpen } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Search & Filter States
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [minPay, setMinPay] = useState('');
-  const [maxPay, setMaxPay] = useState('');
-  const [skillFilter, setSkillFilter] = useState('');
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(() => {
+    if (location.state && typeof location.state.search === 'string') {
+      return location.state.search;
+    }
+    const params = new URLSearchParams(location.search);
+    return params.get('search') || '';
+  });
+
+  const [categoryFilter, setCategoryFilter] = useState(() => {
+    if (location.state && typeof location.state.category === 'string') {
+      return location.state.category;
+    }
+    const params = new URLSearchParams(location.search);
+    return params.get('category') || 'All';
+  });
+
+  const [typeFilter, setTypeFilter] = useState(() => {
+    if (location.state && typeof location.state.type === 'string') {
+      return location.state.type;
+    }
+    const params = new URLSearchParams(location.search);
+    return params.get('type') || '';
+  });
+
+  const [minPay, setMinPay] = useState(() => {
+    if (location.state && (typeof location.state.minPay === 'string' || typeof location.state.minPay === 'number')) {
+      return String(location.state.minPay);
+    }
+    const params = new URLSearchParams(location.search);
+    return params.get('minPay') || '';
+  });
+
+  const [maxPay, setMaxPay] = useState(() => {
+    if (location.state && (typeof location.state.maxPay === 'string' || typeof location.state.maxPay === 'number')) {
+      return String(location.state.maxPay);
+    }
+    const params = new URLSearchParams(location.search);
+    return params.get('maxPay') || '';
+  });
+
+  const [skillFilter, setSkillFilter] = useState(() => {
+    if (location.state && typeof location.state.skill === 'string') {
+      return location.state.skill;
+    }
+    const params = new URLSearchParams(location.search);
+    return params.get('skill') || '';
+  });
+
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(() => {
+    if (location.state && (location.state.type || location.state.minPay || location.state.maxPay || location.state.skill)) {
+      return true;
+    }
+    return false;
+  });
 
   // Student specific applications state
   const [myApplications, setMyApplications] = useState([]);
