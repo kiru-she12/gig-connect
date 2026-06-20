@@ -51,11 +51,15 @@ export const JobsProvider = ({ children }) => {
               id: job.job_ID || job.id,
               title: job.title,
               clientId: job.provider_ID || job.client_ID,
-              clientName: 'GigConnect Partner',
+              clientName: job.provider_name || 'GigConnect Partner',
+              clientEmail: job.provider_email || '',
+              job_date: job.job_date || null,
+              start_time: job.start_time || null,
+              end_time: job.end_time || null,
               category: job.category || getDynamicCategory(job.title, parsedSkills),
               type: job.job_type || job.type,
               pay: job.payment || job.budget,
-              duration: job.duration || 'Short Term',
+              duration: job.job_date ? `${job.job_date} @ ${job.start_time} - ${job.end_time}` : (job.duration || 'Short Term'),
               status: job.status,
               skills: parsedSkills,
               description: job.description,
@@ -103,7 +107,7 @@ export const JobsProvider = ({ children }) => {
           description: job.description,
           skills: job.skills.join(', '),
           payment: parseFloat(job.pay),
-          job_type: job.type,
+          job_type: job.type.toLowerCase().replace('-', ''),
           deadline: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split('T')[0] // 7 days from now
         })
       });
@@ -179,28 +183,158 @@ export const JobsProvider = ({ children }) => {
     }
   };
 
-  const updateApplicationStatus = (appId, status) => {
-    setApplications(applications.map(app => 
-      app.id === appId ? { ...app, status } : app
-    ));
+  const updateApplicationStatus = async (appId, status) => {
+    try {
+      const token = localStorage.getItem('token');
+      const actionMap = {
+        'shortlisted': 'shortlist',
+        'accepted': 'accept',
+        'rejected': 'reject',
+        'shortlist': 'shortlist',
+        'accept': 'accept',
+        'reject': 'reject',
+        'Shortlisted': 'shortlist',
+        'Accepted': 'accept',
+        'Rejected': 'reject'
+      };
+      const action = actionMap[status];
+      if (!action) {
+        throw new Error(`Invalid status: ${status}`);
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/update_applicant.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          application_ID: appId,
+          action: action
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update application status in database');
+      }
+
+      const resData = await response.json();
+      if (resData.error) {
+        throw new Error(resData.error);
+      }
+
+      // Update local state
+      setApplications(prev => prev.map(app => 
+        app.id === appId ? { ...app, status: resData.status } : app
+      ));
+
+      return resData;
+    } catch (err) {
+      console.error('Error updating application status:', err);
+      // Fallback
+      setApplications(prev => prev.map(app => 
+        app.id === appId ? { ...app, status } : app
+      ));
+    }
   };
 
-  const approveJob = (jobId) => {
-    setJobs(jobs.map(job => 
-      job.id === jobId ? { ...job, status: 'Active' } : job
-    ));
+  const approveJob = async (jobId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve_job.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          job_ID: jobId,
+          action: 'approve'
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setJobs(prevJobs => prevJobs.map(job => 
+            job.id === jobId ? { ...job, status: 'active' } : job
+          ));
+          return data;
+        } else {
+          throw new Error(data.error || 'Failed to approve job');
+        }
+      }
+    } catch (err) {
+      console.error('Error approving job:', err);
+      setJobs(prevJobs => prevJobs.map(job => 
+        job.id === jobId ? { ...job, status: 'Active' } : job
+      ));
+    }
   };
 
-  const rejectJob = (jobId) => {
-    setJobs(jobs.map(job => 
-      job.id === jobId ? { ...job, status: 'Rejected' } : job
-    ));
+  const rejectJob = async (jobId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve_job.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          job_ID: jobId,
+          action: 'reject'
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setJobs(prevJobs => prevJobs.map(job => 
+            job.id === jobId ? { ...job, status: 'closed' } : job
+          ));
+          return data;
+        } else {
+          throw new Error(data.error || 'Failed to reject job');
+        }
+      }
+    } catch (err) {
+      console.error('Error rejecting job:', err);
+      setJobs(prevJobs => prevJobs.map(job => 
+        job.id === jobId ? { ...job, status: 'Rejected' } : job
+      ));
+    }
   };
 
-  const markJobCompleted = (jobId) => {
-    setJobs(jobs.map(job => 
-      job.id === jobId ? { ...job, status: 'Completed' } : job
-    ));
+  const markJobCompleted = async (jobId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve_job.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          job_ID: jobId,
+          status: 'completed'
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setJobs(prevJobs => prevJobs.map(job => 
+            job.id === jobId ? { ...job, status: 'completed' } : job
+          ));
+          return data;
+        } else {
+          throw new Error(data.error || 'Failed to mark job as completed');
+        }
+      }
+    } catch (err) {
+      console.error('Error completing job:', err);
+      setJobs(prevJobs => prevJobs.map(job => 
+        job.id === jobId ? { ...job, status: 'Completed' } : job
+      ));
+    }
   };
 
   return (

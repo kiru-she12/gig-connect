@@ -221,17 +221,17 @@ const FindJobs = () => {
       <Navbar />
 
       {/* Banner */}
-      <section className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white py-16 px-6 sm:px-10 lg:px-16 relative overflow-hidden">
+      <section className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white py-16 px-6 sm:px-10 lg:px-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.05] pointer-events-none"></div>
-        <div className="absolute -top-10 -right-10 w-80 h-80 bg-indigo-500/10 rounded-full blur-[100px]"></div>
-        <div className="absolute -bottom-10 -left-10 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px]"></div>
+        <div className="absolute -top-10 -right-10 w-80 h-80 bg-primary/15 rounded-full blur-[100px]"></div>
+        <div className="absolute -bottom-10 -left-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px]"></div>
 
         <div className="max-w-7xl mx-auto relative z-10 text-center space-y-4">
-          <span className="badge bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-4 py-1.5 text-xs font-bold rounded-2xl">
+          <span className="badge bg-primary/10 text-primary-light border border-primary/20 px-4 py-1.5 text-xs font-bold rounded-2xl">
             Explore Opportunities
           </span>
           <h1 className="text-4xl sm:text-5xl font-heading font-black tracking-tight leading-none">
-            Find Your Next <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300 font-serif italic font-normal">Gig</span>
+            Find Your Next <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 font-serif italic font-normal">Gig</span>
           </h1>
           <p className="text-slate-300 text-base max-w-xl mx-auto font-light">
             Search and apply for student-friendly jobs around Uva Wellassa University. Filter by category, duration, and pay.
@@ -250,7 +250,7 @@ const FindJobs = () => {
                   onClick={() => setCategoryFilter(cat)}
                   className={`px-4 py-2 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${
                     categoryFilter === cat
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100'
+                      ? 'bg-primary text-white border-primary shadow-md shadow-primary/10'
                       : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
                   }`}
                 >
@@ -267,14 +267,14 @@ const FindJobs = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search gigs by title or keywords..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500/50 focus:bg-white transition-all text-xs font-medium text-slate-800"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-primary/50 focus:bg-white transition-all text-xs font-medium text-slate-800"
                 />
               </div>
               <button
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 className={`p-2.5 rounded-xl border flex items-center justify-center transition-all ${
                   showAdvancedFilters || typeFilter || minPay || maxPay || skillFilter
-                    ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
+                    ? 'bg-primary-light border-primary/20 text-primary-dark font-bold'
                     : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
@@ -297,7 +297,7 @@ const FindJobs = () => {
                     <select
                       value={typeFilter}
                       onChange={(e) => setTypeFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500/50 focus:bg-white text-xs font-bold text-slate-700 cursor-pointer"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-primary/50 focus:bg-white text-xs font-bold text-slate-700 cursor-pointer"
                     >
                       <option value="">Any Type</option>
                       <option value="Remote">Remote</option>
@@ -312,7 +312,7 @@ const FindJobs = () => {
                       placeholder="e.g. Photoshop, PHP..."
                       value={skillFilter}
                       onChange={(e) => setSkillFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500/50 focus:bg-white text-xs font-medium text-slate-700"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-primary/50 focus:bg-white text-xs font-medium text-slate-700"
                     />
                   </div>
 
@@ -323,7 +323,7 @@ const FindJobs = () => {
                       placeholder="0"
                       value={minPay}
                       onChange={(e) => setMinPay(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500/50 focus:bg-white text-xs font-medium text-slate-700"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-primary/50 focus:bg-white text-xs font-medium text-slate-700"
                     />
                   </div>
 
@@ -334,7 +334,7 @@ const FindJobs = () => {
                       placeholder="Any"
                       value={maxPay}
                       onChange={(e) => setMaxPay(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500/50 focus:bg-white text-xs font-medium text-slate-700"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-primary/50 focus:bg-white text-xs font-medium text-slate-700"
                     />
                   </div>
                 </div>
@@ -370,7 +370,7 @@ const FindJobs = () => {
 
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-xl font-heading font-black text-slate-900 flex items-center gap-2">
-            <Briefcase size={20} className="text-indigo-600" />
+            <Briefcase size={20} className="text-primary" />
             <span>Available Opportunities ({filteredJobs.length})</span>
           </h2>
         </div>
@@ -396,11 +396,11 @@ const FindJobs = () => {
                   key={job.id} 
                   className={`bg-white rounded-2xl p-6 md:p-8 border shadow-sm hover:shadow-xl transition-all duration-300 group relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${
                     isBoosted 
-                      ? 'border-indigo-200 bg-gradient-to-r from-white via-indigo-50/10 to-indigo-50/20 shadow-md shadow-indigo-100/50' 
+                      ? 'border-primary/30 bg-gradient-to-r from-white via-primary-light/10 to-primary-light/20 shadow-md shadow-primary/10' 
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <div className={`absolute top-0 left-0 w-1.5 h-full bg-indigo-600 transition-opacity ${
+                  <div className={`absolute top-0 left-0 w-1.5 h-full bg-primary transition-opacity ${
                     isBoosted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                   }`}></div>
 
@@ -411,8 +411,8 @@ const FindJobs = () => {
                       <span>Proposals: 5-10</span>
                       
                       {isBoosted === 1 && (
-                        <span className="ml-auto md:ml-0 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-indigo-200/55 flex items-center gap-1.5 animate-pulse">
-                          <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
+                        <span className="ml-auto md:ml-0 bg-primary-light text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-primary/20 flex items-center gap-1.5 animate-pulse">
+                          <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
                           Featured
                         </span>
                       )}
@@ -425,17 +425,17 @@ const FindJobs = () => {
                     </div>
 
                     <div>
-                      <h3 className="font-heading font-black text-2xl text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug">
+                      <h3 className="font-heading font-black text-2xl text-slate-900 group-hover:text-primary transition-colors leading-snug">
                         {job.title}
                       </h3>
                       <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500 mt-1.5">
-                        <span className="text-indigo-600 font-extrabold uppercase tracking-wider">{job.category}</span>
+                        <span className="text-primary font-extrabold uppercase tracking-wider">{job.category}</span>
                         <span>•</span>
                         <span>{job.type}</span>
                         <span>•</span>
                         <span>Est. Budget: LKR {parseFloat(job.pay).toLocaleString()}</span>
                         <span>•</span>
-                        <span>{job.duration || 'Short Term'}</span>
+                        <span>{job.job_date ? `${job.job_date} @ ${job.start_time} - ${job.end_time}` : (job.duration || 'Short Term')}</span>
                       </div>
                     </div>
 
@@ -461,7 +461,7 @@ const FindJobs = () => {
                         <span className="text-slate-600 text-[11px] font-medium ml-1">4.9 rating</span>
                       </div>
                       <div>
-                        <span className="font-bold text-slate-700">Client: <strong>{job.clientName || 'GigConnect Partner'}</strong></span>
+                        <span className="font-bold text-slate-700">Client: <strong>{job.clientName || 'GigConnect Partner'}</strong> {job.clientEmail && <span className="text-slate-400 font-normal">({job.clientEmail})</span>}</span>
                       </div>
                     </div>
                   </div>
@@ -473,7 +473,7 @@ const FindJobs = () => {
                       className={`w-full md:w-48 py-4 px-6 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
                         hasApplied 
                           ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' 
-                          : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200 hover:scale-[1.02] active:scale-[0.98]'
+                          : 'bg-primary text-white hover:bg-primary-dark shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]'
                       }`}
                     >
                       {hasApplied ? (
@@ -515,7 +515,7 @@ const FindJobs = () => {
             <form onSubmit={handleConfirmApplication} className="space-y-4">
               {/* Job Summary */}
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-start gap-3">
-                <Briefcase size={20} className="text-indigo-500 shrink-0 mt-0.5" />
+                <Briefcase size={20} className="text-primary shrink-0 mt-0.5" />
                 <div className="text-xs text-slate-600 leading-relaxed font-medium">
                   By applying, you commit to fulfilling this job to the best of your ability.
                   {applyModalJob._isProduct && (
@@ -528,10 +528,10 @@ const FindJobs = () => {
 
               {/* Delivery Section — shown ONLY for product-based jobs */}
               {applyModalJob._isProduct && (
-                <div className="p-4 bg-gradient-to-br from-indigo-50 to-slate-50 border border-indigo-100 rounded-2xl space-y-4">
+                <div className="p-4 bg-gradient-to-br from-primary-light/50 to-slate-50 border border-primary/20 rounded-2xl space-y-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <Truck size={16} className="text-indigo-600" />
-                    <span className="text-xs font-black text-indigo-700 uppercase tracking-wider">Delivery Method</span>
+                    <Truck size={16} className="text-primary" />
+                    <span className="text-xs font-black text-primary-dark uppercase tracking-wider">Delivery Method</span>
                     <span className="text-[10px] font-bold text-rose-500 ml-auto">Required</span>
                   </div>
 
@@ -555,13 +555,13 @@ const FindJobs = () => {
                       onClick={() => setDeliveryType('platform')}
                       className={`p-4 rounded-2xl border-2 text-xs font-bold transition-all flex flex-col items-center gap-2 ${
                         deliveryType === 'platform'
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                          ? 'bg-primary border-primary text-white shadow-sm'
                           : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
                       }`}
                     >
                       <Truck size={20} />
                       <span>Platform Rider</span>
-                      <span className={`text-[9px] font-normal ${deliveryType === 'platform' ? 'text-indigo-200' : 'text-slate-400'}`}>Staff assigned</span>
+                      <span className={`text-[9px] font-normal ${deliveryType === 'platform' ? 'text-primary-light' : 'text-slate-400'}`}>Staff assigned</span>
                     </button>
                   </div>
 
@@ -575,7 +575,7 @@ const FindJobs = () => {
                         value={pickupAddress}
                         onChange={(e) => setPickupAddress(e.target.value)}
                         required
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 text-xs font-medium"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-primary text-xs font-medium"
                       />
                     </div>
                     <div>
@@ -586,13 +586,13 @@ const FindJobs = () => {
                         value={deliveryAddress}
                         onChange={(e) => setDeliveryAddress(e.target.value)}
                         required
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 text-xs font-medium"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-primary text-xs font-medium"
                       />
                     </div>
                   </div>
 
                   {deliveryType === 'platform' && (
-                    <p className="text-[10px] text-indigo-600 font-bold bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2">
+                    <p className="text-[10px] text-primary font-bold bg-primary-light border border-primary/20 rounded-xl px-3 py-2">
                       ✓ A GigConnect rider will be assigned once your application is accepted.
                     </p>
                   )}
@@ -602,7 +602,7 @@ const FindJobs = () => {
               <button
                 type="submit"
                 disabled={applying}
-                className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all disabled:opacity-60"
+                className="w-full bg-primary text-white py-3 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 hover:bg-primary-dark transition-all disabled:opacity-60"
               >
                 {applying ? 'Submitting...' : 'Confirm Application & Send'}
               </button>

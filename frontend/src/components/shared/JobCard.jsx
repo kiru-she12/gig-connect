@@ -32,11 +32,14 @@ const JobCard = ({ job, onApply, applied = false, matchScore = null, isRecommend
           <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{job.type}</span>
         </div>
         <h3 className="font-heading font-bold text-xl text-text-primary group-hover:text-primary transition-colors leading-tight">{job.title}</h3>
-        <div className="flex items-center gap-1.5 mt-2">
+        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
           <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-[10px] font-bold text-text-secondary">
-            {job.clientName[0]}
+            {job.clientName ? job.clientName[0] : 'G'}
           </div>
           <span className="text-xs font-medium text-text-secondary">{job.clientName}</span>
+          {job.clientEmail && (
+            <span className="text-[10px] text-text-muted">({job.clientEmail})</span>
+          )}
           <CheckCircle size={12} className="text-primary" />
         </div>
       </div>
@@ -60,7 +63,7 @@ const JobCard = ({ job, onApply, applied = false, matchScore = null, isRecommend
           </div>
         </div>
         <div className="flex items-center gap-2 text-right">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-primary-light text-primary flex items-center justify-center">
             <Clock size={16} />
           </div>
           <div>

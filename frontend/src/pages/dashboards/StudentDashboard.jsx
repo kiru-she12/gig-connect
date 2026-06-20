@@ -543,16 +543,16 @@ const HomeTab = ({ profile, applications, recommendations, allJobs, notification
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 text-white p-8 md:p-10 shadow-2xl border border-white/10">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl"></div>
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-primary-dark to-slate-900 text-white p-8 md:p-10 shadow-2xl border border-white/10">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-primary/10 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-emerald-500/10 blur-3xl"></div>
         
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight">
               Welcome back, {profile?.name ? profile.name.split(' ')[0] : 'Student'}! 👋
             </h1>
-            <p className="text-blue-100/80 mt-1.5 text-sm md:text-base font-medium">
+            <p className="text-primary-light/80 mt-1.5 text-sm md:text-base font-medium">
               Here's what's happening with your gigs today.
             </p>
           </div>
@@ -564,12 +564,12 @@ const HomeTab = ({ profile, applications, recommendations, allJobs, notification
         {/* Welcome Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 pt-8 border-t border-white/10">
           {[
-            { label: 'Active Apps', value: activeAppsCount, color: 'text-sky-300' },
+            { label: 'Active Apps', value: activeAppsCount, color: 'text-emerald-300' },
             { label: 'Completed Gigs', value: completedCount, color: 'text-emerald-300' },
             { 
               label: 'Rating', 
               value: ratingVal === 0 ? (
-                <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">New</span>
+                <span className="bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">New</span>
               ) : (
                 <span className="flex items-center gap-1">
                   {ratingVal.toFixed(1)} <Star size={14} className="fill-amber-300 text-amber-300 inline" />
@@ -694,11 +694,15 @@ const HomeTab = ({ profile, applications, recommendations, allJobs, notification
                 title: job.title,
                 category: job.category || 'General',
                 type: job.job_type,
-                clientName: 'GigConnect Partner',
+                clientName: job.provider_name || 'GigConnect Partner',
+                clientEmail: job.provider_email || '',
                 skills: job.skills ? job.skills.split(', ') : [],
                 pay: job.payment,
-                duration: 'Short Term',
-                description: job.description
+                duration: job.job_date ? `${job.job_date} @ ${job.start_time} - ${job.end_time}` : 'Short Term',
+                description: job.description,
+                job_date: job.job_date || null,
+                start_time: job.start_time || null,
+                end_time: job.end_time || null
               };
               return (
                 <div key={job.job_ID} className="min-w-[280px] md:min-w-[350px] max-w-[400px] shrink-0">
@@ -734,11 +738,15 @@ const HomeTab = ({ profile, applications, recommendations, allJobs, notification
                 title: job.title,
                 category: job.category || 'General',
                 type: job.job_type,
-                clientName: 'GigConnect Partner',
+                clientName: job.provider_name || 'GigConnect Partner',
+                clientEmail: job.provider_email || '',
                 skills: job.skills ? job.skills.split(', ') : [],
                 pay: job.payment,
-                duration: 'Short Term',
-                description: job.description
+                duration: job.job_date ? `${job.job_date} @ ${job.start_time} - ${job.end_time}` : 'Short Term',
+                description: job.description,
+                job_date: job.job_date || null,
+                start_time: job.start_time || null,
+                end_time: job.end_time || null
               };
               return (
                 <JobCard 
@@ -759,8 +767,8 @@ const HomeTab = ({ profile, applications, recommendations, allJobs, notification
         <h2 className="text-xl font-heading font-black text-slate-800 text-center mb-8">How GigConnect Works</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { step: '1', title: 'Create your profile', desc: 'Register with UWU email, add your skills and availability.', icon: User, color: 'bg-blue-100 text-blue-700' },
-            { step: '2', title: 'Get matched', desc: 'Our smart system recommends jobs based on your skills and ratings.', icon: Award, color: 'bg-indigo-100 text-indigo-700' },
+            { step: '1', title: 'Create your profile', desc: 'Register with UWU email, add your skills and availability.', icon: User, color: 'bg-primary-light text-primary' },
+            { step: '2', title: 'Get matched', desc: 'Our smart system recommends jobs based on your skills and ratings.', icon: Award, color: 'bg-primary-light text-primary' },
             { step: '3', title: 'Apply & get hired', desc: 'Apply with one click, communicate with clients securely.', icon: CheckCircle, color: 'bg-emerald-100 text-emerald-700' },
             { step: '4', title: 'Get paid & rated', desc: 'Complete the job, receive payment, and build your rating.', icon: DollarSign, color: 'bg-amber-100 text-amber-700' }
           ].map((item, i) => (
@@ -833,7 +841,7 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
               <tbody className="divide-y divide-slate-100">
                 {filteredApps.map((app) => {
                   const statusColors = {
-                    'applied': 'bg-blue-100 text-blue-700 border border-blue-200',
+                    'applied': 'bg-primary-light text-primary border border-primary/20',
                     'shortlisted': 'bg-amber-100 text-amber-700 border border-amber-200',
                     'accepted': 'bg-emerald-100 text-emerald-700 border border-emerald-200',
                     'rejected': 'bg-rose-100 text-rose-700 border border-rose-200'
@@ -935,7 +943,7 @@ const PastHistoryTab = ({ applications, profile, fetchDashboardData }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { label: 'Total Jobs Completed', value: completedJobs.length, icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Total Earnings', value: `LKR ${totalEarned.toLocaleString()}`, icon: DollarSign, color: 'bg-blue-50 text-blue-600' },
+          { label: 'Total Earnings', value: `LKR ${totalEarned.toLocaleString()}`, icon: DollarSign, color: 'bg-primary-light text-primary' },
           { 
             label: 'Average Client Rating', 
             value: averageRating === 0 ? 'New' : `${averageRating.toFixed(1)} Stars`, 
@@ -1122,8 +1130,8 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
                     <h3 className="font-bold text-slate-800 text-base mt-2">{del.job_title}</h3>
                     <span className={`badge ${
                       del.status === 'delivered'  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                      del.status === 'picked_up'  ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' :
-                      del.status === 'assigned'   ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                      del.status === 'picked_up'  ? 'bg-primary-light text-primary border border-primary/20' :
+                      del.status === 'assigned'   ? 'bg-primary-light text-primary border border-primary/20' :
                       'bg-amber-50 text-amber-700 border border-amber-100'
                     } text-xs font-bold uppercase px-3 py-1 rounded-full`}>
                       {del.status === 'pending'   ? '🕐 Awaiting Pickup'
@@ -1739,7 +1747,7 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
             <p className="text-xs text-slate-400 font-semibold">{profile?.email}</p>
             <div className="flex flex-wrap gap-2 mt-2 justify-center sm:justify-start">
               <span className="badge bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold">✓ Email Verified</span>
-              <span className="badge bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-bold capitalize">✓ Status: {profile?.status || 'Active'}</span>
+              <span className="badge bg-primary-light text-primary border border-primary/20 text-[10px] font-bold capitalize">✓ Status: {profile?.status || 'Active'}</span>
             </div>
           </div>
         </div>

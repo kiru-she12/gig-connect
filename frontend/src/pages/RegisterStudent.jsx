@@ -368,7 +368,7 @@ const RegisterStudent = () => {
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Short Description / Bio (Min. 100 words)</label>
                       <span className={`text-[10px] font-bold ${
                         formData.bio.trim().split(/\s+/).filter(Boolean).length >= 100 
-                          ? 'text-emerald-500' 
+                          ? 'text-[#4E8C7E]' 
                           : 'text-slate-400'
                       }`}>
                         Word count: {formData.bio.trim().split(/\s+/).filter(Boolean).length} / 100
@@ -381,7 +381,7 @@ const RegisterStudent = () => {
                       onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                     />
                   </div>
-
+ 
                   {/* Preferred Availability */}
                   <div>
                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-4 block">Preferred Availability</label>
@@ -402,7 +402,7 @@ const RegisterStudent = () => {
                       ))}
                     </div>
                   </div>
-
+ 
                   <div className="flex gap-4 pt-4">
                     <button onClick={prevStep} className="flex-1 btn-secondary py-4">Back</button>
                     <button onClick={nextStep} className="flex-[2] btn-primary py-4 group">
@@ -412,7 +412,7 @@ const RegisterStudent = () => {
                   </div>
                 </motion.div>
               )}
-
+ 
               {step === 3 && (
                 <motion.div
                   key="step3"
@@ -451,7 +451,7 @@ const RegisterStudent = () => {
                       </div>
                     </div>
                   </div>
-
+ 
                   <div className="pt-4">
                     <label className="flex items-start gap-4 cursor-pointer group p-4 bg-slate-50 rounded-3xl border border-slate-100 hover:bg-slate-100/50 transition-colors">
                       <input 
@@ -465,7 +465,7 @@ const RegisterStudent = () => {
                       </span>
                     </label>
                   </div>
-
+ 
                   <div className="flex gap-4 pt-4">
                     <button onClick={prevStep} className="flex-1 btn-secondary py-4">Back</button>
                     <button 
@@ -478,7 +478,7 @@ const RegisterStudent = () => {
                   </div>
                 </motion.div>
               )}
-
+ 
               {step === 4 && (
                 <motion.div
                   key="step4"
@@ -496,12 +496,12 @@ const RegisterStudent = () => {
                       We've sent a 6-digit OTP code to <span className="font-semibold text-slate-800">{formData.email}</span>
                     </p>
                     {receivedOtp && (
-                      <div className="mt-4 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold animate-fadeIn">
+                      <div className="mt-4 p-3.5 bg-primary-light border border-border text-primary rounded-2xl text-xs font-bold animate-fadeIn">
                         🔑 Development Verification OTP: <span className="text-sm font-black underline tracking-wider">{receivedOtp}</span>
                       </div>
                     )}
                   </div>
-
+ 
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">6-Digit OTP Code</label>
@@ -516,7 +516,7 @@ const RegisterStudent = () => {
                       />
                     </div>
                   </div>
-
+ 
                   <div className="flex gap-4 pt-4">
                     <button 
                       type="button" 
@@ -546,7 +546,7 @@ const RegisterStudent = () => {
                   </div>
                 </motion.div>
               )}
-
+ 
               {step === 5 && (
                 <motion.div
                   key="step5"
@@ -554,7 +554,7 @@ const RegisterStudent = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col items-center justify-center text-center space-y-6"
                 >
-                  <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <div className="w-20 h-20 bg-primary-light text-primary rounded-full flex items-center justify-center mx-auto mb-2">
                     <CheckCircle size={40} />
                   </div>
                   <h2 className="text-2xl font-bold text-slate-900">Registration Successful!</h2>

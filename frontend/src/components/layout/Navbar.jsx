@@ -123,7 +123,7 @@ const Navbar = ({ dashboard = false }) => {
                       to={link.to}
                       className={`group relative transition-all duration-300 flex items-center gap-1 ${
                         user?.role === 'student'
-                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-[#8fa89b]'
+                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-accent'
                           : showScrolledStyle 
                             ? 'text-sm lg:text-base text-slate-600 hover:text-primary' 
                             : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
@@ -131,7 +131,7 @@ const Navbar = ({ dashboard = false }) => {
                     >
                       {link.name}
                       <span className={`absolute -bottom-1 left-0 w-0 h-[2px] rounded-full transition-all duration-300 group-hover:w-full ${
-                        user?.role === 'student' ? 'bg-[#8fa89b]' : showScrolledStyle ? 'bg-primary' : 'bg-white'
+                        user?.role === 'student' ? 'bg-accent' : showScrolledStyle ? 'bg-primary' : 'bg-white'
                       }`}></span>
                     </Link>
                   ) : (
@@ -145,7 +145,7 @@ const Navbar = ({ dashboard = false }) => {
                       onClick={(e) => scrollToSection(e, link.id)}
                       className={`group relative transition-all duration-300 flex items-center gap-1 ${
                         user?.role === 'student'
-                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-[#8fa89b]'
+                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-accent'
                           : showScrolledStyle 
                             ? 'text-sm lg:text-base text-slate-600 hover:text-primary' 
                             : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
@@ -153,7 +153,7 @@ const Navbar = ({ dashboard = false }) => {
                     >
                       {link.name}
                       <span className={`absolute -bottom-1 left-0 w-0 h-[2px] rounded-full transition-all duration-300 group-hover:w-full ${
-                        user?.role === 'student' ? 'bg-[#8fa89b]' : showScrolledStyle ? 'bg-primary' : 'bg-white'
+                        user?.role === 'student' ? 'bg-accent' : showScrolledStyle ? 'bg-primary' : 'bg-white'
                       }`}></span>
                     </motion.a>
                   )
@@ -169,7 +169,7 @@ const Navbar = ({ dashboard = false }) => {
                     onClick={() => setShowNotifications(!showNotifications)}
                     className={`p-2.5 rounded-full relative transition-all duration-300 ${
                       user?.role === 'student'
-                        ? 'text-slate-800 hover:text-[#8fa89b] hover:bg-slate-100'
+                        ? 'text-slate-800 hover:text-accent hover:bg-slate-100'
                         : showScrolledStyle ? 'text-text-secondary hover:bg-slate-100' : 'text-white/80 hover:bg-white/10'
                     }`}
                   >
@@ -226,7 +226,7 @@ const Navbar = ({ dashboard = false }) => {
                                       navigate('/dashboard/admin/complaints');
                                     }
                                   }}
-                                  className={`px-4 py-3 hover:bg-slate-50 transition-all cursor-pointer flex gap-3 items-start ${!notif.read ? 'bg-indigo-50/20' : ''}`}
+                                  className={`px-4 py-3 hover:bg-slate-50 transition-all cursor-pointer flex gap-3 items-start ${!notif.read ? 'bg-primary-light/30' : ''}`}
                                 >
                                   <span className="text-lg mt-0.5">{notif.icon || '🔵'}</span>
                                   <div className="flex-1 min-w-0">
@@ -264,7 +264,7 @@ const Navbar = ({ dashboard = false }) => {
                     }`}
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${
-                      user?.role === 'student' ? 'bg-[#8fa89b]' : 'bg-primary'
+                      user?.role === 'student' ? 'bg-accent' : 'bg-primary'
                     }`}>
                       {user.name[0]}
                     </div>

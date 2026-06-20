@@ -8,12 +8,12 @@ import { TrendingUp, Briefcase, DollarSign, Star, Award } from 'lucide-react';
 
 /* ── colour palettes ── */
 const STATUS_COLORS = {
-  applied: '#3b82f6',
+  applied: '#4E8C7E',
   shortlisted: '#f59e0b',
-  accepted: '#10b981',
+  accepted: '#89D7B7',
   rejected: '#ef4444',
 };
-const BAR_COLORS = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+const BAR_COLORS = ['#1A312C', '#4E8C7E', '#89D7B7', '#f59e0b', '#ef4444', '#ec4899'];
 
 /* ── helpers ── */
 const StatCard = ({ icon: Icon, label, value, sub, color }) => (
@@ -156,12 +156,12 @@ const AnalyticsTab = ({ profile, applications, receivedReviews }) => {
       {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Briefcase}   label="Total Applications" value={apps.length}
-          sub="all time"                  color="bg-blue-50 text-blue-600" />
+          sub="all time"                  color="bg-emerald-50 text-emerald-600" />
         <StatCard icon={TrendingUp}  label="Jobs Completed"     value={completedCount}
           sub="finished gigs"             color="bg-emerald-50 text-emerald-600" />
         <StatCard icon={DollarSign}  label="Total Earned"
           value={`LKR ${totalEarned.toLocaleString()}`}
-          sub="from completed jobs"       color="bg-indigo-50 text-indigo-600" />
+          sub="from completed jobs"       color="bg-primary-light text-primary" />
         <StatCard icon={Star}        label="Avg Rating"
           value={avgRating === 0 ? '—' : avgRating.toFixed(1)}
           sub={avgRating === 0 ? 'No reviews yet' : `${reviews.length} review${reviews.length !== 1 ? 's' : ''}`}
@@ -242,11 +242,11 @@ const AnalyticsTab = ({ profile, applications, receivedReviews }) => {
                       </span>
                     )}
                   />
-                  <Bar dataKey="earnings" fill="#6366f1" radius={[6, 6, 0, 0]} name="earnings" />
+                  <Bar dataKey="earnings" fill="#4E8C7E" radius={[6, 6, 0, 0]} name="earnings" />
                   <Line
                     type="monotone" dataKey="cumulative"
-                    stroke="#10b981" strokeWidth={2.5}
-                    dot={{ r: 4, fill: '#10b981' }}
+                    stroke="#1A312C" strokeWidth={2.5}
+                    dot={{ r: 4, fill: '#1A312C' }}
                     name="cumulative"
                   />
                 </ComposedChart>

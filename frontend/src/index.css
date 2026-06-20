@@ -6,16 +6,16 @@
 
 @layer base {
   :root {
-    --primary: #2563eb;
-    --primary-dark: #1e40af;
-    --primary-light: #eff6ff;
-    --accent: #10b981;
+    --primary: #1A312C;
+    --primary-dark: #4E8C7E;
+    --primary-light: #ffffff;
+    --accent: #89D7B7;
     --surface: #ffffff;
-    --background: #f8fafc;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #94a3b8;
-    --border: #e2e8f0;
+    --background: #ffffff;
+    --text-primary: #1A312C;
+    --text-secondary: #4E8C7E;
+    --text-muted: #89D7B7;
+    --border: rgba(78, 140, 126, 0.2);
     --danger: #ef4444;
   }
 
@@ -34,7 +34,7 @@
   }
   
   .btn-secondary {
-    @apply px-6 py-2.5 bg-white text-text-primary border border-border rounded-xl hover:bg-slate-50 active:scale-[0.98] transition-all duration-200 font-semibold flex items-center justify-center gap-2;
+    @apply px-6 py-2.5 bg-white text-text-primary border border-border rounded-xl hover:bg-primary-light/50 active:scale-[0.98] transition-all duration-200 font-semibold flex items-center justify-center gap-2;
   }
 
   .btn-accent {
@@ -42,25 +42,25 @@
   }
   
   .card {
-    @apply bg-white border border-slate-200/60 rounded-[2rem] shadow-xl shadow-slate-200/40 overflow-hidden;
+    @apply bg-white border border-border rounded-[2rem] shadow-xl shadow-primary/5 overflow-hidden;
   }
 
   /* Dashboard content card */
   .dash-card {
-    @apply bg-white border border-slate-200/70 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200;
+    @apply bg-white border border-border rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200;
   }
 
   .input-field {
-    @apply w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 font-medium text-text-primary placeholder:text-text-muted;
+    @apply w-full px-4 py-3.5 bg-primary-light/20 border border-border rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 font-medium text-text-primary placeholder:text-text-muted;
   }
 
   /* Dark sidebar links — now handled inline in Sidebar.jsx */
   .sidebar-link {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-white/5 hover:text-slate-200 transition-all duration-200 font-semibold text-[13px];
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-text-secondary/70 hover:bg-primary-light hover:text-text-primary transition-all duration-200 font-semibold text-[13px];
   }
 
   .sidebar-link-active {
-    @apply bg-white/10 text-white shadow-sm;
+    @apply bg-primary text-white shadow-sm;
   }
 
   .badge {

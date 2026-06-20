@@ -1,8 +1,8 @@
 # Frontend
-gig-connect-front-end/node_modules/
-gig-connect-front-end/dist/
-gig-connect-front-end/build/
-gig-connect-front-end/.env
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
 
 # Backend
 backend/vendor/
@@ -14,3 +14,4 @@ backend/config/db.php
 .vscode/
 .idea/
 *.log
+node_modules

@@ -101,37 +101,37 @@ const LoginModal = ({ isOpen, onClose }) => {
           </button>
 
           {/* Left Pane (Branded) */}
-          <div className="hidden md:flex flex-col w-[45%] bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 relative overflow-hidden text-white pt-12 px-10">
+          <div className="hidden md:flex flex-col w-[45%] bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 relative overflow-hidden text-white pt-12 px-10">
             {/* Decorative circles */}
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/5 blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-blue-500/10 blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl"></div>
 
             <h2 className="text-3xl font-bold mb-8 tracking-tight relative z-10">Welcome to<br/>GigConnect</h2>
             
             <div className="space-y-6 mb-10 relative z-10">
               <div className="flex items-start gap-3">
                 <div className="p-1 rounded-full bg-white/10 mt-0.5">
-                  <Check size={16} className="text-blue-200" />
+                  <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-blue-50">Exclusive student opportunities</span>
+                <span className="text-lg font-medium text-emerald-50">Exclusive student opportunities</span>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1 rounded-full bg-white/10 mt-0.5">
-                  <Check size={16} className="text-blue-200" />
+                  <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-blue-50">Build a real-world portfolio</span>
+                <span className="text-lg font-medium text-emerald-50">Build a real-world portfolio</span>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1 rounded-full bg-white/10 mt-0.5">
-                  <Check size={16} className="text-blue-200" />
+                  <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-blue-50 leading-snug">Connect with leading businesses</span>
+                <span className="text-lg font-medium text-emerald-50 leading-snug">Connect with leading businesses</span>
               </div>
             </div>
 
             {/* Bottom Image */}
             <div className="absolute bottom-0 left-0 right-0 h-[45%] z-0 border-t border-white/10">
-              <div className="absolute inset-0 bg-gradient-to-t from-blue-900/80 to-transparent z-10"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/80 to-transparent z-10"></div>
               <img 
                 src="https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&q=80" 
                 alt="Working" 

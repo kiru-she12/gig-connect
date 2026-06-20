@@ -93,7 +93,7 @@ const RegisterClient = () => {
   const progress = Math.min((step / 4) * 100, 100);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-emerald-500/10 selection:text-emerald-600">
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-primary/10 selection:text-primary">
       {/* Navigation */}
       <div className="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-3 no-underline group">
@@ -104,9 +104,9 @@ const RegisterClient = () => {
         </Link>
         <button 
           onClick={() => setIsLoginModalOpen(true)}
-          className="text-sm font-bold text-slate-500 hover:text-emerald-600 transition-colors"
+          className="text-sm font-bold text-slate-500 hover:text-primary transition-colors"
         >
-          Manage existing account? <span className="text-emerald-600">Login</span>
+          Already have an account? <span className="text-primary">Login</span>
         </button>
       </div>
 
@@ -118,11 +118,11 @@ const RegisterClient = () => {
               <h2 className="text-3xl font-black text-slate-900 mb-1">Business Registration</h2>
               <p className="text-slate-500 font-medium">Stage {step > 3 ? step - 1 : step} of 3: {step === 1 ? 'Representative Info' : step === 2 ? 'Business Verification' : step === 3 ? 'Access Security' : step === 4 ? 'OTP Verification' : 'Success'}</p>
             </div>
-            <span className="text-sm font-black text-emerald-600">{Math.round(progress)}% Complete</span>
+            <span className="text-sm font-black text-primary">{Math.round(progress)}% Complete</span>
           </div>
           <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
             <motion.div 
-              className="h-full bg-emerald-500"
+              className="h-full bg-primary"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5 }}
@@ -162,7 +162,7 @@ const RegisterClient = () => {
                           onClick={() => setFormData({ ...formData, jobType: type })}
                           className={`py-3.5 text-sm font-bold rounded-2xl transition-all ${
                             formData.jobType === type
-                            ? 'bg-white text-emerald-600 shadow-md shadow-slate-200/50 scale-[1.02] ring-1 ring-slate-100'
+                            ? 'bg-white text-primary shadow-md shadow-slate-200/50 scale-[1.02] ring-1 ring-slate-100'
                             : 'text-slate-500 hover:text-slate-800'
                           }`}
                         >
@@ -176,12 +176,12 @@ const RegisterClient = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                       <div className="relative group">
-                        <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="text" 
                           required
                           placeholder="Representative Name"
-                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          className="input-field pl-12 focus:ring-primary/20 focus:border-primary"
                           value={formData.fullName}
                           onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         />
@@ -190,11 +190,11 @@ const RegisterClient = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Name (Optional)</label>
                       <div className="relative group">
-                        <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="text" 
                           placeholder="Company or Brand"
-                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          className="input-field pl-12 focus:ring-primary/20 focus:border-primary"
                           value={formData.businessName}
                           onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                         />
@@ -206,12 +206,12 @@ const RegisterClient = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Corporate Email</label>
                       <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="email" 
                           required
                           placeholder="name@business.com"
-                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          className="input-field pl-12 focus:ring-primary/20 focus:border-primary"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
@@ -220,12 +220,12 @@ const RegisterClient = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Number</label>
                       <div className="relative group">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="tel" 
                           required
                           placeholder="+94 XX XXX XXXX"
-                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          className="input-field pl-12 focus:ring-primary/20 focus:border-primary"
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         />
@@ -235,7 +235,7 @@ const RegisterClient = () => {
 
                   <button 
                     onClick={nextStep}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-600/20 group"
+                    className="w-full bg-primary hover:bg-primary-dark text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 transition-all shadow-xl shadow-primary/20 group"
                   >
                     Continue to Verification
                     <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -255,12 +255,12 @@ const RegisterClient = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">National Identity Card (NIC)</label>
                       <div className="relative group">
-                        <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="text" 
                           required
                           placeholder="NIC Number"
-                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          className="input-field pl-12 focus:ring-primary/20 focus:border-primary"
                           value={formData.nic}
                           onChange={(e) => setFormData({ ...formData, nic: e.target.value })}
                         />
@@ -269,12 +269,12 @@ const RegisterClient = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Registration Number</label>
                       <div className="relative group">
-                        <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="text" 
                           required={formData.jobType !== 'Remote'}
                           placeholder="BR Number"
-                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          className="input-field pl-12 focus:ring-primary/20 focus:border-primary"
                           value={formData.businessReg}
                           onChange={(e) => setFormData({ ...formData, businessReg: e.target.value })}
                         />
@@ -282,8 +282,8 @@ const RegisterClient = () => {
                     </div>
                   </div>
 
-                  <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100 flex gap-4 items-start">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm flex-shrink-0">
+                  <div className="p-6 bg-primary-light rounded-3xl border border-border flex gap-4 items-start">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm flex-shrink-0">
                       <ShieldCheck size={20} />
                     </div>
                     <div>
@@ -294,7 +294,7 @@ const RegisterClient = () => {
 
                   <div className="flex gap-4 pt-4">
                     <button onClick={prevStep} className="flex-1 btn-secondary py-4">Back</button>
-                    <button onClick={nextStep} className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-600/20 group">
+                    <button onClick={nextStep} className="flex-[2] bg-primary hover:bg-primary-dark text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 transition-all shadow-xl shadow-primary/20 group">
                       Security Setup
                       <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                     </button>
@@ -314,12 +314,12 @@ const RegisterClient = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Access Password</label>
                       <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="password" 
                           required
                           placeholder="••••••••"
-                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          className="input-field pl-12 focus:ring-primary/20 focus:border-primary"
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         />
@@ -328,12 +328,12 @@ const RegisterClient = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Access Key</label>
                       <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="password" 
                           required
                           placeholder="••••••••"
-                          className="input-field pl-12 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          className="input-field pl-12 focus:ring-primary/20 focus:border-primary"
                           value={formData.confirmPassword}
                           onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                         />
@@ -345,12 +345,12 @@ const RegisterClient = () => {
                     <label className="flex items-start gap-4 cursor-pointer group p-4 bg-slate-50 rounded-3xl border border-slate-100 hover:bg-slate-100/50 transition-colors">
                       <input 
                         type="checkbox" 
-                        className="mt-1 w-5 h-5 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500/20"
+                        className="mt-1 w-5 h-5 rounded-lg border-slate-300 text-primary focus:ring-primary/20"
                         checked={formData.terms}
                         onChange={(e) => setFormData({ ...formData, terms: e.target.checked })}
                       />
                       <span className="text-xs text-slate-500 leading-relaxed font-medium">
-                        I agree to the <Link to="#" className="text-emerald-600 font-bold hover:underline">Terms of Service</Link> and <Link to="#" className="text-emerald-600 font-bold hover:underline">Privacy Policy</Link> for business entities on GigConnect.
+                        I agree to the <Link to="#" className="text-primary font-bold hover:underline">Terms of Service</Link> and <Link to="#" className="text-primary font-bold hover:underline">Privacy Policy</Link> for business entities on GigConnect.
                       </span>
                     </label>
                   </div>
@@ -360,7 +360,7 @@ const RegisterClient = () => {
                     <button 
                       onClick={handleSubmit} 
                       disabled={loading}
-                      className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-emerald-600/20 disabled:opacity-70 transition-all"
+                      className="flex-[2] bg-primary hover:bg-primary-dark text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-primary/20 disabled:opacity-70 transition-all"
                     >
                       {loading ? <Loader2 className="animate-spin" /> : 'Register Business'}
                     </button>
@@ -377,7 +377,7 @@ const RegisterClient = () => {
                   className="space-y-8"
                 >
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-primary-light text-primary rounded-full flex items-center justify-center mx-auto mb-4">
                       <ShieldCheck size={32} />
                     </div>
                     <h3 className="text-xl font-bold text-slate-900">Verify your Contact Info</h3>
@@ -394,7 +394,7 @@ const RegisterClient = () => {
                         maxLength="6" 
                         required 
                         placeholder="000000"
-                        className="w-full text-center tracking-[0.5em] text-xl bg-white border border-slate-300 rounded-[1.5rem] py-4 px-4 outline-none focus:border-emerald-500 transition-all font-bold placeholder:text-slate-200"
+                        className="w-full text-center tracking-[0.5em] text-xl bg-white border border-slate-300 rounded-[1.5rem] py-4 px-4 outline-none focus:border-primary transition-all font-bold placeholder:text-slate-200"
                         value={formData.otpCode || ''}
                         onChange={(e) => setFormData({ ...formData, otpCode: e.target.value.replace(/\D/g, '') })}
                       />
@@ -420,7 +420,7 @@ const RegisterClient = () => {
                     <button 
                       onClick={handleVerifyOtp} 
                       disabled={loading || formData.otpCode?.length !== 6}
-                      className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-emerald-600/20 transition-all"
+                      className="flex-[2] bg-primary hover:bg-primary-dark text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-primary/20 transition-all"
                     >
                       {loading ? <Loader2 className="animate-spin" size={20} /> : 'Verify OTP'}
                     </button>
@@ -435,7 +435,7 @@ const RegisterClient = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col items-center justify-center text-center space-y-6"
                 >
-                  <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <div className="w-20 h-20 bg-primary-light text-primary rounded-full flex items-center justify-center mx-auto mb-2">
                     <CheckCircle size={40} />
                   </div>
                   <h2 className="text-2xl font-bold text-slate-900">Registration Successful!</h2>
@@ -444,7 +444,7 @@ const RegisterClient = () => {
                   </p>
                   <button 
                     onClick={() => navigate('/')} 
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-[1.5rem] font-black text-lg w-full mt-4"
+                    className="w-full bg-primary hover:bg-primary-dark text-white py-4 rounded-[1.5rem] font-black text-lg w-full mt-4"
                   >
                     Return to Home
                   </button>

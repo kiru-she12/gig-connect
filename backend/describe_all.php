@@ -1,5 +1,5 @@
 <?php
-include 'backend/config/db.php';
+include 'config/db.php';
 
 function describe($pdo, $tbl) {
     echo "=== DESCRIBE $tbl ===\n";

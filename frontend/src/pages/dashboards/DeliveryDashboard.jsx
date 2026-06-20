@@ -41,7 +41,7 @@ const ActiveDeliveriesTab = () => (
     <div className="card p-6 border-l-4 border-l-primary">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <span className="badge bg-blue-100 text-blue-700 mb-2">In Transit</span>
+          <span className="badge bg-primary-light text-primary-dark font-bold mb-2">In Transit</span>
           <h3 className="text-xl font-bold">Order #DG-8821</h3>
         </div>
         <div className="text-right">

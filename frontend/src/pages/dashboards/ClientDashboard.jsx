@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -28,7 +28,7 @@ const ClientDashboard = () => {
         <Route path="home" element={<HomeTab user={user} clientJobs={clientJobs} clientApps={clientApps} />} />
         <Route path="post" element={<PostJobTab addJob={addJob} />} />
         <Route path="listings" element={<ListingsTab clientJobs={clientJobs} />} />
-        <Route path="applicants" element={<ApplicantsTab clientJobs={clientJobs} applications={applications} updateStatus={updateApplicationStatus} />} />
+        <Route path="applicants" element={<ApplicantsTab clientJobs={clientJobs} updateStatus={updateApplicationStatus} />} />
         <Route path="messages" element={<ChatTab />} />
         <Route path="delivery" element={<PlaceholderTab title="Delivery Tracking" icon={MapPin} message="Track your deliveries in real-time." />} />
         <Route path="ratings" element={<PlaceholderTab title="Your Ratings" icon={Star} message="View feedback from students you've hired." />} />
@@ -106,7 +106,7 @@ const HomeTab = ({ user, clientJobs, clientApps }) => (
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {[
-        { label: 'Jobs Posted', value: clientJobs.length, icon: List, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Jobs Posted', value: clientJobs.length, icon: List, color: 'text-primary', bg: 'bg-primary-light' },
         { label: 'Active Jobs', value: clientJobs.filter(j => j.status === 'Active').length, icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
         { label: 'Pending Applicants', value: clientApps.filter(a => a.status === 'Applied').length, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
         { label: 'Amount Spent', value: 'LKR 12.5k', icon: DollarSign, color: 'text-purple-600', bg: 'bg-purple-50' },
@@ -150,14 +150,17 @@ const PostJobTab = ({ addJob }) => {
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      addJob(formData);
+    try {
+      await addJob(formData);
       setStep(3);
+    } catch (err) {
+      console.error('Error posting job:', err);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const handleSkillToggle = (skill) => {
@@ -368,7 +371,7 @@ const ListingsTab = ({ clientJobs }) => (
             <h3 className="font-bold text-lg">{job.title}</h3>
             <span className={`badge ${
               job.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 
-              job.status === 'Pending Approval' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+              job.status === 'Pending Approval' ? 'bg-amber-100 text-amber-700' : 'bg-primary-light text-primary-dark font-bold'
             }`}>
               {job.status}
             </span>
@@ -387,9 +390,47 @@ const ListingsTab = ({ clientJobs }) => (
   </div>
 );
 
-const ApplicantsTab = ({ clientJobs, applications, updateStatus }) => {
+const ApplicantsTab = ({ clientJobs, updateStatus }) => {
   const [selectedJobId, setSelectedJobId] = useState(clientJobs[0]?.id || '');
-  const filteredApps = applications.filter(app => app.jobId === selectedJobId);
+  const [applicants, setApplicants] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchApplicants = async (jobId) => {
+    if (!jobId) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/get_applicants.php?job_ID=${jobId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.applicants)) {
+          setApplicants(data.applicants);
+        } else {
+          setApplicants([]);
+        }
+      } else {
+        setApplicants([]);
+      }
+    } catch (err) {
+      console.error("Error fetching applicants:", err);
+      setApplicants([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApplicants(selectedJobId);
+  }, [selectedJobId]);
+
+  const handleUpdateStatus = async (appId, action) => {
+    await updateStatus(appId, action);
+    fetchApplicants(selectedJobId);
+  };
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -404,46 +445,74 @@ const ApplicantsTab = ({ clientJobs, applications, updateStatus }) => {
         </select>
       </div>
 
-      {filteredApps.length > 0 ? (
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-text-secondary mt-2 text-sm font-medium">Loading applicants...</p>
+        </div>
+      ) : applicants.length > 0 ? (
         <div className="space-y-4">
-          {filteredApps.map(app => (
-            <div key={app.id} className="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-primary transition-all">
+          {applicants.map(app => (
+            <div key={app.application_ID} className="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-primary transition-all">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-primary-light text-primary rounded-2xl flex items-center justify-center font-bold text-xl">
-                  S
+                <div className="w-16 h-16 bg-primary-light text-primary rounded-2xl flex items-center justify-center font-bold text-xl uppercase">
+                  {app.name ? app.name[0] : 'S'}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-lg">Student Applicant</h4>
-                    <span className="badge bg-blue-50 text-blue-600 text-[10px]">92% Match</span>
+                    <h4 className="font-bold text-lg">{app.name || 'Student Applicant'}</h4>
+                    <span className="badge bg-primary-light text-primary text-[10px]">Active Member</span>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-text-secondary mt-1">
-                    <span className="flex items-center gap-1 text-amber-500 font-bold"><Star size={14} fill="currentColor"/> 4.8</span>
+                    <span className="flex items-center gap-1 text-amber-500 font-bold"><Star size={14} fill="currentColor"/> {app.rating || '5.0'}</span>
                     <span>•</span>
-                    <span>12 jobs completed</span>
+                    <span className="text-xs">{app.email}</span>
                   </div>
+                  {app.skills && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {app.skills.split(', ').map((skill, index) => (
+                        <span key={index} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <button 
-                  onClick={() => updateStatus(app.id, 'Rejected')}
-                  className="px-4 py-2 text-danger font-bold text-sm hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  Reject
-                </button>
-                <button 
-                  onClick={() => updateStatus(app.id, 'Shortlisted')}
-                  className="px-4 py-2 text-amber-600 font-bold text-sm bg-amber-50 rounded-lg"
-                >
-                  Shortlist
-                </button>
-                <button 
-                  onClick={() => updateStatus(app.id, 'Accepted')}
-                  className="btn-primary py-2 px-6 text-sm"
-                >
-                  Hire Student
-                </button>
+                {app.status === 'accepted' ? (
+                  <span className="badge bg-emerald-100 text-emerald-700 font-bold py-2 px-4 flex items-center gap-1.5">
+                    <CheckCircle size={14} /> Hired
+                  </span>
+                ) : app.status === 'rejected' ? (
+                  <span className="badge bg-red-100 text-red-700 font-bold py-2 px-4">
+                    Rejected
+                  </span>
+                ) : (
+                  <>
+                    <button 
+                      onClick={() => handleUpdateStatus(app.application_ID, 'Rejected')}
+                      className="px-4 py-2 text-danger font-bold text-sm hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      Reject
+                    </button>
+                    {app.status !== 'shortlisted' && (
+                      <button 
+                        onClick={() => handleUpdateStatus(app.application_ID, 'Shortlisted')}
+                        className="px-4 py-2 text-amber-600 font-bold text-sm bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors"
+                      >
+                        Shortlist
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => handleUpdateStatus(app.application_ID, 'Accepted')}
+                      className="btn-primary py-2 px-6 text-sm"
+                    >
+                      Hire Student
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}

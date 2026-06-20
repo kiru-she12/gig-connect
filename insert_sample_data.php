@@ -8,48 +8,68 @@ try {
 
     echo "Starting database seeding...\n";
 
+    // Ensure the new columns exist in the 'job' table
+    try {
+        $pdo->exec("ALTER TABLE job ADD COLUMN job_date VARCHAR(50) DEFAULT NULL");
+        echo "Added column job_date to job table.\n";
+    } catch (Exception $e) {
+        // Column probably already exists, ignore
+    }
+    try {
+        $pdo->exec("ALTER TABLE job ADD COLUMN start_time VARCHAR(20) DEFAULT NULL");
+        echo "Added column start_time to job table.\n";
+    } catch (Exception $e) {
+        // Column probably already exists, ignore
+    }
+    try {
+        $pdo->exec("ALTER TABLE job ADD COLUMN end_time VARCHAR(20) DEFAULT NULL");
+        echo "Added column end_time to job table.\n";
+    } catch (Exception $e) {
+        // Column probably already exists, ignore
+    }
+
     // 1. Seed/Update 5 Job Providers in 'users' and 'job_provider' tables
     $providers = [
         [
             'id' => 'CLI001',
-            'name' => 'Dunhinda Falls Tourism',
-            'email' => 'dunhinda.tourism@example.com',
+            'name' => 'MPK Select',
+            'email' => 'mpk.select@gmail.com',
             'phone' => '94762004739',
             'nic' => '200471500529',
             'business_reg_no' => 'BR-TR-001',
-            'type' => 'Tourism'
-        ],
-        [
-            'id' => 'CLI002',
-            'name' => 'Badulla Bakers',
-            'email' => 'badulla.bakers@example.com',
-            'phone' => '94712345678',
-            'nic' => '199012345678',
-            'business_reg_no' => 'BR-FD-002',
-            'type' => 'Food'
-        ],
-        [
-            'id' => 'CLI003',
-            'name' => 'Ella View Hotel',
-            'email' => 'ella.view@example.com',
-            'phone' => '94759876543',
-            'nic' => '198598765432',
-            'business_reg_no' => 'BR-HP-003',
-            'type' => 'Hospitality'
-        ],
-        [
-            'id' => 'CLI004',
-            'name' => 'Badulla Super Mart',
-            'email' => 'badulla.super@example.com',
-            'phone' => '94775556677',
-            'nic' => '199555667788',
-            'business_reg_no' => 'BR-RT-004',
             'type' => 'Retail'
         ],
         [
+            'id' => 'CLI002',
+            'name' => 'Vishwam Stores',
+            'email' => 'vishwam.stores@gmail.com',
+            'phone' => '94712345678',
+            'nic' => '199012345678',
+            'business_reg_no' => 'BR-FD-002',
+            'type' => 'Retail'
+        ],
+        [
+            'id' => 'CLI003',
+            'name' => 'BigC Stores',
+            'email' => 'bigc.stores@gmail.com',
+            'phone' => '94759876543',
+            'nic' => '198598765432',
+            'business_reg_no' => 'BR-HP-003',
+            'type' => 'Retail'
+        ],
+        [
+            'id' => 'CLI004',
+            'name' => 'Amara Perera (Baking)',
+            'email' => 'amara.bakes@gmail.com',
+            'phone' => '94775556677',
+            'nic' => '199555667788',
+            'business_reg_no' => 'BR-RT-004',
+            'type' => 'Personal/Home services'
+        ],
+        [
             'id' => 'CLI005',
-            'name' => 'Home provider',
-            'email' => 'home.provider@example.com',
+            'name' => 'Sarah de Silva (Handicrafts)',
+            'email' => 'sarah.crafts@gmail.com',
             'phone' => '94701122334',
             'nic' => '200011223344',
             'business_reg_no' => 'BR-PR-005',
@@ -93,12 +113,15 @@ try {
         [
             'job_ID' => 'JOB001',
             'provider_ID' => 'CLI001',
-            'title' => 'Tour guide at Dunhinda Falls',
-            'description' => 'Guide foreign and local tourists visiting Dunhinda Falls. Share historical details and safety tips. Location: Dunhinda Falls, Badulla. Time: 9AM-1PM (one day).',
-            'skills' => 'English, Sinhala, Tamil',
-            'payment' => 2500.00,
+            'title' => 'Clothing Section Organizer',
+            'description' => 'Organize clothing displays and assist customers in finding sizes. Location: MPK Select, Badulla.',
+            'skills' => 'Sinhala, English, Communication',
+            'payment' => 2000.00,
             'job_type' => 'onsite',
-            'is_boosted' => 1
+            'is_boosted' => 1,
+            'job_date' => '2026-07-20',
+            'start_time' => '2.00pm',
+            'end_time' => '4.00pm'
         ],
         [
             'job_ID' => 'JOB002',
@@ -295,22 +318,28 @@ try {
         [
             'job_ID' => 'JOB021',
             'provider_ID' => 'CLI002',
-            'title' => 'Logo design for bakery',
-            'description' => 'Create a modern, elegant, minimalist brand logo for Badulla Bakers. Remote task.',
-            'skills' => 'Design, Photoshop',
-            'payment' => 2000.00,
-            'job_type' => 'remote',
-            'is_boosted' => 1
+            'title' => 'Household Shelf Organizer',
+            'description' => 'Help arrange household items and shelf labels. Location: Vishwam Stores, Badulla.',
+            'skills' => 'Organizing, Sinhala',
+            'payment' => 1800.00,
+            'job_type' => 'onsite',
+            'is_boosted' => 1,
+            'job_date' => '2026-07-21',
+            'start_time' => '1.00pm',
+            'end_time' => '3.00pm'
         ],
         [
             'job_ID' => 'JOB022',
-            'provider_ID' => 'CLI002',
-            'title' => 'Facebook page management for boutique',
-            'description' => 'Manage a boutique page for 4 weeks. Draft weekly posts, respond to customer product queries. Remote task.',
-            'skills' => 'Social Media Management',
-            'payment' => 1500.00,
-            'job_type' => 'remote',
-            'is_boosted' => 0
+            'provider_ID' => 'CLI003',
+            'title' => 'Stock Assistant for Household Goods',
+            'description' => 'Help stock and verify incoming household supplies. Location: BigC Stores, Badulla.',
+            'skills' => 'English, Sinhala, Physical',
+            'payment' => 2200.00,
+            'job_type' => 'onsite',
+            'is_boosted' => 0,
+            'job_date' => '2026-07-22',
+            'start_time' => '10.00am',
+            'end_time' => '12.00pm'
         ],
         [
             'job_ID' => 'JOB023',
@@ -496,23 +525,29 @@ try {
         // CATEGORY 3: HOME/PERSONAL SERVICES (JOB041 - JOB060)
         [
             'job_ID' => 'JOB041',
-            'provider_ID' => 'CLI005',
-            'title' => 'Cupcake/cake order delivery',
-            'description' => 'Pick up cake from Home Provider in Badulla and deliver it safely to a client in Badulla town. Remote (delivery only).',
-            'skills' => 'Delivery',
-            'payment' => 500.00,
-            'job_type' => 'remote',
-            'is_boosted' => 1
+            'provider_ID' => 'CLI004',
+            'title' => 'Custom Birthday Cake Baker',
+            'description' => 'Help Amara bake and decorate a custom birthday cake. Location: Badulla town.',
+            'skills' => 'Baking, Cake Decoration',
+            'payment' => 2500.00,
+            'job_type' => 'onsite',
+            'is_boosted' => 1,
+            'job_date' => '2026-07-23',
+            'start_time' => '2.00pm',
+            'end_time' => '5.00pm'
         ],
         [
             'job_ID' => 'JOB042',
             'provider_ID' => 'CLI005',
-            'title' => 'Handmade products delivery',
-            'description' => 'Pick up craft box and deliver to customer in Badulla town. Remote (delivery only).',
-            'skills' => 'Delivery',
-            'payment' => 600.00,
-            'job_type' => 'remote',
-            'is_boosted' => 0
+            'title' => 'Handicrafts Stall Assistant',
+            'description' => 'Help Sarah setup the handicraft exhibition stall and present clay/handmade products. Location: Badulla Town Hall.',
+            'skills' => 'Communication, Sinhala, English',
+            'payment' => 2000.00,
+            'job_type' => 'onsite',
+            'is_boosted' => 0,
+            'job_date' => '2026-07-24',
+            'start_time' => '9.00am',
+            'end_time' => '1.00pm'
         ],
         [
             'job_ID' => 'JOB043',
@@ -706,9 +741,23 @@ try {
         $deadlineUnix = rand(strtotime('2026-07-12 00:00:00'), strtotime('2026-08-30 23:59:59'));
         $deadline = date('Y-m-d H:i:s', $deadlineUnix);
 
+        // Calculate schedule if not provided
+        $start_hour = rand(8, 16);
+        $end_hour = $start_hour + rand(2, 4);
+        
+        $start_ampm = $start_hour >= 12 ? 'pm' : 'am';
+        $start_hour_display = $start_hour > 12 ? $start_hour - 12 : $start_hour;
+        
+        $end_ampm = $end_hour >= 12 ? 'pm' : 'am';
+        $end_hour_display = $end_hour > 12 ? $end_hour - 12 : $end_hour;
+        
+        $start_time = $j['start_time'] ?? ($start_hour_display . '.00' . $start_ampm);
+        $end_time = $j['end_time'] ?? ($end_hour_display . '.00' . $end_ampm);
+        $job_date = $j['job_date'] ?? date('Y-m-d', $deadlineUnix);
+
         $stmtJob = $pdo->prepare("
-            INSERT INTO job (job_ID, provider_ID, title, description, skills, payment, job_type, status, deadline, is_boosted, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
+            INSERT INTO job (job_ID, provider_ID, title, description, skills, payment, job_type, status, deadline, is_boosted, created_at, job_date, start_time, end_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 provider_ID = VALUES(provider_ID),
                 title = VALUES(title),
@@ -719,7 +768,10 @@ try {
                 status = 'active',
                 deadline = VALUES(deadline),
                 is_boosted = VALUES(is_boosted),
-                created_at = VALUES(created_at)
+                created_at = VALUES(created_at),
+                job_date = VALUES(job_date),
+                start_time = VALUES(start_time),
+                end_time = VALUES(end_time)
         ");
         $stmtJob->execute([
             $j['job_ID'],
@@ -731,7 +783,10 @@ try {
             $j['job_type'],
             $deadline,
             $j['is_boosted'],
-            $createdAt
+            $createdAt,
+            $job_date,
+            $start_time,
+            $end_time
         ]);
     }
 

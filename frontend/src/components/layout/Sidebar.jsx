@@ -6,18 +6,18 @@ import { X, LogOut, Zap, ChevronRight } from 'lucide-react';
 
 /* ── Role label & colour helpers ── */
 const ROLE_META = {
-  student:       { label: 'Student',        color: 'bg-indigo-500' },
-  client:        { label: 'Job Provider',    color: 'bg-emerald-500' },
-  job_provider:  { label: 'Job Provider',    color: 'bg-emerald-500' },
-  admin:         { label: 'Admin',           color: 'bg-rose-500' },
-  manager:       { label: 'Manager',         color: 'bg-amber-500' },
-  delivery_staff:{ label: 'Delivery Staff',  color: 'bg-cyan-500' },
+  student:       { label: 'Student',        color: 'bg-primary' },
+  client:        { label: 'Job Provider',    color: 'bg-[#4E8C7E]' },
+  job_provider:  { label: 'Job Provider',    color: 'bg-[#4E8C7E]' },
+  admin:         { label: 'Admin',           color: 'bg-primary' },
+  manager:       { label: 'Manager',         color: 'bg-[#4E8C7E]' },
+  delivery_staff:{ label: 'Delivery Staff',  color: 'bg-[#89D7B7] text-[#1A312C]' },
 };
 
 const Avatar = ({ name = '' }) => {
   const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   return (
-    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-lg shadow-indigo-900/40 flex-shrink-0">
+    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-light to-primary flex items-center justify-center text-white text-xs font-black shadow-lg flex-shrink-0">
       {initials || '?'}
     </div>
   );
@@ -55,9 +55,9 @@ const LinkList = ({ links, onClose, handleLinkClick }) => (
         >
           {({ isActive }) => (
             <>
-              <link.icon size={18} className={`flex-shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-indigo-300' : ''}`} />
+              <link.icon size={18} className={`flex-shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-primary-light' : ''}`} />
               <span className={`text-[13px] font-semibold flex-1 ${isActive ? 'text-white' : ''}`}>{link.label}</span>
-              {isActive && <ChevronRight size={13} className="text-indigo-300 opacity-70" />}
+              {isActive && <ChevronRight size={13} className="text-primary-light opacity-70" />}
             </>
           )}
         </NavLink>
@@ -94,12 +94,12 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="px-5 py-6 flex items-center gap-3 border-b border-white/10">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg shadow-indigo-900/50">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg">
           <Zap size={18} className="text-white" fill="currentColor" />
         </div>
         <div className="leading-none">
           <span className="font-heading font-black text-white text-lg tracking-tight">GigConnect</span>
-          <span className="block text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-0.5">UWU Student Hub</span>
+          <span className="block text-[10px] font-bold text-primary-light uppercase tracking-widest mt-0.5">UWU Student Hub</span>
         </div>
       </div>
 
@@ -141,7 +141,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       {/* ── Desktop Sidebar ── */}
       <aside
         className="w-60 hidden lg:flex flex-col sticky top-0 h-screen z-30 overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #0f0c29 0%, #1a1144 50%, #0f0c29 100%)' }}
+        style={{ background: 'linear-gradient(160deg, #1A312C 0%, #24443E 50%, #1A312C 100%)' }}
       >
         <SidebarContent />
       </aside>
@@ -158,7 +158,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
           {/* Panel */}
           <div
             className="relative w-64 max-w-[80vw] h-full flex flex-col shadow-2xl animate-slideRight"
-            style={{ background: 'linear-gradient(160deg, #0f0c29 0%, #1a1144 50%, #0f0c29 100%)' }}
+            style={{ background: 'linear-gradient(160deg, #1A312C 0%, #24443E 50%, #1A312C 100%)' }}
           >
             {/* Close button */}
             <button

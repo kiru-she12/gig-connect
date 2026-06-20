@@ -7,9 +7,9 @@ import { useNavigate } from 'react-router-dom';
 /* ── Notification icon by type ── */
 const NotifIcon = ({ type }) => {
   const icons = {
-    delivery_request: <Truck size={13} className="text-indigo-500" />,
+    delivery_request: <Truck size={13} className="text-primary" />,
     application:      <Package size={13} className="text-emerald-500" />,
-    info:             <Info size={13} className="text-blue-500" />,
+    info:             <Info size={13} className="text-primary-dark" />,
     alert:            <AlertCircle size={13} className="text-amber-500" />,
   };
   return (
@@ -113,7 +113,7 @@ const DashboardLayout = ({ children }) => {
             <input
               type="text"
               placeholder="Search dashboard..."
-              className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:border-indigo-400 focus:bg-white transition-all"
+              className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:border-primary focus:bg-white transition-all"
             />
           </div>
 
@@ -124,7 +124,7 @@ const DashboardLayout = ({ children }) => {
             <button
               onClick={() => navigate('/')}
               title="Landing Page"
-              className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-indigo-500 transition-all"
+              className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-primary transition-all"
             >
               <Home size={17} />
             </button>
@@ -133,11 +133,11 @@ const DashboardLayout = ({ children }) => {
             <div ref={notifRef} className="relative">
               <button
                 onClick={handleBellClick}
-                className="relative p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-indigo-600 transition-all"
+                className="relative p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-primary transition-all"
               >
                 <Bell size={18} />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-indigo-500 text-white text-[8px] font-black rounded-full ring-2 ring-white flex items-center justify-center px-0.5">
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-primary text-white text-[8px] font-black rounded-full ring-2 ring-white flex items-center justify-center px-0.5">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -149,7 +149,7 @@ const DashboardLayout = ({ children }) => {
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                     <div className="flex items-center gap-2">
-                      <Bell size={13} className="text-indigo-500" />
+                      <Bell size={13} className="text-primary" />
                       <span className="text-sm font-black text-slate-800">Notifications</span>
                     </div>
                     <button
@@ -172,7 +172,7 @@ const DashboardLayout = ({ children }) => {
                       notifications.map((n) => (
                         <div
                           key={n.notification_ID}
-                          className={`flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${n.status === 'unread' ? 'bg-indigo-50/50' : ''}`}
+                          className={`flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${n.status === 'unread' ? 'bg-primary-light/30' : ''}`}
                         >
                           <NotifIcon type={n.type} />
                           <div className="flex-1 min-w-0">
@@ -184,7 +184,7 @@ const DashboardLayout = ({ children }) => {
                             </p>
                           </div>
                           {n.status === 'unread' && (
-                            <span className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0 mt-1" />
+                            <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1" />
                           )}
                         </div>
                       ))
@@ -199,7 +199,7 @@ const DashboardLayout = ({ children }) => {
                           setShowNotifs(false);
                           navigate('/dashboard/student/notifications');
                         }}
-                        className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 uppercase tracking-wider"
+                        className="text-[10px] font-black text-primary hover:text-primary-dark uppercase tracking-wider"
                       >
                         View all notifications →
                       </button>
@@ -215,7 +215,7 @@ const DashboardLayout = ({ children }) => {
               title="Go to landing page"
               className="flex items-center gap-2 pl-2 ml-1 border-l border-slate-200 hover:opacity-80 transition-opacity"
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-xs font-black shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white text-xs font-black shadow-sm">
                 {initials}
               </div>
               <div className="hidden md:block text-left leading-none">

@@ -178,14 +178,14 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
   const totalInteractionsVal = analytics ? analytics.interactions.total_interactions : 1284;
 
   const stats = [
-    { label: 'Total Interactions', value: totalInteractionsVal.toLocaleString(), change: '+14%', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Total Users', value: totalUsers, change: '+12%', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Active Jobs', value: activeJobsVal, change: '+5%', icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Total Interactions', value: totalInteractionsVal.toLocaleString(), change: '+14%', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary-light' },
+    { label: 'Total Users', value: totalUsers, change: '+12%', icon: Users, color: 'text-[#4E8C7E]', bg: 'bg-primary-light' },
+    { label: 'Active Jobs', value: activeJobsVal, change: '+5%', icon: Clock, color: 'text-accent', bg: 'bg-primary-light' },
     { label: 'Monthly Revenue (LKR)', value: revenueVal.toLocaleString(), change: 'Close to Target', icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Verified Clients', value: verifiedClientsVal, change: '+6', icon: CheckCircle, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Verified Clients', value: verifiedClientsVal, change: '+6', icon: CheckCircle, color: 'text-accent', bg: 'bg-primary-light' },
     { label: 'Pending Approvals', value: pendingApprovalsVal, change: '-2', icon: ShieldAlert, color: 'text-red-600', bg: 'bg-red-50' },
     { label: 'Banned Accounts', value: fraudAlertsVal, change: '0', icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-50' },
-    { label: 'Active Deliveries', value: activeDeliveriesVal, change: '+1', icon: Truck, color: 'text-cyan-600', bg: 'bg-cyan-50' },
+    { label: 'Active Deliveries', value: activeDeliveriesVal, change: '+1', icon: Truck, color: 'text-[#4E8C7E]', bg: 'bg-primary-light' },
   ];
 
   const pendingJobsCount = jobs.filter(j => j.status === 'Pending Approval').length;
@@ -198,7 +198,7 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
           <p className="text-text-secondary mt-1">Real-time indicators and critical operations overview.</p>
         </div>
         <div className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+          <span className="w-2.5 h-2.5 rounded-full bg-accent animate-ping" />
           SYSTEM ONLINE
         </div>
       </div>
@@ -213,7 +213,7 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
             <div className="flex items-end justify-between mt-1">
               <p className="text-2xl font-heading font-bold text-text-primary">{stat.value}</p>
               {stat.change && (
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${stat.change.startsWith('+') ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-600'}`}>
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${stat.change.startsWith('+') ? 'bg-primary-light text-primary' : 'bg-slate-50 text-slate-600'}`}>
                   {stat.change}
                 </span>
               )}
@@ -229,10 +229,10 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
           </h3>
           <div className="space-y-6">
             {[
-              { text: 'Student cst23001 applied to "Web Frontend Refactoring"', time: '4 mins ago', icon: Users, color: 'bg-blue-100 text-blue-600' },
-              { text: 'Badulla Grocery paid LKR 8,000 for priority advertising boost', time: '18 mins ago', icon: DollarSign, color: 'bg-emerald-100 text-emerald-600' },
+              { text: 'Student cst23001 applied to "Web Frontend Refactoring"', time: '4 mins ago', icon: Users, color: 'bg-primary-light text-primary' },
+              { text: 'Badulla Grocery paid LKR 8,000 for priority advertising boost', time: '18 mins ago', icon: DollarSign, color: 'bg-accent/25 text-[#1A312C]' },
               { text: 'Job "UX Redesign" posted by Uva Design Lab', time: '38 mins ago', icon: FileText, color: 'bg-amber-100 text-amber-600' },
-              { text: 'System resolved Complaint #1024 regarding delivery delay', time: '2 hours ago', icon: AlertCircle, color: 'bg-indigo-100 text-indigo-600' },
+              { text: 'System resolved Complaint #1024 regarding delivery delay', time: '2 hours ago', icon: AlertCircle, color: 'bg-teal-100 text-teal-600' },
             ].map((item, i) => (
               <div key={i} className="flex gap-4">
                 <div className={`w-10 h-10 ${item.color} rounded-full flex-shrink-0 flex items-center justify-center`}>
@@ -382,7 +382,7 @@ const AnalyticsTab = ({ analytics, loading }) => {
     { day: 'Sat', solved: 58, created: 45 },
   ];
 
-  const COLORS = ['#7C3AED', '#06B6D4', '#EC4899', '#F59E0B'];
+  const COLORS = ['#1A312C', '#4E8C7E', '#89D7B7', '#F59E0B'];
 
   return (
     <div className="space-y-8 animate-fadeIn bg-slate-900/5 p-1 rounded-2xl">
@@ -396,13 +396,13 @@ const AnalyticsTab = ({ analytics, loading }) => {
             <div className="flex flex-wrap gap-2">
               <button 
                 onClick={() => navigate('/dashboard/admin/reports?auto=interactions')} 
-                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                className="px-3 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
               >
                 <Download size={12} /> Monthly Interaction (PDF)
               </button>
               <button 
                 onClick={() => navigate('/dashboard/admin/reports?auto=jobs')} 
-                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                className="px-3 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
               >
                 <Download size={12} /> 6-Month Placement (PDF)
               </button>
@@ -423,7 +423,7 @@ const AnalyticsTab = ({ analytics, loading }) => {
       
       {/* CRM Style Top Summary Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
+        <div className="bg-gradient-to-r from-primary-dark to-primary text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
           <div className="relative z-10">
             <p className="text-xs font-extrabold uppercase tracking-widest text-white/70">Avg Resolve Time</p>
             <p className="text-3xl font-heading font-black mt-2">22<span className="text-base font-normal opacity-80">h</span> 40<span className="text-base font-normal opacity-80">min</span></p>
@@ -434,7 +434,7 @@ const AnalyticsTab = ({ analytics, loading }) => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
+        <div className="bg-gradient-to-r from-primary to-primary-dark text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
           <div className="relative z-10">
             <p className="text-xs font-extrabold uppercase tracking-widest text-white/70">Avg Student Interaction Rate</p>
             <p className="text-3xl font-heading font-black mt-2">1,284 <span className="text-sm font-normal opacity-80">gigs</span></p>
@@ -467,7 +467,7 @@ const AnalyticsTab = ({ analytics, loading }) => {
               <h3 className="font-bold text-sm text-text-primary uppercase tracking-wider">Support Solved vs Created</h3>
               <p className="text-xs text-text-muted mt-0.5">Peak solve rate at 68 tickets</p>
             </div>
-            <span className="text-[10px] bg-purple-50 text-purple-700 px-2.5 py-0.5 rounded-full font-bold">Max = 68 T</span>
+            <span className="text-[10px] bg-primary-light text-primary px-2.5 py-0.5 rounded-full font-bold">Max = 68 T</span>
           </div>
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -476,8 +476,8 @@ const AnalyticsTab = ({ analytics, loading }) => {
                 <XAxis dataKey="day" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
                 <Tooltip />
-                <Line type="monotone" dataKey="solved" stroke="#7C3AED" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Solved Tickets" />
-                <Line type="monotone" dataKey="created" stroke="#06B6D4" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 2 }} name="Created Tickets" />
+                <Line type="monotone" dataKey="solved" stroke="#1A312C" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Solved Tickets" />
+                <Line type="monotone" dataKey="created" stroke="#4E8C7E" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 2 }} name="Created Tickets" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -490,7 +490,7 @@ const AnalyticsTab = ({ analytics, loading }) => {
               <h3 className="font-bold text-sm text-text-primary uppercase tracking-wider">Revenue Audit (LKR)</h3>
               <p className="text-xs text-text-muted mt-0.5">Commission target benchmarked at LKR 100,000</p>
             </div>
-            <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold">LKR 98,750 (Mar)</span>
+            <span className="text-[10px] bg-primary-light text-primary px-2.5 py-0.5 rounded-full font-bold">LKR 98,750 (Mar)</span>
           </div>
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -499,7 +499,7 @@ const AnalyticsTab = ({ analytics, loading }) => {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
                 <Tooltip />
-                <Bar dataKey="revenue" fill="#06B6D4" radius={[4, 4, 0, 0]} name="Commission Revenue" />
+                <Bar dataKey="revenue" fill="#4E8C7E" radius={[4, 4, 0, 0]} name="Commission Revenue" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -553,7 +553,7 @@ const AnalyticsTab = ({ analytics, loading }) => {
                 <span>840 interactions</span>
               </div>
               <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-purple-600 h-full rounded-full" style={{ width: '65%' }} />
+                <div className="bg-primary h-full rounded-full" style={{ width: '65%' }} />
               </div>
             </div>
 
@@ -563,7 +563,7 @@ const AnalyticsTab = ({ analytics, loading }) => {
                 <span>444 interactions</span>
               </div>
               <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-cyan-500 h-full rounded-full" style={{ width: '35%' }} />
+                <div className="bg-[#4E8C7E] h-full rounded-full" style={{ width: '35%' }} />
               </div>
             </div>
 
@@ -1147,7 +1147,7 @@ const JobMonitoringTab = ({ jobs, refreshJobs }) => {
     if (job.status?.toLowerCase() === 'pending' || job.status?.toLowerCase() === 'pending approval') {
       return { bg: 'bg-amber-500', text: 'text-white border-amber-600', label: 'Pending' };
     }
-    return { bg: 'bg-indigo-600', text: 'text-white border-indigo-700', label: 'Active' };
+    return { bg: 'bg-primary', text: 'text-white border-primary-dark', label: 'Active' };
   };
 
   // Enforce high-fidelity dummy jobs if empty for simulation
@@ -1355,7 +1355,7 @@ const JobMonitoringTab = ({ jobs, refreshJobs }) => {
             </div>
 
             <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-text-secondary bg-slate-50 p-3 rounded-xl border border-slate-100 justify-center">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-indigo-600 rounded-full" /> Active</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-primary rounded-full" /> Active</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-emerald-500 rounded-full" /> Completed</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-rose-500 rounded-full" /> Overdue</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-amber-500 rounded-full" /> Pending</span>
@@ -1437,7 +1437,7 @@ const JobMonitoringTab = ({ jobs, refreshJobs }) => {
                           <span className={`badge ${
                             job.status?.toLowerCase() === 'completed' ? 'bg-emerald-100 text-emerald-700' :
                             style.label === 'Overdue' ? 'bg-rose-100 text-rose-700' :
-                            job.status?.toLowerCase() === 'pending' || job.status?.toLowerCase() === 'pending approval' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'
+                            job.status?.toLowerCase() === 'pending' || job.status?.toLowerCase() === 'pending approval' ? 'bg-amber-100 text-amber-700' : 'bg-primary-light text-primary-dark font-bold'
                           }`}>
                             {style.label === 'Overdue' ? 'Overdue' : job.status}
                           </span>
@@ -1490,7 +1490,7 @@ const JobMonitoringTab = ({ jobs, refreshJobs }) => {
                   {[
                     { status: 'pending', label: 'Reset to Pending', bg: 'bg-amber-100 text-amber-700 hover:bg-amber-200' },
                     { status: 'active', label: 'Approve / Active', bg: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' },
-                    { status: 'in_progress', label: 'In Progress', bg: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' },
+                    { status: 'in_progress', label: 'In Progress', bg: 'bg-teal-100 text-teal-700 hover:bg-teal-200' },
                     { status: 'completed', label: 'Complete Job', bg: 'bg-green-100 text-green-700 hover:bg-green-200' },
                     { status: 'closed', label: 'Close / Reject', bg: 'bg-rose-100 text-rose-700 hover:bg-rose-200' }
                   ].map(act => (
@@ -1550,13 +1550,13 @@ const RevenueTab = ({ analytics }) => {
           <div className="flex flex-wrap gap-2 items-center">
             <button 
               onClick={() => navigate('/dashboard/admin/reports?auto=financial')} 
-              className="px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+              className="px-3 py-2 bg-[#4E8C7E] hover:bg-[#4E8C7E]/90 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
               <Download size={12} /> Monthly Revenue (CSV)
             </button>
             <button 
               onClick={() => navigate('/dashboard/admin/reports?auto=financial')} 
-              className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+              className="px-3 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
               <Download size={12} /> 6-Month Statement (CSV)
             </button>
@@ -2184,7 +2184,7 @@ const ReportsTab = ({ analytics }) => {
           <button
             onClick={handleExportPDF}
             disabled={loading || !reportData}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-bold text-xs shadow-md transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 font-bold text-xs shadow-md transition-all"
           >
             {loading ? 'Generating...' : 'Export PDF'}
           </button>

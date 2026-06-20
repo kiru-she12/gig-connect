@@ -15,6 +15,30 @@ class SmartRecommendations {
         $this->pdo = $pdo;
     }
 
+    private function getCategory($title, $skills) {
+        $t = strtolower($title);
+        $s = strtolower($skills);
+        if (strpos($t, 'design') !== false || strpos($t, 'logo') !== false || strpos($t, 'poster') !== false || strpos($t, 'card') !== false || strpos($t, 'flyer') !== false || strpos($t, 'presentation') !== false || strpos($t, 'powerpoint') !== false || strpos($t, 'cv') !== false || strpos($t, 'resume') !== false || strpos($s, 'design') !== false || strpos($s, 'photoshop') !== false) {
+            return 'Design';
+        }
+        if (strpos($t, 'data entry') !== false || strpos($t, 'excel') !== false || strpos($t, 'inventory') !== false || strpos($t, 'listing') !== false || strpos($t, 'typing') !== false || strpos($t, 'form') !== false || strpos($s, 'data entry') !== false || strpos($s, 'excel') !== false || strpos($s, 'typing') !== false) {
+            return 'Data Entry';
+        }
+        if (strpos($t, 'photography') !== false || strpos($t, 'photographer') !== false || strpos($t, 'video') !== false || strpos($t, 'editor') !== false || strpos($t, 'vlog') !== false || strpos($t, 'reels') !== false || strpos($t, 'thumbnail') !== false || strpos($s, 'photography') !== false || strpos($s, 'video editing') !== false) {
+            return 'Photography';
+        }
+        if (strpos($t, 'web dev') !== false || strpos($t, 'website') !== false || strpos($s, 'web dev') !== false || strpos($s, 'coding') !== false) {
+            return 'Web Dev';
+        }
+        if (strpos($t, 'translation') !== false || strpos($t, 'translator') !== false || strpos($t, 'translate') !== false || strpos($t, 'proofreading') !== false || strpos($s, 'translation') !== false || strpos($s, 'translator') !== false) {
+            return 'Translation';
+        }
+        if (strpos($t, 'tutor') !== false || strpos($t, 'homework') !== false || strpos($t, 'kids') !== false || strpos($t, 'academic') !== false || strpos($s, 'tutoring') !== false || strpos($s, 'maths') !== false) {
+            return 'Academic & Tutoring';
+        }
+        return 'Local Services';
+    }
+
     private function parseSkills($skills_str) {
         if (empty($skills_str)) return [];
         $decoded = json_decode($skills_str, true);
@@ -136,8 +160,9 @@ class SmartRecommendations {
 
         // ── 3. FETCH ACTIVE UNAPPLIED JOBS ───────────────────────────────────────
         $stmt_jobs = $this->pdo->prepare("
-            SELECT j.*
+            SELECT j.*, u.name AS provider_name, u.email AS provider_email
             FROM job j
+            LEFT JOIN users u ON j.provider_ID = u.user_ID
             WHERE j.status = 'active'
               AND (j.deadline IS NULL OR j.deadline >= NOW())
               AND j.job_ID NOT IN (
@@ -233,6 +258,12 @@ class SmartRecommendations {
                 "match_reasons"   => $reasons,
                 "is_new_student"  => $completed_count === 0,
                 "student_rating"  => $rating,
+                "provider_name"   => $job['provider_name'] ?? 'GigConnect Partner',
+                "provider_email"  => $job['provider_email'] ?? '',
+                "job_date"        => $job['job_date'] ?? null,
+                "start_time"      => $job['start_time'] ?? null,
+                "end_time"        => $job['end_time'] ?? null,
+                "category"        => $this->getCategory($job['title'], $job['skills'] ?? ''),
             ];
         }
 
