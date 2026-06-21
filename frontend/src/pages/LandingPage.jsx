@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
+import studentImg from '../indian_student_laptop_green.png';
 
 const DetailedStudentJobCard = ({ job, onApply, applied = false, matchScore = null, isRecommended = false }) => {
   return (
@@ -1101,7 +1102,7 @@ const LandingPage = () => {
                 <ul className="space-y-4 text-sm text-slate-400 font-light">
                   <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
                   <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-                  <li><a href="#" className="hover:text-white transition-colors">Contact Support</a></li>
+                  <li><a href="mailto:gigconnectsystem@gmail.com" className="hover:text-white transition-colors">Contact Support</a></li>
                 </ul>
               </div>
             </div>
@@ -1388,21 +1389,21 @@ const LandingPage = () => {
                 variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
                 className="text-4xl md:text-5xl lg:text-6xl font-heading font-black text-slate-900 mb-8 leading-[1.1] tracking-tight"
               >
-                A Legacy of <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1A312C] to-[#4E8C7E] font-serif italic font-normal">Excellence</span>
+                A Bridge to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1A312C] to-[#4E8C7E] font-serif italic font-normal">Opportunity</span>
               </motion.h2>
 
               <motion.p
                 variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
                 className="text-slate-600 text-lg leading-relaxed mb-10 font-light"
               >
-                At GigConnect, we believe that the gap between academic learning and professional experience should be a bridge, not a barrier. Founded by students of Uva Wellassa University, our platform was born from a simple observation: students have incredible skills, and local businesses have real needs.
+                At GigConnect, we believe a university timetable shouldn't stand between students and real income. Founded by students of Uva Wellassa University, our platform was born from a simple observation: Badulla's students have valuable skills, and local clients need affordable, trustworthy help — but no platform connects them safely.
               </motion.p>
 
               <div className="space-y-8 mb-12">
                 {[
-                  { title: 'For Students', text: 'Build a professional portfolio and earn income while studying.' },
-                  { title: 'For Businesses', text: 'Access high-quality, specialized talent right from your campus.' },
-                  { title: 'For UWU', text: 'Fostering an ecosystem of innovation and practical education.' }
+                  { title: 'For Students', text: 'Earn flexible income around your class schedule, with every client verified for your safety.' },
+                  { title: 'For Job providers', text: 'Hire verified, skilled UWU students for short-term tasks — at a fraction of the cost of mainstream platforms.' },
+                  { title: 'For UWU', text: 'Strengthening the bridge between academic life and real-world experience for our student community.' }
                 ].map((item, i) => (
                   <motion.div
                     key={i}
@@ -1420,15 +1421,7 @@ const LandingPage = () => {
                 ))}
               </div>
 
-              <motion.button
-                variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => window.open('https://www.uwu.ac.lk/', '_blank')}
-                className="px-8 py-4 bg-[#4E8C7E] text-white hover:bg-[#4E8C7E]/90 shadow-xl shadow-[#4E8C7E]/20 rounded-full font-bold tracking-wide transition-all duration-300"
-              >
-                Discover Our Roots
-              </motion.button>
+              {/* Button Removed */}
             </motion.div>
 
             {/* Image Column */}
@@ -1648,7 +1641,7 @@ const LandingPage = () => {
       </section>
 
       {/* Seamless Collaboration Section */}
-      <section id="collaboration" className="py-16 lg:py-24 bg-white/40 relative overflow-hidden">
+      <section id="collaboration" className="py-16 lg:py-24 bg-[#EAF5EF] relative overflow-hidden">
         {/* Subtle luxury background elements */}
         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.03] pointer-events-none"></div>
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#89D7B7]/10 rounded-full blur-[120px] pointer-events-none"></div>
@@ -1704,7 +1697,7 @@ const LandingPage = () => {
                 hidden: { opacity: 0, y: 30 },
                 visible: { opacity: 1, y: 0 }
               }}
-              className="bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-white/60 p-8 lg:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 relative overflow-hidden group"
+              className="bg-white rounded-[2.5rem] border border-[#4E8C7E]/20 p-8 lg:p-10 shadow-[0_10px_40px_rgba(26,49,44,0.04)] hover:shadow-[0_20px_50px_rgba(26,49,44,0.08)] transition-all duration-500 relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#89D7B7]/20 to-transparent rounded-bl-full opacity-50"></div>
 
@@ -1734,13 +1727,13 @@ const LandingPage = () => {
               </div>
             </motion.div>
 
-            {/* For Clients Card */}
+            {/* For Job Providers Card */}
             <motion.div
               variants={{
                 hidden: { opacity: 0, y: 30 },
                 visible: { opacity: 1, y: 0 }
               }}
-              className="bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-white/60 p-8 lg:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 relative overflow-hidden group"
+              className="bg-white rounded-[2.5rem] border border-[#4E8C7E]/20 p-8 lg:p-10 shadow-[0_10px_40px_rgba(26,49,44,0.04)] hover:shadow-[0_20px_50px_rgba(26,49,44,0.08)] transition-all duration-500 relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#4E8C7E]/20 to-transparent rounded-bl-full opacity-50"></div>
 
@@ -1748,12 +1741,12 @@ const LandingPage = () => {
                 <div className="w-14 h-14 rounded-2xl border border-[#89D7B7] bg-white shadow-sm flex items-center justify-center text-[#4E8C7E] group-hover:bg-[#4E8C7E] group-hover:text-white group-hover:border-[#4E8C7E] transition-all duration-500">
                   <Briefcase size={28} />
                 </div>
-                <h3 className="text-3xl font-heading font-black text-slate-900">For Clients 💼</h3>
+                <h3 className="text-3xl font-heading font-black text-slate-900">For Job Providers 💼</h3>
               </div>
 
               <div className="space-y-6 relative z-10">
                 {[
-                  { title: 'Post a job', desc: 'Describe the task, set the payment, and choose onsite or remote — verified with NIC and OTP.' },
+                  { title: 'Post a job', desc: 'Describe the task, set the payment, and choose onsite or remote — business registration number is mandatory for onsite jobs.' },
                   { title: 'Review applicants', desc: 'See a ranked list of students matched by skill and rating, then shortlist your top picks.' },
                   { title: 'Confirm and pay', desc: 'Track job progress, confirm completion, and pay a low commission — far less than other platforms.' }
                 ].map((step, i) => (
@@ -1808,49 +1801,58 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Ready to Boost Your Career and Income Section */}
-      <section className="relative rounded-[2.5rem] overflow-hidden bg-black min-h-[400px] flex items-end shadow-lg mx-6 sm:mx-10 lg:mx-16 my-16">
-        <img
-          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80"
-          alt="Networking Background"
-          className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-luminosity"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+      {/* Achieve More, Together Section (with original content) */}
+      <section className="mx-6 sm:mx-10 lg:mx-16 my-20 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-0 items-center relative min-h-[500px]">
+          
+          {/* Left Image Column */}
+          <div className="lg:col-span-8 w-full h-[350px] sm:h-[450px] lg:h-[500px] rounded-[2.5rem] overflow-hidden shadow-xl relative z-0">
+            <img
+              src={studentImg}
+              alt="Indian student working on laptop"
+              className="w-full h-full object-cover"
+            />
+            {/* Subtle overlay for the image */}
+            <div className="absolute inset-0 bg-black/10"></div>
+          </div>
 
-        <div className="relative z-10 m-6 sm:m-10 bg-white rounded-3xl p-8 md:p-12 text-[#1A312C] shadow-2xl border border-[#4E8C7E]/20 flex-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            {/* Left Column */}
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#1A312C] bg-white/45 px-2.5 py-1 rounded-full">
+          {/* Right Card Column - Overlapping on Desktop */}
+          <div className="lg:col-span-6 lg:absolute lg:right-0 lg:top-1/2 lg:-translate-y-1/2 w-full lg:w-[48%] bg-[#F5FBF7] rounded-[2.5rem] p-8 sm:p-12 lg:p-14 shadow-2xl border border-[#4E8C7E]/10 z-10 overflow-hidden relative">
+            
+            {/* Decorative background blobs */}
+            <div className="absolute -bottom-10 -left-10 w-44 h-44 bg-[#E2F5EC] rounded-full blur-2xl opacity-80 pointer-events-none"></div>
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#DDF8A3]/30 rounded-full blur-2xl opacity-60 pointer-events-none"></div>
+            
+            <div className="relative z-10 space-y-6">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#4E8C7E] bg-[#E2F5EC] px-3 py-1 rounded-full inline-block">
                 Join the Network
               </span>
-              <h3 className="font-heading font-black text-2xl sm:text-3xl lg:text-4xl text-[#1A312C] tracking-tight mt-4 uppercase">
+              
+              <h3 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-[#1A312C] leading-[1.1] tracking-tight uppercase">
                 Ready to Boost Your <br className="hidden sm:block" />Career and Income?
               </h3>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-6">
-              <p className="text-[#1A312C] text-sm sm:text-base leading-relaxed font-semibold">
+              
+              <p className="text-[#3B5A51] text-sm sm:text-base leading-relaxed font-medium">
                 Connect with top businesses, build a standout portfolio, and start earning on your own terms while completing your studies.
               </p>
               
-              <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex flex-wrap gap-4 items-center pt-2">
                 <button
                   onClick={() => setIsRegisterModalOpen(true)}
-                  className="bg-[#1A312C] hover:bg-[#4E8C7E] text-white text-xs sm:text-sm font-bold px-6 py-3.5 rounded-xl transition-all shadow-md flex items-center gap-2"
+                  className="bg-[#CFF293] hover:bg-[#bfe283] text-[#1A312C] text-xs sm:text-sm font-bold px-6 py-3.5 rounded-full transition-all shadow-md hover:shadow-lg active:scale-95 duration-200 flex items-center gap-2"
                 >
                   Register Now <ArrowRight size={16} />
                 </button>
                 <button
                   onClick={() => setIsLoginModalOpen(true)}
-                  className="bg-white/60 hover:bg-white/80 border border-[#1A312C]/20 text-[#1A312C] text-xs sm:text-sm font-bold px-6 py-3.5 rounded-xl transition-all"
+                  className="bg-transparent hover:bg-[#1A312C]/5 border border-[#1A312C]/20 text-[#1A312C] text-xs sm:text-sm font-bold px-6 py-3.5 rounded-full transition-all active:scale-95 duration-200"
                 >
                   Sign In
                 </button>
               </div>
             </div>
           </div>
+          
         </div>
       </section>
 
@@ -1888,7 +1890,7 @@ const LandingPage = () => {
               <ul className="space-y-4 text-sm text-slate-400 font-light">
                 <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact Support</a></li>
+                <li><a href="mailto:gigconnectsystem@gmail.com" className="hover:text-white transition-colors">Contact Support</a></li>
               </ul>
             </div>
           </div>
@@ -1896,9 +1898,6 @@ const LandingPage = () => {
           <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-slate-500 text-sm font-light">
               &copy; {new Date().getFullYear()} GigConnect. All rights reserved.
-            </p>
-            <p className="text-slate-500 text-sm flex items-center gap-1.5 font-light">
-              Built with <span className="text-rose-500">❤️</span> for Uva Wellassa University
             </p>
           </div>
         </div>

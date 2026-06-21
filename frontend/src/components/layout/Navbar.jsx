@@ -110,12 +110,12 @@ const Navbar = ({ dashboard = false }) => {
                   { name: 'Communication', to: '/dashboard/student/messages' },
                   { name: 'Find Gigs', to: '/jobs' },
                   { name: 'How It Works', id: '#how-it-works' },
-                  { name: 'Contact', id: '#contact' }
+                  { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
                 ] : [
                   { name: 'Home', id: '#home' },
                   { name: 'About', id: '#about' },
                   { name: 'Find Gigs', to: '/jobs' },
-                  { name: 'Contact', id: '#contact' }
+                  { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
                 ]).map((link) => 
                   link.to ? (
                     <Link
@@ -141,8 +141,11 @@ const Navbar = ({ dashboard = false }) => {
                         visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
                       }}
                       key={link.name}
-                      href={link.id || '/'}
-                      onClick={(e) => scrollToSection(e, link.id)}
+                      href={link.email ? 'mailto:' + link.email : link.id || '/'}
+                      onClick={(e) => {
+                        if (link.email) return;
+                        scrollToSection(e, link.id);
+                      }}
                       className={`group relative transition-all duration-300 flex items-center gap-1 ${
                         user?.role === 'student'
                           ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-accent'
@@ -394,12 +397,12 @@ const Navbar = ({ dashboard = false }) => {
                 { name: 'Communication', to: '/dashboard/student/messages' },
                 { name: 'Find Gigs', to: '/jobs' },
                 { name: 'How It Works', id: '#how-it-works' },
-                { name: 'Contact', id: '#contact' }
+                { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
               ] : [
                 { name: 'Home', id: '#home' },
                 { name: 'About', id: '#about' },
                 { name: 'Find Gigs', to: '/jobs' },
-                { name: 'Contact', id: '#contact' }
+                { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
               ]).map((item) => 
                 item.to ? (
                   <Link
@@ -413,9 +416,12 @@ const Navbar = ({ dashboard = false }) => {
                 ) : (
                   <a 
                     key={item.name}
-                    href={item.id}
+                    href={item.email ? 'mailto:' + item.email : item.id}
                     className="block px-4 py-3 text-lg font-medium text-text-primary hover:bg-slate-50 rounded-xl transition-colors"
-                    onClick={(e) => scrollToSection(e, item.id)}
+                    onClick={(e) => {
+                      if (item.email) return;
+                      scrollToSection(e, item.id);
+                    }}
                   >
                     {item.name}
                   </a>
