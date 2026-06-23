@@ -74,6 +74,42 @@ try {
             'nic' => '200011223344',
             'business_reg_no' => 'BR-PR-005',
             'type' => 'Personal/Home services'
+        ],
+        [
+            'id' => 'CLI006',
+            'name' => 'Badulla Tuition Centre',
+            'email' => 'badulla.tuitions@gmail.com',
+            'phone' => '94771234567',
+            'nic' => '199512345678',
+            'business_reg_no' => 'BR-ED-006',
+            'type' => 'Education'
+        ],
+        [
+            'id' => 'CLI007',
+            'name' => 'Tamil Education Seminar',
+            'email' => 'tamil.seminar@gmail.com',
+            'phone' => '94772234567',
+            'nic' => '199522345678',
+            'business_reg_no' => 'BR-ED-007',
+            'type' => 'Education'
+        ],
+        [
+            'id' => 'CLI008',
+            'name' => 'Dunhinda Falls Tourism',
+            'email' => 'dunhinda.tourism@gmail.com',
+            'phone' => '94773234567',
+            'nic' => '199532345678',
+            'business_reg_no' => 'BR-TO-008',
+            'type' => 'Tourism'
+        ],
+        [
+            'id' => 'CLI009',
+            'name' => 'Capital City Hotel',
+            'email' => 'capital.city@gmail.com',
+            'phone' => '94774234567',
+            'nic' => '199542345678',
+            'business_reg_no' => 'BR-HO-009',
+            'type' => 'Hospitality'
         ]
     ];
 
@@ -728,6 +764,58 @@ try {
             'payment' => 1200.00,
             'job_type' => 'remote',
             'is_boosted' => 0
+        ],
+        [
+            'job_ID' => 'JOB061',
+            'provider_ID' => 'CLI006',
+            'title' => '🎓 O/L Mathematics Tutoring',
+            'description' => 'Help O/L students with mathematics revision at a local tuition centre in Badulla town. Perfect for students with strong math skills. Business Reg: Required',
+            'skills' => 'Mathematics, Sinhala, Tamil',
+            'payment' => 800.00,
+            'job_type' => 'onsite',
+            'is_boosted' => 0,
+            'job_date' => '2026-07-05',
+            'start_time' => '10.00am',
+            'end_time' => '11.00am'
+        ],
+        [
+            'job_ID' => 'JOB062',
+            'provider_ID' => 'CLI007',
+            'title' => '📚 Tamil A/L Seminar Assistant',
+            'description' => 'Assist in conducting Tamil language seminars for A/L students. Support coordinators, manage materials, and guide students during sessions.',
+            'skills' => 'Tamil, English, Communication',
+            'payment' => 1500.00,
+            'job_type' => 'onsite',
+            'is_boosted' => 0,
+            'job_date' => '2026-07-10',
+            'start_time' => '9.00am',
+            'end_time' => '12.00pm'
+        ],
+        [
+            'job_ID' => 'JOB063',
+            'provider_ID' => 'CLI008',
+            'title' => '🗺️ Associate Travel Guide',
+            'description' => 'Guide local and foreign tourists around Badulla area attractions including Dunhinda Falls. Must be confident in English communication and knowledgeable about local history.',
+            'skills' => 'English, Sinhala, Tamil, Communication',
+            'payment' => 2500.00,
+            'job_type' => 'onsite',
+            'is_boosted' => 0,
+            'job_date' => '2026-07-15',
+            'start_time' => '8.00am',
+            'end_time' => '1.00pm'
+        ],
+        [
+            'job_ID' => 'JOB064',
+            'provider_ID' => 'CLI009',
+            'title' => '🏨 Hotel Receptionist Assistant',
+            'description' => 'Assist the front desk reception team at a reputed hotel in Badulla. Ideal for Hotel Management students seeking real-world hospitality experience.',
+            'skills' => 'English, Communication, Hotel Management',
+            'payment' => 1200.00,
+            'job_type' => 'onsite',
+            'is_boosted' => 0,
+            'job_date' => '2026-07-20',
+            'start_time' => '2.00pm',
+            'end_time' => '4.00pm'
         ]
     ];
 

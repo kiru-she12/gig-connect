@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Building, Mail, Phone, Lock, FileText, Loader2, X, ShieldCheck, ArrowLeft, ArrowRight, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../logo.svg';
+import Footer from '../components/layout/Footer';
 
 const RegisterClient = () => {
   const [step, setStep] = useState(1);
@@ -93,7 +94,7 @@ const RegisterClient = () => {
   const progress = Math.min((step / 4) * 100, 100);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-primary/10 selection:text-primary">
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-primary/10 selection:text-primary flex flex-col">
       {/* Navigation */}
       <div className="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-3 no-underline group">
@@ -458,6 +459,7 @@ const RegisterClient = () => {
           Trusted by over 200 businesses. GigConnect is the most reliable way to hire specialized student talent from UWU.
         </p>
       </div>
+      <Footer />
     </div>
   );
 };

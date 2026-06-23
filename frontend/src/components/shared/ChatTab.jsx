@@ -121,7 +121,7 @@ const ChatTab = () => {
       </div>
 
       {/* Terms and Conditions Banner */}
-      <div className="bg-slate-900 border border-slate-800 text-slate-100 p-4 rounded-2xl flex items-start gap-3 shadow-md">
+      <div className="bg-primary border border-primary-dark/30 text-slate-100 p-4 rounded-2xl flex items-start gap-3 shadow-md">
         <Shield size={20} className="text-emerald-500 shrink-0 mt-0.5" />
         <div className="text-xs space-y-1">
           <p className="font-bold">Important Rules & Terms</p>
@@ -141,7 +141,7 @@ const ChatTab = () => {
                   onClick={() => { setActiveChat(chat); setError(''); setSystemWarning(''); }}
                   className={`w-full text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1.5 ${
                     activeChat?.job_ID === chat.job_ID
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                      ? 'bg-primary text-white border-primary shadow-md'
                       : 'bg-slate-50/50 border-slate-100 hover:bg-slate-50 text-slate-800'
                   }`}
                 >
@@ -202,7 +202,7 @@ const ChatTab = () => {
                       <div key={i} className={`flex flex-col max-w-[80%] ${isMe ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
                         <div className={`p-3.5 rounded-2xl text-xs font-medium leading-relaxed shadow-sm ${
                           isMe
-                            ? 'bg-slate-900 text-white rounded-tr-none'
+                            ? 'bg-primary text-white rounded-tr-none'
                             : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none'
                         }`}>
                           {msg.content}
@@ -237,7 +237,7 @@ const ChatTab = () => {
                 <button
                   type="submit"
                   disabled={sending || !newMessage.trim()}
-                  className="px-4 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl transition-all flex items-center justify-center shrink-0 disabled:opacity-50"
+                  className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl transition-all flex items-center justify-center shrink-0 disabled:opacity-50"
                 >
                   <Send size={14} />
                 </button>

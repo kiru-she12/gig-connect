@@ -57,7 +57,11 @@ class UserManager {
 
             // send approval email
             $email_body = approvalEmail($target_user['name'], $target_user['role']);
-            sendEmail($target_user['email'], "GigConnect - Account Approved!", $email_body);
+            $mailSent = sendEmail($target_user['email'], "GigConnect - Account Approved!", $email_body);
+
+            if (!$mailSent) {
+                return ["success" => "User approved successfully, but the notification email could not be sent. Please verify your SMTP settings and check if outbound ports 587/465 are blocked by your network/firewall."];
+            }
 
             return ["success" => "User approved successfully!"];
 

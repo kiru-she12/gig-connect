@@ -119,13 +119,13 @@ const LoginModal = ({ isOpen, onClose }) => {
                 <div className="p-1 rounded-full bg-white/10 mt-0.5">
                   <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-emerald-50">Build a real-world portfolio</span>
+                <span className="text-lg font-medium text-emerald-50">Build your reputation</span>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1 rounded-full bg-white/10 mt-0.5">
                   <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-emerald-50 leading-snug">Connect with leading businesses</span>
+                <span className="text-lg font-medium text-emerald-50 leading-snug">Connect with local clients</span>
               </div>
             </div>
 
@@ -251,7 +251,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                     <button 
                       type="submit" 
                       disabled={loading || !email || !password}
-                      className="w-full bg-slate-900 disabled:bg-[#e4e5e7] disabled:text-[#b5b6ba] hover:bg-black text-white py-2.5 rounded font-bold text-sm flex items-center justify-center transition-all"
+                      className="w-full bg-primary disabled:bg-[#e4e5e7] disabled:text-[#b5b6ba] hover:bg-primary-dark text-white py-2.5 rounded font-bold text-sm flex items-center justify-center transition-all"
                     >
                       {loading ? <Loader2 className="animate-spin" size={20} /> : 'Sign in'}
                     </button>
@@ -298,7 +298,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                     <button 
                       type="submit" 
                       disabled={loading || !resetEmail}
-                      className="w-full bg-slate-900 disabled:bg-[#e4e5e7] disabled:text-[#b5b6ba] hover:bg-black text-white py-2.5 rounded font-bold text-sm flex items-center justify-center transition-all"
+                      className="w-full bg-primary disabled:bg-[#e4e5e7] disabled:text-[#b5b6ba] hover:bg-primary-dark text-white py-2.5 rounded font-bold text-sm flex items-center justify-center transition-all"
                     >
                       {loading ? <Loader2 className="animate-spin" size={20} /> : 'Send OTP'}
                     </button>
@@ -364,7 +364,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                     <button 
                       type="submit" 
                       disabled={loading || otpCode.length !== 6 || !newPassword || !confirmPassword}
-                      className="w-full bg-slate-900 disabled:bg-[#e4e5e7] disabled:text-[#b5b6ba] hover:bg-black text-white py-2.5 rounded font-bold text-sm flex items-center justify-center transition-all"
+                      className="w-full bg-primary disabled:bg-[#e4e5e7] disabled:text-[#b5b6ba] hover:bg-primary-dark text-white py-2.5 rounded font-bold text-sm flex items-center justify-center transition-all"
                     >
                       {loading ? <Loader2 className="animate-spin" size={20} /> : 'Reset Password'}
                     </button>
@@ -387,7 +387,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                 <button 
                   type="button" 
                   onClick={() => { setView('login'); setError(''); }} 
-                  className="w-full bg-slate-900 hover:bg-black text-white py-2.5 rounded font-bold text-sm transition-all"
+                  className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded font-bold text-sm transition-all"
                 >
                   Return to Sign In
                 </button>

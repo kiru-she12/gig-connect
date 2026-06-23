@@ -56,7 +56,7 @@ class User {
         $hashed = password_hash($password, PASSWORD_BCRYPT);
 
         // insert into users table
-        $stmt = $this->pdo->prepare("INSERT INTO users (user_ID, name, email, password, role, status) VALUES (?, ?, ?, ?, ?, 'inactive')");
+        $stmt = $this->pdo->prepare("INSERT INTO users (user_ID, name, email, password, role, status) VALUES (?, ?, ?, ?, ?, 'pending')");
         $stmt->execute([$user_ID, $name, $email, $hashed, $role]);
 
         // if student insert into student table

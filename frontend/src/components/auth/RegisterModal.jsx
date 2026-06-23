@@ -152,13 +152,13 @@ const RegisterModal = ({ isOpen, onClose }) => {
                 <div className="p-1 rounded-full bg-white/10 mt-0.5">
                   <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-emerald-50">Build a real-world portfolio</span>
+                <span className="text-lg font-medium text-emerald-50">Build your reputation</span>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1 rounded-full bg-white/10 mt-0.5">
                   <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-emerald-50 leading-snug">Connect with leading businesses</span>
+                <span className="text-lg font-medium text-emerald-50 leading-snug">Connect with local clients</span>
               </div>
             </div>
 
@@ -423,7 +423,7 @@ const RegisterModal = ({ isOpen, onClose }) => {
                         </p>
                       </div>
                     </div>
-                    <button type="button" onClick={onClose} className="w-full bg-slate-900 hover:bg-black text-white py-3.5 rounded-lg font-bold text-sm flex items-center justify-center transition-all mt-4">
+                    <button type="button" onClick={onClose} className="w-full bg-primary hover:bg-primary-dark text-white py-3.5 rounded-lg font-bold text-sm flex items-center justify-center transition-all mt-4">
                       Return to Home
                     </button>
                   </motion.div>

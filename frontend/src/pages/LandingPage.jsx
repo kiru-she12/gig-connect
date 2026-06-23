@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Filter, ArrowRight, CheckCircle, Zap, Shield, Users, DollarSign, Briefcase, PlusCircle, User, Calendar, MapPin, Clock, ChevronDown, GraduationCap, Star, Play, Pause, Sparkles, Truck, MessageSquare, Percent, CheckCircle2 } from 'lucide-react';
+import { Search, Filter, ArrowRight, CheckCircle, Zap, Shield, Users, DollarSign, Briefcase, PlusCircle, User, Calendar, MapPin, Clock, ChevronDown, GraduationCap, Star, Play, Pause, Sparkles, Truck, MessageSquare, Percent, CheckCircle2, Heart, PenTool } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
+import Footer from '../components/layout/Footer';
 import JobCard from '../components/shared/JobCard';
 import { INITIAL_JOBS } from '../data/mockData';
 import { useJobs } from '../context/JobsContext';
@@ -8,7 +9,53 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
-import studentImg from '../indian_student_laptop_green.png';
+import studentImg from '../assets/images/students-group.jpg';
+import studentBenchImg from '../assets/images/student-bench.jpg';
+import studentsStudying from '../assets/images/students-studying.jpg';
+import heroChef from '../assets/images/hero-chef.jpg';
+import heroVideo from '../assets/images/hero-video.jpg';
+import heroAuditorium from '../assets/images/hero-auditorium.jpg';
+import chefsEvent from '../assets/images/chefs-event.jpg';
+
+const getCategoryIcon = (category, title) => {
+  const t = (title || '').toLowerCase();
+  const c = (category || '').toLowerCase();
+  
+  if (c.includes('design') || t.includes('design') || t.includes('graphic')) {
+    return {
+      icon: <PenTool size={20} className="text-violet-600" />,
+      bg: 'bg-violet-100'
+    };
+  }
+  if (c.includes('web') || c.includes('dev') || t.includes('web') || t.includes('developer') || t.includes('code')) {
+    return {
+      icon: <Briefcase size={20} className="text-blue-600" />,
+      bg: 'bg-blue-100'
+    };
+  }
+  if (c.includes('photo') || t.includes('photo') || t.includes('video')) {
+    return {
+      icon: <Sparkles size={20} className="text-pink-600" />,
+      bg: 'bg-pink-100'
+    };
+  }
+  if (c.includes('data') || t.includes('data') || t.includes('entry') || t.includes('excel')) {
+    return {
+      icon: <CheckCircle size={20} className="text-amber-600" />,
+      bg: 'bg-amber-100'
+    };
+  }
+  if (c.includes('academic') || c.includes('tutor') || t.includes('tutor') || t.includes('teach')) {
+    return {
+      icon: <GraduationCap size={20} className="text-emerald-600" />,
+      bg: 'bg-emerald-100'
+    };
+  }
+  return {
+    icon: <Briefcase size={20} className="text-slate-600" />,
+    bg: 'bg-slate-100'
+  };
+};
 
 const DetailedStudentJobCard = ({ job, onApply, applied = false, matchScore = null, isRecommended = false }) => {
   return (
@@ -314,18 +361,18 @@ const LandingPage = () => {
 
   const heroSlides = [
     {
-      image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1471&auto=format&fit=crop",
+      image: heroChef,
       subtitle: "Find Flexible Jobs",
       title: "Earn while you learn\nat University"
     },
     {
-      image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80",
+      image: heroVideo,
       subtitle: "Build Your Portfolio",
       title: "Real projects for\nreal clients"
     },
     {
-      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80",
-      image2: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80",
+      image: heroAuditorium,
+      image2: heroAuditorium,
       subtitle: "Campus Connections",
       title: "Network with local\nbusinesses"
     }
@@ -519,27 +566,24 @@ const LandingPage = () => {
 
         {/* Hero Section Container */}
         <section id="home" className="max-w-7xl mx-auto w-full px-6 sm:px-10 lg:px-16 py-8 relative">
-          <div className="bg-[#D1EBE1] rounded-[2.5rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden flex flex-col lg:flex-row items-center gap-12 min-h-[550px] shadow-lg border border-[#4E8C7E]/25">
+          <div className="bg-gradient-to-br from-[#0ABAB5] via-[#099A95] to-[#07807D] rounded-[2.5rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between min-h-[450px] shadow-2xl border border-white/10 gap-8 text-left">
             {/* Outlined text in background */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
-              <span className="text-[12vw] font-black text-[#1A312C]/5 uppercase tracking-widest font-sans leading-none">
+            <div className="absolute inset-0 flex items-center justify-start pl-8 sm:pl-16 pointer-events-none select-none overflow-hidden">
+              <span className="text-[15vw] font-black text-white/[0.07] uppercase tracking-widest font-sans leading-none select-none">
                 STUDENT
               </span>
             </div>
 
-            {/* Left Content Column */}
-            <div className="relative z-10 flex-1 w-full lg:max-w-2xl text-left">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-black tracking-tight leading-none mb-4 uppercase text-[#1A312C]">
+            {/* Content Column */}
+            <div className="relative z-10 w-full md:w-3/5 flex flex-col items-start">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-black tracking-tight leading-none mb-6 uppercase text-white">
                 Welcome back, <br />
-                <span className="font-serif italic font-normal text-[#4E8C7E]">{user.name.split(' ')[0]}</span>! 👋
+                <span className="font-serif italic font-normal text-white">{user.name.split(' ')[0]}</span>! 👋
               </h1>
-              <p className="text-[#1A312C]/80 text-base sm:text-lg font-medium max-w-xl">
-                Find high-quality Jobs opportunities matching your skill set and study schedule.
-              </p>
 
               {/* Integrated Search Input */}
-              <div className="w-full max-w-xl bg-white rounded-2xl p-2.5 flex items-center shadow-xl border border-slate-200/50 mt-8 mb-4">
-                <Search className="ml-4 text-slate-400 flex-shrink-0" size={18} />
+              <div className="w-full max-w-md bg-white rounded-full p-1.5 pl-4 flex items-center shadow-2xl border border-white/5 mb-4 transition-all focus-within:ring-2 focus-within:ring-white/20">
+                <Search className="text-slate-400 flex-shrink-0" size={18} />
                 <input
                   type="text"
                   value={searchTerm}
@@ -552,91 +596,84 @@ const LandingPage = () => {
                   placeholder="Search for any service or gig..."
                   className="w-full bg-transparent border-0 outline-none text-slate-800 px-3 text-xs sm:text-sm placeholder:text-slate-400 font-medium"
                 />
-                <div className="flex items-center gap-2 pr-1">
-                  <button
-                    onClick={handleSearchSubmit}
-                    className="px-6 py-2.5 bg-[#1A312C] text-white rounded-xl text-xs font-bold hover:bg-[#4E8C7E] transition-all active:scale-95 whitespace-nowrap"
-                  >
-                    Search
-                  </button>
-                </div>
+                <button
+                  onClick={handleSearchSubmit}
+                  className="w-10 h-10 bg-[#1A312C] text-white rounded-full flex items-center justify-center hover:bg-[#4E8C7E] transition-all active:scale-95 flex-shrink-0"
+                >
+                  <ArrowRight size={18} />
+                </button>
               </div>
 
               {/* Popular tags list */}
-              <div className="flex flex-wrap items-center gap-1.5 text-[#1A312C]/90">
-                <span className="font-bold opacity-90 mr-1 text-[#1A312C]">Popular skills:</span>
+              <div className="flex flex-wrap items-center gap-1.5 text-white/90 mb-6">
+                <span className="font-bold opacity-90 mr-1 text-white text-xs">Popular skills:</span>
                 {['All', 'Design', 'Data Entry', 'Photography', 'Web Dev', 'Translation'].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => {
                       navigate('/jobs', { state: { category: cat } });
                     }}
-                    className="px-3 py-1 rounded-full border text-[11px] font-bold transition-all whitespace-nowrap bg-white text-[#1A312C] border-[#1A312C]/20 hover:bg-[#1A312C] hover:text-white"
+                    className="px-3.5 py-1.5 rounded-full border text-[11px] font-bold transition-all whitespace-nowrap bg-white/20 text-white border-white/10 hover:bg-white hover:text-[#0ABAB5]"
                   >
                     {cat}
                   </button>
                 ))}
               </div>
+
+              {/* Description */}
+              <p className="text-white/90 text-sm sm:text-base font-medium max-w-md leading-relaxed">
+                Find high-quality Jobs opportunities matching your skill set and study schedule.
+              </p>
             </div>
 
-            {/* Right Student Image & Floating Cards Column */}
-            <div className="relative z-10 flex-shrink-0 w-full lg:w-96 flex items-center justify-center lg:justify-end mt-8 lg:mt-0">
-              <div className="relative w-64 h-64 sm:w-80 sm:h-80 rounded-[3rem] overflow-hidden border-4 border-white/80 shadow-2xl">
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80"
-                  alt="Student working"
-                  className="w-full h-full object-cover"
-                />
+            {/* Right Column / Rating Box */}
+            <div className="relative z-10 w-full md:w-auto flex flex-col items-center justify-center flex-shrink-0">
+              <div className="bg-slate-900/60 backdrop-blur-md rounded-[2rem] p-6 shadow-2xl border border-white/10 flex flex-col gap-5 w-full min-w-[260px] max-w-[280px] text-left animate-fadeIn">
+                {/* Item 1: Profile Status */}
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-[#89D7B7]/10 rounded-full flex items-center justify-center flex-shrink-0 text-[#89D7B7]">
+                    {studentRating > 0 ? <Zap size={18} /> : <Sparkles size={18} />}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white leading-tight">
+                      {studentRating > 0 ? "Experienced Student" : "New Student"}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                      {studentRating > 0 ? "Active profile" : "Fresh account"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Item 2: Rating */}
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center flex-shrink-0 text-amber-400">
+                    <Star className="fill-amber-400 text-amber-400" size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white leading-tight">
+                      {studentRating > 0 ? `${studentRating.toFixed(1)} / 5.0 Rating` : "No Ratings Yet"}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                      {studentRating > 0 ? "High performance" : "Start your first gig"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Item 3: Completed Gigs */}
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center flex-shrink-0 text-emerald-400">
+                    <Briefcase size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white leading-tight">
+                      {completedCount} Gigs Completed
+                    </h4>
+                    <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                      {completedCount > 0 ? "Completed works" : "Ready to hire"}
+                    </p>
+                  </div>
+                </div>
               </div>
-
-              {/* Floating Pill 1: Student Tag */}
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-4 -left-4 bg-white border border-slate-100 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 animate-float"
-              >
-                <div className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center font-bold text-xs">
-                  {user.name.charAt(0)}
-                </div>
-                <div>
-                  <h4 className="text-[11px] font-black text-slate-900 leading-none">{user.name.split(' ')[0]}</h4>
-                  <p className="text-[9px] text-slate-400 font-bold mt-1">UWU Student</p>
-                </div>
-              </motion.div>
-
-              {/* Floating Pill 2: Gigs completed */}
-              <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                className="absolute top-24 -right-4 bg-white border border-slate-100 rounded-2xl p-3 shadow-xl flex items-center gap-2 animate-float-delayed"
-              >
-                <div className="w-6 h-6 rounded-full bg-[#89D7B7]/25 text-[#1A312C] flex items-center justify-center font-bold text-xs">
-                  ✓
-                </div>
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-900 leading-none">{completedCount}+ Gigs</h4>
-                  <p className="text-[8px] text-slate-400 font-bold mt-0.5">Completed</p>
-                </div>
-              </motion.div>
-
-              {/* Floating Pill 3: Standing/Rating */}
-              <motion.div
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute -bottom-4 left-6 bg-white border border-slate-100 rounded-2xl p-3 shadow-xl flex items-center gap-2"
-              >
-                <div className="w-6 h-6 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-[10px]">
-                  ★
-                </div>
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-900 leading-none">
-                    {studentRating === 0 ? 'New' : studentRating.toFixed(2)} Rating
-                  </h4>
-                  <p className="text-[8px] text-slate-400 font-bold mt-0.5">
-                    {noShows > 0 ? `-${noShows * 1.5} Penalty` : 'Top Standing'}
-                  </p>
-                </div>
-              </motion.div>
             </div>
           </div>
         </section>
@@ -687,84 +724,114 @@ const LandingPage = () => {
                 {backendRecs.slice(0, 8).map((job, idx) => {
                   const matchPct = job.match_score || 0;
                   const alreadyApplied = (applications || []).some(a => a.job_ID === job.job_ID);
+                  const iconStyle = getCategoryIcon(job.category, job.title);
 
                   return (
                     <div
                       key={`${job.job_ID || job.id}-${idx}`}
-                      className="bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group"
+                      className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group p-6 relative overflow-hidden"
                     >
-                      {/* Card Content */}
-                      <div className="p-6 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-accent/20 px-2.5 py-1 rounded-full">
-                              {job.job_type}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] font-black text-slate-800 bg-primary-light border border-slate-200 px-2 py-0.5 rounded-full">{matchPct}% Match</span>
-                            </div>
-                          </div>
+                      {/* Heart Icon at Top Right */}
+                      <button className="absolute top-6 right-6 p-1.5 rounded-full hover:bg-slate-50 transition-colors text-slate-300 hover:text-rose-500 z-20">
+                        <Heart size={18} />
+                      </button>
 
-                          <h3 className="font-heading font-black text-base text-slate-900 group-hover:text-[#89D7B7] transition-colors leading-snug line-clamp-2">
+                      {/* Header Row: Logo & Title/Details */}
+                      <div className="flex items-start gap-4">
+                        {/* Rounded Icon Box */}
+                        <div className={`w-12 h-12 rounded-2xl ${iconStyle.bg} flex items-center justify-center shrink-0 shadow-sm`}>
+                          {iconStyle.icon}
+                        </div>
+                        {/* Title and Client Info */}
+                        <div className="pr-6">
+                          <h3 className="font-heading font-black text-sm text-slate-800 group-hover:text-[#4E8C7E] transition-colors leading-snug line-clamp-2">
                             {job.title}
                           </h3>
+                          <div className="text-[11px] text-slate-400 font-bold mt-1 flex items-center gap-1 flex-wrap">
+                            <span>{job.provider_name || 'Client'}</span>
+                            {job.provider_email && (
+                              <span className="text-slate-300 text-[9px] font-normal">({job.provider_email})</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
 
-                          <p className="text-[#4E8C7E] font-extrabold text-sm mt-2">
+                      {/* Badges / Tags Row */}
+                      <div className="flex flex-wrap gap-1.5 mt-4">
+                        {/* Job Type Badge */}
+                        <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border border-transparent ${
+                          (job.job_type || '').toLowerCase() === 'remote'
+                            ? 'bg-blue-50 text-blue-600'
+                            : 'bg-amber-50 text-amber-600'
+                        }`}>
+                          {job.job_type}
+                        </span>
+
+                        {/* Match Percentage */}
+                        <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-transparent">
+                          {matchPct}% Match
+                        </span>
+
+                        {/* Reasons tags */}
+                        {job.match_reasons && job.match_reasons.slice(0, 1).map((reason, i) => {
+                          const isPref = reason.toLowerCase().includes('pref');
+                          return (
+                            <span key={i} className={`text-[9px] font-black px-2.5 py-1 rounded-full border border-transparent ${
+                              isPref ? 'bg-indigo-50 text-indigo-600' : 'bg-pink-50 text-pink-600'
+                            }`}>
+                              {reason}
+                            </span>
+                          );
+                        })}
+
+                        {/* Skills */}
+                        {(job.skills ? job.skills.split(',').slice(0, 2) : []).map((s, i) => (
+                          <span key={i} className="text-[9px] font-black bg-slate-50 text-slate-500 px-2.5 py-1 rounded-full border border-transparent">
+                            {s.trim()}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Schedule info if exists */}
+                      {job.job_date && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold mt-3.5 bg-slate-50/60 p-2.5 rounded-xl border border-slate-100/50">
+                          <Calendar size={13} className="text-slate-400 shrink-0" />
+                          <span className="text-slate-600">
+                            {job.job_date} @ {job.start_time} - {job.end_time}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Divider line */}
+                      <div className="border-t border-slate-100 my-4"></div>
+
+                      {/* Footer Row: Price & Action button */}
+                      <div className="flex items-center justify-between mt-auto">
+                        <div>
+                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Salary</div>
+                          <div className="text-sm font-black text-slate-800">
                             LKR {parseFloat(job.payment || 0).toLocaleString()}
-                          </p>
-
-                          {/* Client & Date / Time */}
-                          <div className="mt-3 text-[11px] font-semibold text-slate-500 space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            {job.provider_name && (
-                              <div className="flex items-center gap-1 flex-wrap">
-                                <span className="font-bold text-slate-700">Client:</span>
-                                <span className="text-slate-600">{job.provider_name}</span>
-                                {job.provider_email && (
-                                  <span className="text-slate-400 text-[9px] font-normal">({job.provider_email})</span>
-                                )}
-                              </div>
-                            )}
-                            {job.job_date && (
-                              <div className="flex items-center gap-1 text-slate-500 font-medium">
-                                <span className="font-bold text-slate-700">Schedule:</span>
-                                <span className="text-slate-600">{job.job_date} @ {job.start_time} - {job.end_time}</span>
-                              </div>
-                            )}
                           </div>
+                        </div>
 
-                          {/* Reason tags */}
-                          {job.match_reasons && (
-                            <div className="flex flex-wrap gap-1 mt-3">
-                              {job.match_reasons.slice(0, 2).map((reason, i) => (
-                                <span key={i} className="text-[9px] font-bold bg-white text-[#1A312C] border border-[#4E8C7E]/25 px-2 py-0.5 rounded-full">
-                                  {reason}
-                                </span>
-                              ))}
-                            </div>
+                        <button
+                          onClick={() => handleApplyJobClick()}
+                          disabled={alreadyApplied}
+                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5 ${
+                            alreadyApplied
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                              : 'bg-[#1A312C] text-white hover:bg-[#4E8C7E] hover:shadow-md'
+                          }`}
+                        >
+                          {alreadyApplied ? (
+                            'Applied'
+                          ) : (
+                            <>
+                              <span>Quick Apply</span>
+                              <ArrowRight size={12} />
+                            </>
                           )}
-
-                          {/* Skills */}
-                          <div className="flex flex-wrap gap-1 mt-3">
-                            {(job.skills ? job.skills.split(',').slice(0, 3) : []).map((s, i) => (
-                              <span key={i} className="text-[9px] font-bold bg-slate-50 text-slate-500 px-2 py-0.5 rounded border border-slate-100">
-                                {s.trim()}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                          <button
-                            onClick={() => handleApplyJobClick()}
-                            disabled={alreadyApplied}
-                            className={`flex items-center gap-1 text-[11px] font-black uppercase tracking-wider transition-all ${alreadyApplied
-                                ? 'text-slate-400 cursor-not-allowed'
-                                : 'text-slate-900 hover:text-[#4E8C7E] group-hover:translate-x-1'
-                              }`}
-                          >
-                            {alreadyApplied ? 'Applied' : <><span>Quick Apply</span><ArrowRight size={12} className="inline ml-1" /></>}
-                          </button>
-                        </div>
+                        </button>
                       </div>
                     </div>
                   );
@@ -776,7 +843,7 @@ const LandingPage = () => {
           {/* ── MID-PAGE BANNER (Outstanding Workmanship) ── */}
           <section className="relative rounded-[2.5rem] overflow-hidden bg-black min-h-[400px] flex items-end shadow-lg">
             <img
-              src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80"
+              src={studentsStudying}
               alt="Students collaborating"
               className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-luminosity"
             />
@@ -801,8 +868,8 @@ const LandingPage = () => {
             <div className="lg:col-span-5 relative flex justify-center">
               <div className="relative w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-lg border border-slate-200">
                 <img
-                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80"
-                  alt="Student collaborating"
+                  src={chefsEvent}
+                  alt="Chefs event"
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-slate-900/10"></div>
@@ -856,67 +923,32 @@ const LandingPage = () => {
           </section>
 
           {/* ── TESTIMONIALS (What Our Customers Say) ── */}
-          <section className="bg-white rounded-[2.5rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 text-[#1A312C] shadow-md border border-[#4E8C7E]/20">
+          <section className="bg-[#EAF5EF] rounded-[2.5rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 text-[#1A312C] shadow-md border border-[#4E8C7E]/20">
             <div className="max-w-2xl">
-              <span className="text-5xl font-serif italic opacity-30">“</span>
-              <p className="text-lg sm:text-xl font-bold leading-relaxed -mt-4 text-slate-900">
+              <span className="text-5xl font-serif italic opacity-50 text-[#4E8C7E]">“</span>
+              <p className="text-lg sm:text-xl font-bold leading-relaxed -mt-4 text-[#1A312C]">
                 I hired a student tour guide through GigConnect for my trip to Ella. She was incredibly knowledgeable, showing us hidden waterfalls and viewpoints we never would have found otherwise. It was a truly unforgettable experience!
               </p>
 
               <div className="flex items-center gap-3 mt-8">
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold text-slate-900">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold text-[#1A312C] border border-[#4E8C7E]/20">
                   O
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-slate-900 leading-none">Oliver Bennett</h4>
-                  <p className="text-[10px] text-slate-700 font-bold mt-1">Tourist from United Kingdom</p>
+                  <h4 className="text-xs font-black text-[#1A312C] leading-none">Oliver Bennett</h4>
+                  <p className="text-[10px] text-[#4E8C7E] font-bold mt-1">Tourist from United Kingdom</p>
                 </div>
               </div>
             </div>
 
             <div className="flex-shrink-0">
-              <h3 className="font-heading font-black text-2xl sm:text-3xl text-slate-950 tracking-tight max-w-[200px] uppercase leading-none text-right md:text-left">
+              <h3 className="font-heading font-black text-2xl sm:text-3xl text-[#1A312C] tracking-tight max-w-[200px] uppercase leading-none text-right md:text-left">
                 What our customers say
               </h3>
             </div>
           </section>
 
-          {/* ── TOP RATED STUDENTS / EXPERIENCED FREELANCE ── */}
-          <section className="flex flex-col lg:flex-row items-center justify-between gap-12 py-6">
-            <div className="max-w-md">
-              <div className="text-yellow-500 text-sm font-bold mb-2">★★★★★</div>
-              <h3 className="font-heading font-black text-3xl sm:text-4xl text-slate-900 tracking-tight uppercase leading-none mb-4">
-                Experienced Gigs
-              </h3>
-              <p className="text-slate-500 text-sm leading-relaxed mb-6 font-light">
-                Our platform features talented student freelancers who possess a deep understanding of their craft, delivering top-quality work that exceeds expectations.
-              </p>
-              <button
-                onClick={() => document.getElementById('browse').scrollIntoView({ behavior: 'smooth' })}
-                className="px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-full text-xs font-bold transition-all"
-              >
-                Start Finding
-              </button>
-            </div>
 
-            {/* Grid of student avatars */}
-            <div className="grid grid-cols-4 gap-4 sm:gap-6 flex-shrink-0">
-              {[
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-                'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
-                'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80',
-                'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
-                'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
-                'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80'
-              ].map((url, idx) => (
-                <div key={idx} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-white shadow-md hover:scale-110 transition-transform">
-                  <img src={url} alt="Student Profile" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-          </section>
 
           {/* ── GENERAL OPPORTUNITIES SECTION ── */}
           <section className="pt-8 border-t border-slate-200">
@@ -934,17 +966,29 @@ const LandingPage = () => {
                 No general gigs match your filters.
               </div>
             ) : (
-              <div className="flex flex-col gap-6">
-                {generalGigs.map((job, idx) => (
-                  <DetailedStudentJobCard
-                    key={`${job.id}-${idx}`}
-                    job={job}
-                    applied={studentApps.some(a => a.jobId === job.id)}
-                    matchScore={0}
-                    isRecommended={false}
-                    onApply={(id) => applyForJob(id, user.id)}
-                  />
-                ))}
+              <div className="space-y-6">
+                <div className="flex flex-col gap-6">
+                  {generalGigs.slice(0, 5).map((job, idx) => (
+                    <DetailedStudentJobCard
+                      key={`${job.id}-${idx}`}
+                      job={job}
+                      applied={studentApps.some(a => a.jobId === job.id)}
+                      matchScore={0}
+                      isRecommended={false}
+                      onApply={(id) => applyForJob(id, user.id)}
+                    />
+                  ))}
+                </div>
+
+                <div className="flex justify-center pt-4">
+                  <Link
+                    to="/jobs"
+                    className="px-8 py-3.5 bg-[#1A312C] text-white font-bold text-xs uppercase tracking-wider rounded-full hover:bg-[#4E8C7E] hover:shadow-md transition-all active:scale-95 duration-200 flex items-center gap-2"
+                  >
+                    <span>View All General Opportunities</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
               </div>
             )}
           </section>
@@ -974,60 +1018,134 @@ const LandingPage = () => {
             </div>
 
             {/* Steps Timeline Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-24">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24">
               {[
                 {
                   step: '01',
                   title: 'Register with UWU Email',
-                  desc: 'Sign up using your @std.uwu.ac.lk email and verify with OTP. Your account gets approved by admin within 24 hours.'
+                  desc: 'Sign up using your @std.uwu.ac.lk email and verify with OTP. Your account gets approved by admin within 24 hours.',
+                  bg: 'bg-[#FFEFE6]', // Peach
+                  border: 'border-[#FFD7C2]/30',
+                  logoText: 'R',
+                  label: 'Student Registry',
+                  tags: ['OTP Verification', 'Admin Review', '24h Approval'],
+                  rate: 'LKR 0 Fees',
+                  location: 'Online Portal'
                 },
                 {
                   step: '02',
                   title: 'Build Your Profile',
-                  desc: 'Add your skills, availability, and preferences so the system can match you with the right jobs.'
+                  desc: 'Add your skills, availability, and preferences so the system can match you with the right jobs.',
+                  bg: 'bg-[#EBF8F5]', // Mint
+                  border: 'border-[#C2EDE2]/30',
+                  logoText: 'P',
+                  label: 'Skill Showcase',
+                  tags: ['Skills List', 'Availability', 'Preferences'],
+                  rate: '100% Free',
+                  location: 'Dashboard Setup'
                 },
                 {
                   step: '03',
-                  title: 'Browse or Get Recommendations',
-                  desc: 'Search jobs by category, payment, and location, or check your personalized "Recommended for You" section.'
+                  title: 'Browse Recommendations',
+                  desc: 'Search jobs by category, payment, and location, or check your personalized "Recommended for You" section.',
+                  bg: 'bg-[#F4F0FF]', // Lavender
+                  border: 'border-[#E5D9FF]/30',
+                  logoText: 'B',
+                  label: 'Job Discovery',
+                  tags: ['Smart Match', 'Custom Filters', 'Live Feeds'],
+                  rate: '100+ Live Gigs',
+                  location: 'Campus Wide'
                 },
                 {
                   step: '04',
                   title: 'Apply & Get Shortlisted',
-                  desc: 'Apply with one click. Clients review your profile, skills, and ratings to shortlist candidates.'
+                  desc: 'Apply with one click. Clients review your profile, skills, and ratings to shortlist candidates.',
+                  bg: 'bg-[#EEF5FC]', // Light Blue
+                  border: 'border-[#D0E2F7]/30',
+                  logoText: 'A',
+                  label: 'Application Flow',
+                  tags: ['One-Click', 'Shortlisting', 'Fast Process'],
+                  rate: 'Direct Contact',
+                  location: 'Instant Alert'
                 },
                 {
                   step: '05',
                   title: 'Work & Earn',
-                  desc: 'Once accepted, complete the job on your schedule. For product-based jobs, choose self-delivery or let our Delivery Staff handle it.'
+                  desc: 'Once accepted, complete the job on your schedule. Choose self-delivery or let our Delivery Staff handle it.',
+                  bg: 'bg-[#FFF0F6]', // Pink
+                  border: 'border-[#FFD3E8]/30',
+                  logoText: 'W',
+                  label: 'Active Gigs',
+                  tags: ['Flexible Hours', 'Self-Delivery', 'Gig Tracking'],
+                  rate: 'On-Demand',
+                  location: 'UWU Campus'
                 },
                 {
                   step: '06',
                   title: 'Get Paid & Rated',
-                  desc: 'Receive payment, leave a review for the client, and build your rating for future opportunities.'
+                  desc: 'Receive payment, leave a review for the client, and build your rating for future opportunities.',
+                  bg: 'bg-[#F8F9FA]', // Grey
+                  border: 'border-[#E9ECEF]/30',
+                  logoText: 'E',
+                  label: 'Direct Payments',
+                  tags: ['Secure Pay', 'Client Reviews', 'Rating Boost'],
+                  rate: 'Instant Deposit',
+                  location: '5-Star System'
                 }
               ].map((item, idx) => (
                 <div
                   key={idx}
-                  className="bg-white border border-[#4E8C7E]/20 rounded-3xl p-8 hover:border-accent hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
+                  className={`${item.bg} border ${item.border} rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[350px] group`}
                 >
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-accent/20 to-transparent rounded-bl-full opacity-55"></div>
+                  <div>
+                    {/* Card Top Row: Date style pill & Bookmark */}
+                    <div className="flex items-center justify-between mb-5">
+                      <span className="px-3 py-1 bg-white text-slate-800 text-[10px] font-bold rounded-full shadow-sm border border-slate-100">
+                        Step {item.step}
+                      </span>
+                      <button className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors shadow-sm border border-slate-100">
+                        <Heart size={14} className="fill-transparent group-hover:fill-red-400 group-hover:text-red-400 transition-all" />
+                      </button>
+                    </div>
 
-                  <div className="flex justify-between items-center mb-6">
-                    <span className="text-4xl font-extrabold text-accent font-sans tracking-tight">
-                      {item.step}
-                    </span>
-                    <div className="w-10 h-10 rounded-xl bg-white border border-[#4E8C7E]/20 text-[#1A312C] group-hover:bg-accent group-hover:text-white transition-colors">
-                      <Sparkles size={16} />
+                    {/* Card Company & Logo Row */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-xs font-bold text-slate-500">{item.label}</span>
+                      <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                        {item.logoText}
+                      </div>
+                    </div>
+
+                    {/* Card Title & Description */}
+                    <div className="mb-4 space-y-2">
+                      <h3 className="font-heading font-black text-lg text-slate-900 group-hover:text-[#4E8C7E] transition-colors leading-tight">
+                        {item.title}
+                      </h3>
+                      <p className="text-slate-600 text-xs leading-relaxed font-semibold">
+                        {item.desc}
+                      </p>
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-bold text-primary group-hover:text-[#4E8C7E] transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-[#4E8C7E] text-sm leading-relaxed font-light">
-                    {item.desc}
-                  </p>
+                  <div>
+                    {/* Card Tags List */}
+                    <div className="flex flex-wrap gap-1.5 mb-5">
+                      {item.tags.map((tag, tagIdx) => (
+                        <span
+                          key={tagIdx}
+                          className="px-2.5 py-1 bg-white/70 text-slate-700 text-[9px] font-extrabold rounded-full border border-slate-200/50"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Card Bottom Row: Rate & Location */}
+                    <div className="pt-4 border-t border-slate-200/40">
+                      <p className="text-[11px] font-black text-slate-800 leading-tight">{item.rate}</p>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{item.location}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1073,47 +1191,7 @@ const LandingPage = () => {
         </div>
 
         {/* Dark Footer */}
-        <footer className="bg-black pt-16 pb-8 relative overflow-hidden text-white">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.02] pointer-events-none"></div>
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#89D7B7]/5 rounded-full blur-[150px] pointer-events-none"></div>
-
-          <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-16">
-              <div className="col-span-1 md:col-span-2">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-2xl font-heading font-black text-white tracking-tight">GigConnect</span>
-                </div>
-                <p className="text-slate-400 text-sm leading-relaxed max-w-sm font-light">
-                  Empowering university students to build their careers, gain real-world experience, and connect with top businesses.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="text-white font-black mb-6 tracking-wide">Platform</h4>
-                <ul className="space-y-4 text-sm text-slate-400 font-light">
-                  <li><a href="#home" className="hover:text-white transition-colors">Home</a></li>
-                  <li><a href="#browse" className="hover:text-white transition-colors">Browse Gigs</a></li>
-                  <li><a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a></li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-white font-black mb-6 tracking-wide">Legal</h4>
-                <ul className="space-y-4 text-sm text-slate-400 font-light">
-                  <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                  <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-                  <li><a href="mailto:gigconnectsystem@gmail.com" className="hover:text-white transition-colors">Contact Support</a></li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-slate-500 text-sm font-light">
-                &copy; {new Date().getFullYear()} GigConnect. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </footer>
+        <Footer />
       </div>
     );
   }
@@ -1439,7 +1517,7 @@ const LandingPage = () => {
                   transition={{ duration: 0.5 }}
                 >
                   <img
-                    src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80"
+                    src={studentBenchImg}
                     alt="Heritage Campus"
                     className="w-full h-full object-cover aspect-[3/4] transition-all duration-700 group-hover:scale-105"
                   />
@@ -1633,7 +1711,7 @@ const LandingPage = () => {
               onClick={() => navigate('/jobs')}
               className="inline-flex items-center gap-2 text-slate-400 font-bold hover:text-white transition-all group"
             >
-              <span className="text-base">Explore all 150+ active gigs</span>
+              <span className="text-base">Explore all</span>
               <ChevronDown size={20} className="group-hover:translate-y-1 transition-transform" />
             </button>
           </div>
@@ -1801,6 +1879,36 @@ const LandingPage = () => {
         </div>
       </div>
 
+      {/* ── TESTIMONIALS (What Our Customers Say) ── */}
+      <section className="py-10 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
+          <div className="bg-[#EAF5EF] rounded-[2.5rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 text-[#1A312C] shadow-md border border-[#4E8C7E]/20">
+            <div className="max-w-2xl text-left">
+              <span className="text-5xl font-serif italic opacity-50 text-[#4E8C7E]">“</span>
+              <p className="text-lg sm:text-xl font-bold leading-relaxed -mt-4 text-[#1A312C]">
+                I hired a student tour guide through GigConnect for my trip to Ella. She was incredibly knowledgeable, showing us hidden waterfalls and viewpoints we never would have found otherwise. It was a truly unforgettable experience!
+              </p>
+
+              <div className="flex items-center gap-3 mt-8">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold text-[#1A312C] border border-[#4E8C7E]/20">
+                  O
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-[#1A312C] leading-none">Oliver Bennett</h4>
+                  <p className="text-[10px] text-[#4E8C7E] font-bold mt-1">Tourist from United Kingdom</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0 text-left md:text-right">
+              <h3 className="font-heading font-black text-2xl sm:text-3xl text-[#1A312C] tracking-tight max-w-[200px] uppercase leading-none">
+                What our customers say
+              </h3>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Achieve More, Together Section (with original content) */}
       <section className="mx-6 sm:mx-10 lg:mx-16 my-20 relative">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-0 items-center relative min-h-[500px]">
@@ -1857,51 +1965,7 @@ const LandingPage = () => {
       </section>
 
       {/* Dark Footer */}
-      <footer className="bg-black pt-20 pb-10 relative overflow-hidden text-white">
-        {/* Subtle background texture */}
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.03] pointer-events-none"></div>
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#89D7B7]/5 rounded-full blur-[150px] pointer-events-none"></div>
-
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-16">
-            {/* Brand */}
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-2xl font-heading font-black text-white tracking-tight">GigConnect</span>
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed max-w-sm font-light">
-                Empowering university students to build their careers, gain real-world experience, and connect with top businesses.
-              </p>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h4 className="text-white font-black mb-6 tracking-wide">Platform</h4>
-              <ul className="space-y-4 text-sm text-slate-400 font-light">
-                <li><a href="#home" className="hover:text-white transition-colors">Home</a></li>
-                <li><a href="#about" className="hover:text-white transition-colors">Our Heritage</a></li>
-                <li><a href="#jobs" className="hover:text-white transition-colors">Opportunities</a></li>
-              </ul>
-            </div>
-
-            {/* Legal / Contact */}
-            <div>
-              <h4 className="text-white font-black mb-6 tracking-wide">Legal</h4>
-              <ul className="space-y-4 text-sm text-slate-400 font-light">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="mailto:gigconnectsystem@gmail.com" className="hover:text-white transition-colors">Contact Support</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-slate-500 text-sm font-light">
-              &copy; {new Date().getFullYear()} GigConnect. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Warning Modal */}
       <AnimatePresence>

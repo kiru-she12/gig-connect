@@ -281,35 +281,7 @@ const StudentDashboard = () => {
 
   return (
     <DashboardLayout role="student">
-      {/* Timer Warning Banner */}
-      {activeApps.length > 0 && (
-        <div className={`p-5 mb-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between border transition-all animate-bounce ${
-          timeLeft === 0 
-            ? 'bg-rose-50 border-rose-200 text-rose-800' 
-            : 'bg-amber-50 border-amber-200 text-amber-800'
-        }`}>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🚨</span>
-            <div>
-              <h4 className="font-bold text-sm">Action Required: Job Completion</h4>
-              <p className="text-xs mt-0.5">
-                {timeLeft === 0 
-                  ? `Completion timer EXPIRED for "${activeApps[0].job_title}". Alert escalated to admin & managers.` 
-                  : `Please mark "${activeApps[0].job_title}" as complete. Time left: ${timeLeft} seconds.`
-                }
-              </p>
-            </div>
-          </div>
-          {timeLeft > 0 && (
-            <button 
-              onClick={() => handleMarkAsComplete(activeApps[0].application_ID)}
-              className="mt-3 md:mt-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow transition-all self-start md:self-auto"
-            >
-              Mark as Complete
-            </button>
-          )}
-        </div>
-      )}
+
 
       {/* Manual Refresh Button */}
       <div className="flex justify-end mb-4">
@@ -432,7 +404,7 @@ const StudentDashboard = () => {
                         onClick={() => setDeliveryType('self')}
                         className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1.5 ${
                           deliveryType === 'self'
-                            ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                            ? 'bg-primary border-primary text-white shadow-sm'
                             : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                       >
@@ -444,7 +416,7 @@ const StudentDashboard = () => {
                         onClick={() => setDeliveryType('platform')}
                         className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1.5 ${
                           deliveryType === 'platform'
-                            ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                            ? 'bg-primary border-primary text-white shadow-sm'
                             : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                       >
@@ -1334,7 +1306,7 @@ const MessagesTab = ({ profile }) => {
       </div>
 
       {/* Safety Banner */}
-      <div className="bg-slate-900 border border-slate-800 text-slate-100 p-4 rounded-2xl flex items-start gap-3 shadow-md">
+      <div className="bg-primary border border-primary-dark/30 text-slate-100 p-4 rounded-2xl flex items-start gap-3 shadow-md">
         <Shield size={20} className="text-emerald-500 shrink-0 mt-0.5" />
         <div className="text-xs space-y-1">
           <p className="font-bold">Important Message Safety Guidelines</p>
@@ -1356,7 +1328,7 @@ const MessagesTab = ({ profile }) => {
                   onClick={() => { setActiveConv(conv); setError(''); setSystemWarning(''); }}
                   className={`w-full text-left p-4 rounded-2xl border transition-all flex flex-col gap-1.5 ${
                     activeConv?.conversation_id === conv.conversation_id
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                      ? 'bg-primary text-white border-primary shadow-md'
                       : 'bg-slate-50 border-slate-100 hover:bg-slate-100/70 text-slate-800'
                   }`}
                 >
@@ -1417,7 +1389,7 @@ const MessagesTab = ({ profile }) => {
                       <div key={i} className={`flex flex-col max-w-[80%] ${isMe ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
                         <div className={`p-3.5 rounded-2xl text-xs font-medium leading-relaxed shadow-sm ${
                           isMe
-                            ? 'bg-slate-900 text-white rounded-tr-none'
+                            ? 'bg-primary text-white rounded-tr-none'
                             : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none'
                         }`}>
                           {msg.content}
@@ -1452,7 +1424,7 @@ const MessagesTab = ({ profile }) => {
                 <button
                   type="submit"
                   disabled={sending || !newMessage.trim()}
-                  className="px-4 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl transition-all flex items-center justify-center shrink-0 disabled:opacity-50"
+                  className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl transition-all flex items-center justify-center shrink-0 disabled:opacity-50"
                 >
                   <Send size={14} />
                 </button>
@@ -1551,7 +1523,7 @@ const ReviewsTab = ({ profile, receivedReviews, givenReviews }) => {
       </div>
 
       {activeTab === 'received' && receivedReviews.length > 0 && (
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md border border-white/5 animate-fadeIn">
+        <div className="bg-gradient-to-br from-primary to-primary-dark text-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md border border-white/5 animate-fadeIn">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-amber-400 text-slate-950 rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg shadow-amber-400/20">
               {averageRating.toFixed(1)}
@@ -1825,7 +1797,7 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
                     onClick={() => handleToggleSkill(skill)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                       selected 
-                        ? 'bg-slate-900 border-slate-900 text-white shadow-sm' 
+                        ? 'bg-primary border-primary text-white shadow-sm' 
                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                     }`}
                   >
@@ -1904,7 +1876,7 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
           <button
             type="submit"
             disabled={updatingPassword}
-            className="btn-primary bg-slate-900 hover:bg-black py-2.5 px-6 text-xs font-bold shadow-sm"
+            className="btn-primary py-2.5 px-6 text-xs font-bold shadow-sm"
           >
             {updatingPassword ? 'Updating...' : 'Update Password'}
           </button>

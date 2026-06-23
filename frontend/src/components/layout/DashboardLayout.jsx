@@ -107,15 +107,7 @@ const DashboardLayout = ({ children }) => {
             </p>
           </div>
 
-          {/* Search */}
-          <div className="hidden sm:flex relative ml-auto lg:ml-4" style={{ width: 220 }}>
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search dashboard..."
-              className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:border-primary focus:bg-white transition-all"
-            />
-          </div>
+
 
           {/* Right actions */}
           <div className="flex items-center gap-1 ml-auto">

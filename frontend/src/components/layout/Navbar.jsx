@@ -52,7 +52,7 @@ const Navbar = ({ dashboard = false }) => {
 
   const dashboardLinks = getLinksByRole(user?.role);
   const unreadCount = notifications.filter(n => !n.read).length;
-  const showScrolledStyle = isScrolled || dashboard || (user !== null);
+  const showScrolledStyle = isScrolled || dashboard || (user !== null) || location.pathname !== '/';
 
   const handleLogout = () => {
     logout();
@@ -108,13 +108,13 @@ const Navbar = ({ dashboard = false }) => {
                 {(user?.role === 'student' ? [
                   { name: 'Home', id: '#home' },
                   { name: 'Communication', to: '/dashboard/student/messages' },
-                  { name: 'Find Gigs', to: '/jobs' },
+                  { name: 'Find Jobs', to: '/jobs' },
                   { name: 'How It Works', id: '#how-it-works' },
                   { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
                 ] : [
                   { name: 'Home', id: '#home' },
                   { name: 'About', id: '#about' },
-                  { name: 'Find Gigs', to: '/jobs' },
+                  { name: 'Find Jobs', to: '/jobs' },
                   { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
                 ]).map((link) => 
                   link.to ? (
@@ -395,13 +395,13 @@ const Navbar = ({ dashboard = false }) => {
               {(user?.role === 'student' ? [
                 { name: 'Home', id: '#home' },
                 { name: 'Communication', to: '/dashboard/student/messages' },
-                { name: 'Find Gigs', to: '/jobs' },
+                { name: 'Find Jobs', to: '/jobs' },
                 { name: 'How It Works', id: '#how-it-works' },
                 { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
               ] : [
                 { name: 'Home', id: '#home' },
                 { name: 'About', id: '#about' },
-                { name: 'Find Gigs', to: '/jobs' },
+                { name: 'Find Jobs', to: '/jobs' },
                 { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
               ]).map((item) => 
                 item.to ? (

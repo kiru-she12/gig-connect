@@ -94,9 +94,6 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="px-5 py-6 flex items-center gap-3 border-b border-white/10">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg">
-          <Zap size={18} className="text-white" fill="currentColor" />
-        </div>
         <div className="leading-none">
           <span className="font-heading font-black text-white text-lg tracking-tight">GigConnect</span>
           <span className="block text-[10px] font-bold text-primary-light uppercase tracking-widest mt-0.5">UWU Student Hub</span>

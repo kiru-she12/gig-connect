@@ -5,6 +5,7 @@ import { User, Mail, Phone, Lock, CheckCircle, Loader2, X, ArrowLeft, ArrowRight
 import { motion, AnimatePresence } from 'framer-motion';
 import { SKILLS_LIST } from '../data/mockData';
 import logo from '../logo.svg';
+import Footer from '../components/layout/Footer';
 
 const RegisterStudent = () => {
   const [step, setStep] = useState(1);
@@ -147,7 +148,7 @@ const RegisterStudent = () => {
   const progress = Math.min((step / 4) * 100, 100);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-primary/10">
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-primary/10 flex flex-col">
       {/* Top Navigation */}
       <div className="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-3 no-underline group">
@@ -316,7 +317,7 @@ const RegisterStudent = () => {
                             setCustomSkill('');
                           }
                         }}
-                        className="px-6 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-2xl transition-all"
+                        className="px-6 py-2 bg-primary hover:bg-primary-dark text-white text-xs font-bold rounded-2xl transition-all"
                       >
                         Add
                       </button>
@@ -577,6 +578,7 @@ const RegisterStudent = () => {
           Your data is protected by enterprise-grade encryption. By joining, you become part of an elite student professional community.
         </p>
       </div>
+      <Footer />
     </div>
   );
 };
