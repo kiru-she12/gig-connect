@@ -25,7 +25,7 @@ Use these accounts to test the different dashboard functionalities:
 
 | Role | Email | Password |
 |---|---|---|
-| **Admin** | admin@uwu.ac.lk | admin123 |
+| **Admin** | admin@gigconnect.com | admin123 |
 | **Student** | cst23080@std.uwu.ac.lk | student123 |
 | **Client** | client@business.lk | client123 |
 | **Delivery** | delivery@gigconnect.lk | delivery123 |
