@@ -108,6 +108,18 @@ const SettingsTab = ({ user }) => {
     fetchProfile();
   }, []);
 
+  const handleReverseGeocode = async (lat, lng) => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const data = await response.json();
+      if (data && data.display_name) {
+        setAddress(data.display_name);
+      }
+    } catch (err) {
+      console.error("Reverse geocoding failed:", err);
+    }
+  };
+
   // Initialize map when container and coordinates are available
   useEffect(() => {
     if (window.L && mapContainerRef.current && !mapRef.current && !loading) {
@@ -124,10 +136,19 @@ const SettingsTab = ({ user }) => {
         draggable: true
       }).addTo(mapRef.current);
 
-      markerRef.current.on('dragend', () => {
+      markerRef.current.on('dragend', async () => {
         const position = markerRef.current.getLatLng();
         setLatitude(position.lat);
         setLongitude(position.lng);
+        await handleReverseGeocode(position.lat, position.lng);
+      });
+
+      mapRef.current.on('click', async (e) => {
+        const { lat, lng } = e.latlng;
+        setLatitude(lat);
+        setLongitude(lng);
+        markerRef.current.setLatLng([lat, lng]);
+        await handleReverseGeocode(lat, lng);
       });
     }
   }, [loading]);
