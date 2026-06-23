@@ -1593,6 +1593,7 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
   const [preference, setPreference] = useState(profile?.student_details?.preference || '');
   const [skillsStr, setSkillsStr] = useState(profile?.student_details?.skills || '');
   const [customSkill, setCustomSkill] = useState('');
+  const [university, setUniversity] = useState(profile?.student_details?.university || '');
 
   useEffect(() => {
     if (profile) {
@@ -1600,6 +1601,7 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
       setPhone(profile.phone || '');
       setPreference(profile.student_details?.preference || '');
       setSkillsStr(profile.student_details?.skills || '');
+      setUniversity(profile.student_details?.university || '');
     }
   }, [profile]);
   
@@ -1653,7 +1655,8 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
           name,
           phone,
           skills: skillsStr,
-          preference
+          preference,
+          university
         })
       });
 
@@ -1767,6 +1770,16 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">University Name</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Uva Wellassa University"
+                  className="input-field text-sm"
+                  value={university}
+                  onChange={(e) => setUniversity(e.target.value)}
                 />
               </div>
             </div>
