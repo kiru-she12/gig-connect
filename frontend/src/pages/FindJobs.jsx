@@ -322,27 +322,6 @@ const FindJobs = () => {
               </button>
             </div>
 
-            {/* Filter: Job Type */}
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Job Type</h4>
-              <div className="flex flex-col gap-3">
-                {[
-                  { label: 'On-site', value: 'On-site' },
-                  { label: 'Remote', value: 'Remote' },
-                ].map((typeOption) => (
-                  <label key={typeOption.value} className="flex items-center gap-2.5 text-xs font-bold text-slate-700 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={typeFilter === typeOption.value}
-                      onChange={() => setTypeFilter(typeFilter === typeOption.value ? '' : typeOption.value)}
-                      className="w-4 h-4 rounded text-[#1A312C] focus:ring-[#1A312C] border-slate-300 transition-all cursor-pointer"
-                    />
-                    <span className="group-hover:text-[#1A312C] transition-colors">{typeOption.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
             {/* Filter: Budget Range */}
             <div className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Salary Range (LKR)</h4>
