@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 const LoginModal = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('student');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   
@@ -25,7 +24,7 @@ const LoginModal = ({ isOpen, onClose }) => {
     e.preventDefault();
     setError('');
     try {
-      const userData = await login(email, password, role);
+      const userData = await login(email, password);
       onClose();
       if (userData.role === 'student') {
         navigate('/');
@@ -219,33 +218,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[13px] font-bold text-slate-900 mb-2.5">Account Type</label>
-                    <div className="flex items-center gap-6">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input 
-                          type="radio" 
-                          name="role" 
-                          value="student" 
-                          checked={role === 'student'} 
-                          onChange={() => setRole('student')}
-                          className="w-4 h-4 text-slate-900 border-slate-300 focus:ring-slate-900"
-                        />
-                        <span className="text-[13px] text-slate-600">Student</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input 
-                          type="radio" 
-                          name="role" 
-                          value="client" 
-                          checked={role === 'client'} 
-                          onChange={() => setRole('client')}
-                          className="w-4 h-4 text-slate-900 border-slate-300 focus:ring-slate-900"
-                        />
-                        <span className="text-[13px] text-slate-600">Client / Business</span>
-                      </label>
-                    </div>
-                  </div>
+
 
                   <div className="pt-2">
                     <button 
