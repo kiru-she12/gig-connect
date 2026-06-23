@@ -14,7 +14,6 @@ export const ADMIN_LINKS = [
   { to: '/dashboard/admin/communications', icon: MessageSquare, label: 'Communications' },
   { to: '/dashboard/admin/complaints', icon: AlertCircle, label: 'Complaints & Alerts' },
   { to: '/dashboard/admin/reports', icon: FileText, label: 'Reports' },
-  { to: '/dashboard/admin/settings', icon: Settings, label: 'Settings' },
 ];
 
 export const STUDENT_LINKS = [
