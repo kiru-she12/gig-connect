@@ -107,7 +107,6 @@ const Navbar = ({ dashboard = false }) => {
               >
                 {(user?.role === 'student' ? [
                   { name: 'Home', id: '#home' },
-                  { name: 'Communication', to: '/dashboard/student/messages' },
                   { name: 'Find Jobs', to: '/jobs' },
                   { name: 'How It Works', id: '#how-it-works' },
                   { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
@@ -394,7 +393,6 @@ const Navbar = ({ dashboard = false }) => {
             <div className="space-y-1">
               {(user?.role === 'student' ? [
                 { name: 'Home', id: '#home' },
-                { name: 'Communication', to: '/dashboard/student/messages' },
                 { name: 'Find Jobs', to: '/jobs' },
                 { name: 'How It Works', id: '#how-it-works' },
                 { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
