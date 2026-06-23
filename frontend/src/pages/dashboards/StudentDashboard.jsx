@@ -1593,6 +1593,15 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
   const [preference, setPreference] = useState(profile?.student_details?.preference || '');
   const [skillsStr, setSkillsStr] = useState(profile?.student_details?.skills || '');
   const [customSkill, setCustomSkill] = useState('');
+
+  useEffect(() => {
+    if (profile) {
+      setName(profile.name || '');
+      setPhone(profile.phone || '');
+      setPreference(profile.student_details?.preference || '');
+      setSkillsStr(profile.student_details?.skills || '');
+    }
+  }, [profile]);
   
   // Password Reset states
   const [currentPassword, setCurrentPassword] = useState('');
@@ -1760,62 +1769,94 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Preferred Category</label>
-                <select
-                  className="input-field text-sm font-bold cursor-pointer"
-                  value={preference}
-                  onChange={(e) => setPreference(e.target.value)}
-                >
-                  <option value="">Select preference</option>
-                  <option value="Design">Design</option>
-                  <option value="Data Entry">Data Entry</option>
-                  <option value="Photography">Photography</option>
-                  <option value="Web Dev">Web Dev</option>
-                  <option value="Translation">Translation</option>
-                  <option value="Academic & Tutoring">Academic & Tutoring</option>
-                  <option value="Local Services">Local Services</option>
-                </select>
-              </div>
             </div>
           </div>
 
           {/* Skill expertise selector */}
-          <div className="space-y-3 pt-4 border-t">
+          <div className="space-y-4 pt-4 border-t">
             <div>
               <h4 className="font-bold text-slate-800 text-sm">Your Expertise Skills</h4>
-              <p className="text-[11px] text-slate-400">Click to select skills, or type custom skills below.</p>
+              <p className="text-[11px] text-slate-400">Add or remove skills to update your recommendations.</p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {availableSkills.map((skill) => {
-                const selected = getSkillsArray().includes(skill);
-                return (
-                  <button
-                    key={skill}
-                    type="button"
-                    onClick={() => handleToggleSkill(skill)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                      selected 
-                        ? 'bg-primary border-primary text-white shadow-sm' 
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    {skill}
-                  </button>
-                );
-              })}
+            {/* Currently selected skills with X marks */}
+            <div className="space-y-2">
+              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Skills</span>
+              <div className="flex flex-wrap gap-2 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl min-h-[56px]">
+                {getSkillsArray().length === 0 ? (
+                  <span className="text-xs text-slate-400 font-medium italic self-center">No skills added yet. Select suggestions or add custom skills below.</span>
+                ) : (
+                  getSkillsArray().map((skill) => (
+                    <span 
+                      key={skill} 
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4E8C7E]/10 text-[#1A312C] border border-[#4E8C7E]/20 rounded-xl text-xs font-bold"
+                    >
+                      {skill}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleSkill(skill)}
+                        className="text-[#1A312C]/60 hover:text-rose-600 transition-colors p-0.5 rounded-full hover:bg-rose-50/50"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
             </div>
 
-            <div>
-              <input
-                type="text"
-                placeholder="Press Enter to add custom skills..."
-                className="input-field text-xs max-w-sm mt-2"
-                value={customSkill}
-                onChange={(e) => setCustomSkill(e.target.value)}
-                onKeyDown={handleAddCustomSkill}
-              />
+            {/* Available Skills list as quick suggestions */}
+            <div className="space-y-2">
+              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suggestions</span>
+              <div className="flex flex-wrap gap-2">
+                {availableSkills.map((skill) => {
+                  const selected = getSkillsArray().includes(skill);
+                  return (
+                    <button
+                      key={skill}
+                      type="button"
+                      onClick={() => handleToggleSkill(skill)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                        selected 
+                          ? 'bg-primary border-primary text-white shadow-sm' 
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {skill}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Add Custom Skill with Add Button */}
+            <div className="space-y-2">
+              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Add Custom Skill</span>
+              <div className="flex gap-2 max-w-sm">
+                <input
+                  type="text"
+                  placeholder="Type new skill and press Enter or click Add..."
+                  className="input-field text-xs flex-1"
+                  value={customSkill}
+                  onChange={(e) => setCustomSkill(e.target.value)}
+                  onKeyDown={handleAddCustomSkill}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (customSkill.trim()) {
+                      const arr = getSkillsArray();
+                      if (!arr.includes(customSkill.trim())) {
+                        setSkillsStr([...arr, customSkill.trim()].join(', '));
+                      }
+                      setCustomSkill('');
+                    }
+                  }}
+                  className="px-4 py-2.5 bg-primary hover:bg-[#4E8C7E] text-white text-xs font-bold rounded-xl transition-all active:scale-95 shrink-0"
+                >
+                  Add
+                </button>
+              </div>
             </div>
           </div>
 
