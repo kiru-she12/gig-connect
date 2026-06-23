@@ -15,6 +15,7 @@ const RegisterModal = ({ isOpen, onClose }) => {
   });
   
   const [error, setError] = useState('');
+  const [customSkillInput, setCustomSkillInput] = useState('');
   const { register, verifyOtp, loading, setIsLoginModalOpen } = useAuth();
   const navigate = useNavigate();
 
@@ -63,6 +64,21 @@ const RegisterModal = ({ isOpen, onClose }) => {
       setFormData({ ...formData, skills: formData.skills.filter(s => s !== skill) });
     } else {
       setFormData({ ...formData, skills: [...formData.skills, skill] });
+    }
+  };
+
+  const handleAddCustomSkill = () => {
+    const trimmed = customSkillInput.trim();
+    if (trimmed) {
+      const skillsToAdd = trimmed.split(',').map(s => s.trim()).filter(Boolean);
+      const newSkills = [...formData.skills];
+      skillsToAdd.forEach(skill => {
+        if (!newSkills.includes(skill)) {
+          newSkills.push(skill);
+        }
+      });
+      setFormData({ ...formData, skills: newSkills });
+      setCustomSkillInput('');
     }
   };
 
@@ -126,7 +142,7 @@ const RegisterModal = ({ isOpen, onClose }) => {
         {/* Modal Content */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-[900px] h-[650px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
+          className="relative w-full max-w-[800px] h-[580px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
         >
           {/* Close Button */}
           <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all z-50">
@@ -302,15 +318,40 @@ const RegisterModal = ({ isOpen, onClose }) => {
 
                 {/* Step 2: Specifics */}
                 {step === 2 && role === 'student' && (
-                  <motion.div key="step2-student" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                  <motion.div key="step2-student" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
                     <div>
                       <label className="block text-sm font-bold text-slate-800 mb-2">Your Expertise</label>
-                      <div className="flex flex-wrap gap-2">
-                        {SKILLS_LIST.map((skill) => (
-                          <button key={skill} type="button" onClick={() => handleSkillToggle(skill)} className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all ${formData.skills.includes(skill) ? 'bg-primary border-primary text-white shadow-sm' : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400'}`}>
+                      <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto p-1 border border-slate-100 rounded-lg">
+                        {Array.from(new Set([...SKILLS_LIST, ...formData.skills])).map((skill) => (
+                          <button key={skill} type="button" onClick={() => handleSkillToggle(skill)} className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${formData.skills.includes(skill) ? 'bg-primary border-primary text-white shadow-sm' : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400'}`}>
                             {skill}
                           </button>
                         ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1.5">Add other skills (separated by comma):</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          placeholder="e.g. React, Node.js, Video Editing" 
+                          className="flex-1 bg-white border border-slate-300 rounded-lg py-2 px-3 outline-none focus:border-primary transition-all text-xs font-medium" 
+                          value={customSkillInput} 
+                          onChange={(e) => setCustomSkillInput(e.target.value)} 
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddCustomSkill();
+                            }
+                          }}
+                        />
+                        <button 
+                          type="button" 
+                          onClick={handleAddCustomSkill}
+                          className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
+                        >
+                          Add
+                        </button>
                       </div>
                     </div>
                     <div>
