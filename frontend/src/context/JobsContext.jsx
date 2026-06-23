@@ -46,7 +46,9 @@ export const JobsProvider = ({ children }) => {
         const rawJobs = Array.isArray(data) ? data : (data.jobs || []);
         if (Array.isArray(rawJobs)) {
           const formattedJobs = rawJobs.map(job => {
-            const parsedSkills = job.skills ? job.skills.split(', ') : [];
+            const parsedSkills = job.skills 
+              ? job.skills.split(',').map(s => s.trim()).filter(Boolean) 
+              : [];
             return {
               id: job.job_ID || job.id,
               title: job.title,

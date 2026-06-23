@@ -192,8 +192,26 @@ const FindJobs = () => {
   // Filter Jobs
   const activeJobs = jobs.filter(job => job.status === 'Active' || job.status === 'active');
   
-  // Sort Boosted/Featured first
+  // Sort by skills matching relevance first, then by boosted status
   const sortedJobs = [...activeJobs].sort((a, b) => {
+    const searchSkills = skillFilter.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    
+    let scoreA = 0;
+    let scoreB = 0;
+    
+    if (searchSkills.length > 0) {
+      if (a.skills) {
+        scoreA = a.skills.filter(s => searchSkills.some(fs => s.toLowerCase().includes(fs))).length;
+      }
+      if (b.skills) {
+        scoreB = b.skills.filter(s => searchSkills.some(fs => s.toLowerCase().includes(fs))).length;
+      }
+    }
+    
+    if (scoreA !== scoreB) {
+      return scoreB - scoreA; // More matching skills come first
+    }
+    
     const aBoosted = a.isBoosted || a.is_boosted || 0;
     const bBoosted = b.isBoosted || b.is_boosted || 0;
     return bBoosted - aBoosted;
@@ -209,8 +227,11 @@ const FindJobs = () => {
     const matchesMin = minPay === '' || parseFloat(job.pay) >= parseFloat(minPay);
     const matchesMax = maxPay === '' || parseFloat(job.pay) <= parseFloat(maxPay);
     
-    const matchesSkill = skillFilter.trim() === '' || 
-      (job.skills && job.skills.some(s => s.toLowerCase().includes(skillFilter.toLowerCase())));
+    const searchSkills = skillFilter.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const matchesSkill = searchSkills.length === 0 || 
+      (job.skills && job.skills.some(s => 
+        searchSkills.some(fs => s.toLowerCase().includes(fs))
+      ));
 
     return matchesSearch && matchesCategory && matchesType && matchesMin && matchesMax && matchesSkill;
   });
@@ -473,9 +494,31 @@ const FindJobs = () => {
                       </div>
 
                       {/* Description */}
-                      <p className="text-slate-500 text-xs leading-relaxed line-clamp-3 mb-6">
+                      <p className="text-slate-500 text-xs leading-relaxed line-clamp-3 mb-4">
                         {job.description}
                       </p>
+
+                      {/* Skills Required */}
+                      {job.skills && job.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-6">
+                          {job.skills.map((skill, idx) => {
+                            const searchSkills = skillFilter.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                            const isMatched = searchSkills.some(fs => skill.toLowerCase().includes(fs));
+                            return (
+                              <span 
+                                key={idx} 
+                                className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border transition-all ${
+                                  isMatched 
+                                    ? 'bg-primary/10 text-primary border-primary/30 scale-105 shadow-sm' 
+                                    : 'bg-slate-50 text-slate-500 border-slate-200/60'
+                                }`}
+                              >
+                                {skill}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Footer Area inside Card */}
