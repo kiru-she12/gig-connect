@@ -183,6 +183,10 @@ class SmartRecommendations {
         //
         $recommended = [];
 
+        // Determine the next numeric ID once before loop to optimize and prevent collision
+        $stmt_max = $this->pdo->query("SELECT MAX(CAST(SUBSTRING(recommendation_ID, 4) AS UNSIGNED)) FROM recommendation");
+        $next_rec_num = intval($stmt_max->fetchColumn()) + 1;
+
         foreach ($jobs as $job) {
             $job_skills = $this->parseSkills($job['skills'] ?? '');
             $job_type   = strtolower(trim($job['job_type'] ?? ''));
@@ -213,7 +217,7 @@ class SmartRecommendations {
                 $raw_score = min(1.0, $raw_score + 0.08);
             }
 
-            // No-show penalty: –5% per no-show, floored at 0
+            // No-move penalty: –5% per no-show, floored at 0
             $raw_score = max(0.0, $raw_score - ($no_shows * 0.05));
 
             // Convert to percentage (0–100)
@@ -230,11 +234,10 @@ class SmartRecommendations {
                 $stmt_upd = $this->pdo->prepare("UPDATE recommendation SET match_score = ? WHERE recommendation_ID = ?");
                 $stmt_upd->execute([$score_db, $existing_id]);
             } else {
-                $stmt_cnt = $this->pdo->query("SELECT COUNT(*) FROM recommendation");
-                $cnt = $stmt_cnt->fetchColumn();
-                $rec_id = 'REC' . str_pad($cnt + 1, 3, '0', STR_PAD_LEFT);
+                $rec_id = 'REC' . str_pad($next_rec_num, 3, '0', STR_PAD_LEFT);
                 $stmt_ins = $this->pdo->prepare("INSERT INTO recommendation (recommendation_ID, student_ID, job_ID, match_score) VALUES (?, ?, ?, ?)");
                 $stmt_ins->execute([$rec_id, $student_ID, $job['job_ID'], $score_db]);
+                $next_rec_num++;
             }
 
             // Determine recommendation reason label
