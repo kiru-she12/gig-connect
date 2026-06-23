@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -8,7 +8,8 @@ import ComplaintsTab from '../../components/shared/ComplaintsTab';
 import ChatTab from '../../components/shared/ChatTab';
 import { 
   PlusCircle, List, Users, MessageSquare, MapPin, Star, Settings, 
-  ChevronRight, ChevronLeft, CreditCard, CheckCircle, Clock, DollarSign
+  ChevronRight, ChevronLeft, CreditCard, CheckCircle, Clock, DollarSign,
+  Plus
 } from 'lucide-react';
 
 const ClientDashboard = () => {
@@ -51,51 +52,263 @@ const PlaceholderTab = ({ title, icon: Icon, message }) => (
   </div>
 );
 
-const SettingsTab = ({ user }) => (
-  <div className="space-y-8 animate-fadeIn">
-    <h1 className="text-3xl font-heading font-bold text-text-primary">Profile Settings</h1>
-    <div className="card p-8">
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 bg-primary-light text-primary rounded-2xl flex items-center justify-center font-bold text-2xl">
-            {user.name.split(' ').map(n => n[0]).join('')}
-          </div>
-          <div>
-            <h3 className="font-bold text-lg">{user.name}</h3>
-            <p className="text-text-secondary">{user.email}</p>
-            <span className="badge bg-emerald-100 text-emerald-700 mt-2">Verified Client</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-border">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold text-text-secondary mb-1.5">Business Name</label>
-              <input type="text" className="input-field" defaultValue={user.name} />
+const SettingsTab = ({ user }) => {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+
+  // Form states
+  const [name, setName] = useState('');
+  const [businessRegNo, setBusinessRegNo] = useState('');
+  const [type, setType] = useState('');
+  const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  const [locating, setLocating] = useState(false);
+
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
+  const mapContainerRef = useRef(null);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/profile/get_profile.php`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success && data.profile) {
+        setProfile(data.profile);
+        setName(data.profile.name || '');
+        setBusinessRegNo(data.profile.provider_details?.business_reg_no || '');
+        setType(data.profile.provider_details?.type || '');
+        setAddress(data.profile.provider_details?.address || '');
+        
+        const lat = data.profile.provider_details?.latitude ? parseFloat(data.profile.provider_details.latitude) : null;
+        const lng = data.profile.provider_details?.longitude ? parseFloat(data.profile.provider_details.longitude) : null;
+        setLatitude(lat);
+        setLongitude(lng);
+
+        // Update map if it is already initialized
+        if (mapRef.current && markerRef.current && lat && lng) {
+          mapRef.current.setView([lat, lng], 15);
+          markerRef.current.setLatLng([lat, lng]);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load profile details:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  // Initialize map when container and coordinates are available
+  useEffect(() => {
+    if (window.L && mapContainerRef.current && !mapRef.current && !loading) {
+      const initialLat = latitude || 6.9812; // default UWU Badulla
+      const initialLng = longitude || 81.0763;
+
+      mapRef.current = window.L.map(mapContainerRef.current).setView([initialLat, initialLng], 13);
+
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(mapRef.current);
+
+      markerRef.current = window.L.marker([initialLat, initialLng], {
+        draggable: true
+      }).addTo(mapRef.current);
+
+      markerRef.current.on('dragend', () => {
+        const position = markerRef.current.getLatLng();
+        setLatitude(position.lat);
+        setLongitude(position.lng);
+      });
+    }
+  }, [loading]);
+
+  const handleGeocodeAddress = async () => {
+    if (!address.trim()) return;
+    setLocating(true);
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        setLatitude(lat);
+        setLongitude(lon);
+
+        if (mapRef.current && markerRef.current) {
+          mapRef.current.setView([lat, lon], 15);
+          markerRef.current.setLatLng([lat, lon]);
+        }
+      } else {
+        alert("Address not found on map. Try searching for a nearby town or landmark.");
+      }
+    } catch (err) {
+      console.error("Geocoding failed:", err);
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setUpdating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/profile/update_profile.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name,
+          business_reg_no: businessRegNo,
+          type,
+          address,
+          latitude,
+          longitude
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert("Profile details saved successfully!");
+      } else {
+        alert(data.error || "Failed to update profile details.");
+      }
+    } catch (err) {
+      alert("Error saving profile details.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8 animate-fadeIn max-w-4xl">
+      <h1 className="text-3xl font-heading font-bold text-text-primary">Profile Settings</h1>
+      <div className="card p-8">
+        <form onSubmit={handleSave} className="space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 bg-primary/10 text-primary rounded-2xl flex items-center justify-center font-bold text-2xl">
+              {profile?.name ? profile.name.split(' ').map(n => n[0]).join('') : 'JP'}
             </div>
             <div>
-              <label className="block text-sm font-bold text-text-secondary mb-1.5">Business Registration No.</label>
-              <input type="text" className="input-field" defaultValue="BR-12345-67" />
+              <h3 className="font-bold text-lg text-slate-800">{profile?.name}</h3>
+              <p className="text-sm text-text-secondary">{profile?.email}</p>
+              <span className="badge bg-emerald-100 text-emerald-700 mt-2">Verified Client</span>
             </div>
           </div>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold text-text-secondary mb-1.5">Contact Person</label>
-              <input type="text" className="input-field" defaultValue="Manager Name" />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-border">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-text-secondary mb-1.5">Business Name</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)} 
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-text-secondary mb-1.5">Business Registration No.</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={businessRegNo} 
+                  onChange={(e) => setBusinessRegNo(e.target.value)} 
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-text-secondary mb-1.5">Business Type</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  placeholder="e.g. Retail, Software"
+                  value={type} 
+                  onChange={(e) => setType(e.target.value)} 
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-text-secondary mb-1.5">Payment Method</label>
-              <div className="flex items-center gap-3 p-3 border border-border rounded-lg">
-                <CreditCard size={18} className="text-text-muted" />
-                <span className="text-sm">Visa ending in 4242</span>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-text-secondary mb-1.5">Business Address</label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    className="input-field pr-10" 
+                    placeholder="Enter business address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    required
+                  />
+                  {address.trim().length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleGeocodeAddress}
+                      disabled={locating}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-primary text-white rounded-lg hover:bg-[#1A312C] transition-all flex items-center justify-center shadow-sm"
+                      title="Fetch address on map"
+                    >
+                      {locating ? (
+                        <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                      ) : (
+                        <Plus size={16} />
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Map Container */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-text-secondary block">Location Coordinates (Drag marker to refine)</span>
+                  {latitude && longitude && (
+                    <span className="text-[10px] text-text-muted font-bold">
+                      {parseFloat(latitude).toFixed(4)}, {parseFloat(longitude).toFixed(4)}
+                    </span>
+                  )}
+                </div>
+                <div 
+                  ref={mapContainerRef} 
+                  className="w-full h-48 rounded-2xl border border-border overflow-hidden z-10"
+                  style={{ minHeight: '180px' }}
+                />
               </div>
             </div>
           </div>
-        </div>
-        <button className="btn-primary">Save Profile Changes</button>
+          <button 
+            type="submit" 
+            disabled={updating} 
+            className="btn-primary py-3 px-8 text-sm font-bold shadow-md"
+          >
+            {updating ? 'Saving Changes...' : 'Save Profile Changes'}
+          </button>
+        </form>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const HomeTab = ({ user, clientJobs, clientApps }) => (
   <div className="space-y-8 animate-fadeIn">

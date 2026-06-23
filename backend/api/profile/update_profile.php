@@ -42,12 +42,18 @@ class Profile {
         if($user->role === 'job_provider') {
             $business_reg_no = $data['business_reg_no'] ?? null;
             $type = $data['type'] ?? null;
+            $address = $data['address'] ?? null;
+            $latitude = $data['latitude'] ?? null;
+            $longitude = $data['longitude'] ?? null;
 
             $stmt = $this->pdo->prepare("UPDATE job_provider SET 
                 business_reg_no = COALESCE(?, business_reg_no),
-                type = COALESCE(?, type)
+                type = COALESCE(?, type),
+                address = COALESCE(?, address),
+                latitude = COALESCE(?, latitude),
+                longitude = COALESCE(?, longitude)
                 WHERE user_ID = ?");
-            $stmt->execute([$business_reg_no, $type, $user->user_ID]);
+            $stmt->execute([$business_reg_no, $type, $address, $latitude, $longitude, $user->user_ID]);
         }
 
         // update delivery staff details

@@ -30,7 +30,7 @@ class Profile {
             $profile['student_details'] = $extra;
 
         } else if($user->role === 'job_provider') {
-            $stmt = $this->pdo->prepare("SELECT provider_ID, nic, business_reg_no, type, is_verified FROM job_provider WHERE user_ID = ?");
+            $stmt = $this->pdo->prepare("SELECT provider_ID, nic, business_reg_no, type, is_verified, address, latitude, longitude FROM job_provider WHERE user_ID = ?");
             $stmt->execute([$user->user_ID]);
             $extra = $stmt->fetch(PDO::FETCH_ASSOC);
             $profile['provider_details'] = $extra;
