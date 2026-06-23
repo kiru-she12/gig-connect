@@ -1593,7 +1593,7 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
   const [preference, setPreference] = useState(profile?.student_details?.preference || '');
   const [skillsStr, setSkillsStr] = useState(profile?.student_details?.skills || '');
   const [customSkill, setCustomSkill] = useState('');
-  const [university, setUniversity] = useState(profile?.student_details?.university || '');
+  const [degree, setDegree] = useState(profile?.student_details?.degree || '');
 
   useEffect(() => {
     if (profile) {
@@ -1601,7 +1601,7 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
       setPhone(profile.phone || '');
       setPreference(profile.student_details?.preference || '');
       setSkillsStr(profile.student_details?.skills || '');
-      setUniversity(profile.student_details?.university || '');
+      setDegree(profile.student_details?.degree || '');
     }
   }, [profile]);
   
@@ -1656,7 +1656,7 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
           phone,
           skills: skillsStr,
           preference,
-          university
+          degree
         })
       });
 
@@ -1773,13 +1773,13 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">University Name</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Course Name</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. Uva Wellassa University"
+                  placeholder="e.g. Computer Science"
                   className="input-field text-sm"
-                  value={university}
-                  onChange={(e) => setUniversity(e.target.value)}
+                  value={degree}
+                  onChange={(e) => setDegree(e.target.value)}
                 />
               </div>
             </div>

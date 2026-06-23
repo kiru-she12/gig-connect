@@ -27,15 +27,15 @@ class Profile {
             $skills = $data['skills'] ?? null;
             $preference = $data['preference'] ?? null;
             $is_delivery_available = $data['is_delivery_available'] ?? null;
-            $university = $data['university'] ?? null;
+            $degree = $data['degree'] ?? null;
 
             $stmt = $this->pdo->prepare("UPDATE student SET 
                 skills = COALESCE(?, skills),
                 preference = COALESCE(?, preference),
                 is_delivery_available = COALESCE(?, is_delivery_available),
-                university = COALESCE(?, university)
+                degree = COALESCE(?, degree)
                 WHERE user_ID = ?");
-            $stmt->execute([$skills, $preference, $is_delivery_available, $university, $user->user_ID]);
+            $stmt->execute([$skills, $preference, $is_delivery_available, $degree, $user->user_ID]);
         }
 
         // update job provider details
