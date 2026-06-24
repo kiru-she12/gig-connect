@@ -142,7 +142,7 @@ const RegisterModal = ({ isOpen, onClose }) => {
         {/* Modal Content */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-[800px] h-[580px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
+          className="relative w-full max-w-[760px] h-auto md:h-[520px] max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
         >
           {/* Close Button */}
           <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all z-50">
@@ -150,42 +150,32 @@ const RegisterModal = ({ isOpen, onClose }) => {
           </button>
 
           {/* Left Pane (Branded) */}
-          <div className="hidden md:flex flex-col w-[45%] bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 relative overflow-hidden text-white pt-12 px-10">
+          <div className="hidden md:flex flex-col w-[45%] bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 relative overflow-hidden text-white justify-center items-center p-8 text-center">
             {/* Decorative circles */}
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/5 blur-3xl"></div>
             <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl"></div>
 
-            <h2 className="text-3xl font-bold mb-8 tracking-tight relative z-10">Welcome to<br/>GigConnect</h2>
+            <h2 className="text-3xl font-bold mb-8 tracking-tight relative z-10 text-center">Welcome to<br/>GigConnect</h2>
             
-            <div className="space-y-6 mb-10 relative z-10">
-              <div className="flex items-start gap-3">
-                <div className="p-1 rounded-full bg-white/10 mt-0.5">
+            <div className="space-y-6 relative z-10 w-full max-w-[280px]">
+              <div className="flex items-center gap-3">
+                <div className="p-1 rounded-full bg-white/10 shrink-0">
                   <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-emerald-50">Exclusive student opportunities</span>
+                <span className="text-lg font-medium text-emerald-50 text-left leading-snug">Exclusive student opportunities</span>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="p-1 rounded-full bg-white/10 mt-0.5">
+              <div className="flex items-center gap-3">
+                <div className="p-1 rounded-full bg-white/10 shrink-0">
                   <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-emerald-50">Build your reputation</span>
+                <span className="text-lg font-medium text-emerald-50 text-left leading-snug">Build your reputation</span>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="p-1 rounded-full bg-white/10 mt-0.5">
+              <div className="flex items-center gap-3">
+                <div className="p-1 rounded-full bg-white/10 shrink-0">
                   <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-emerald-50 leading-snug">Connect with local clients</span>
+                 <span className="text-lg font-medium text-emerald-50 text-left leading-snug">Connect with local job providers</span>
               </div>
-            </div>
-
-            {/* Bottom Image */}
-            <div className="absolute bottom-0 left-0 right-0 h-[35%] z-0 border-t border-white/10">
-              <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/80 to-transparent z-10"></div>
-              <img 
-                src="https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&q=80" 
-                alt="Working" 
-                className="w-full h-full object-cover object-top opacity-90"
-              />
             </div>
           </div>
 
@@ -199,65 +189,65 @@ const RegisterModal = ({ isOpen, onClose }) => {
             )}
 
             {step === 0 ? (
-              <div className="mb-8 text-center mt-4">
-                <h2 className="text-3xl font-bold text-slate-900 mb-3">Join GigConnect</h2>
-                <p className="text-slate-600">
+              <div className="mb-5 text-center mt-1">
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Join GigConnect</h2>
+                <p className="text-xs text-slate-500">
                   Which describes you best?
                 </p>
               </div>
             ) : step < 5 ? (
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Create your {role === 'student' ? 'Student' : 'Business'} account</h2>
-                <p className="text-sm text-slate-500">
+              <div className="mb-5">
+                <h2 className="text-xl font-bold text-slate-900 mb-1.5">Create your {role === 'student' ? 'Student' : 'Business'} account</h2>
+                <p className="text-xs text-slate-500">
                   {step === 4 ? 'Please verify your contact details to finish' : 'Additional verification may be required at a later stage'}
                 </p>
               </div>
             ) : null}
 
             {error && (
-              <div className="mb-6 p-3 bg-rose-50 border border-rose-200 text-rose-600 text-sm rounded-lg flex items-center font-medium">
+              <div className="mb-4 p-2.5 bg-rose-50 border border-rose-200 text-rose-600 text-xs rounded-lg flex items-center font-medium">
                 {error}
               </div>
             )}
 
-            <form onSubmit={step === 4 ? handleVerifyOtp : handleSubmit} className="space-y-5 flex-1">
+            <form onSubmit={step === 4 ? handleVerifyOtp : handleSubmit} className="space-y-4 flex-1">
               <AnimatePresence mode="wait">
                 
                 {/* Step 0: Role Selection */}
                 {step === 0 && (
-                  <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                    <div className="space-y-4 mt-2">
+                  <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                    <div className="space-y-3 mt-1">
                       <button 
                         type="button" 
                         onClick={() => handleRoleSelection('client')} 
-                        className="w-full group flex items-center gap-5 border-2 border-slate-100 rounded-2xl p-5 hover:border-primary hover:shadow-lg hover:bg-primary-light/50 transition-all text-left bg-white"
+                        className="w-full group flex items-center gap-4 border-2 border-slate-100 rounded-xl p-3.5 hover:border-primary hover:shadow-md hover:bg-primary-light/50 transition-all text-left bg-white"
                       >
-                        <div className="h-16 w-16 shrink-0 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-700 transition-transform group-hover:scale-110 group-hover:bg-emerald-200">
-                           <Building size={32} strokeWidth={1.5} />
+                        <div className="h-12 w-12 shrink-0 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 transition-transform group-hover:scale-105 group-hover:bg-emerald-200">
+                           <Building size={24} strokeWidth={1.5} />
                         </div>
                         <div className="flex-1">
-                           <h3 className="font-bold text-lg text-slate-900 flex items-center justify-between">
-                            Client / Business
-                            <ArrowRight size={18} className="text-primary opacity-0 -translate-x-4 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                           <h3 className="font-bold text-base text-slate-900 flex items-center justify-between">
+                             Job Provider / Business
+                            <ArrowRight size={16} className="text-primary opacity-0 -translate-x-3 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                           </h3>
-                          <p className="text-sm text-slate-500 mt-1 font-medium">Post jobs and hire</p>
+                          <p className="text-xs text-slate-500 mt-0.5 font-medium">Post jobs and hire</p>
                         </div>
                       </button>
 
                       <button 
                         type="button" 
                         onClick={() => handleRoleSelection('student')} 
-                        className="w-full group flex items-center gap-5 border-2 border-slate-100 rounded-2xl p-5 hover:border-primary hover:shadow-lg hover:bg-primary-light/50 transition-all text-left bg-white"
+                        className="w-full group flex items-center gap-4 border-2 border-slate-100 rounded-xl p-3.5 hover:border-primary hover:shadow-md hover:bg-primary-light/50 transition-all text-left bg-white"
                       >
-                        <div className="h-16 w-16 shrink-0 rounded-2xl bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110 group-hover:bg-primary/20">
-                           <Monitor size={32} strokeWidth={1.5} />
+                        <div className="h-12 w-12 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-105 group-hover:bg-primary/20">
+                           <Monitor size={24} strokeWidth={1.5} />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-bold text-lg text-slate-900 flex items-center justify-between">
+                          <h3 className="font-bold text-base text-slate-900 flex items-center justify-between">
                             Student
-                            <ArrowRight size={18} className="text-primary opacity-0 -translate-x-4 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                            <ArrowRight size={16} className="text-primary opacity-0 -translate-x-3 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                           </h3>
-                          <p className="text-sm text-slate-500 mt-1 font-medium">Work and get paid</p>
+                          <p className="text-xs text-slate-500 mt-0.5 font-medium">Work and get paid</p>
                         </div>
                       </button>
                     </div>
@@ -472,16 +462,16 @@ const RegisterModal = ({ isOpen, onClose }) => {
               </AnimatePresence>
             </form>
 
-            {step < 5 && (
-              <div className="mt-8 pt-4 border-t border-slate-100">
-                <p className="text-xs text-slate-500 leading-relaxed">
+             {step < 5 && (
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <p className="text-[10px] text-slate-500 leading-normal">
                   By joining, you agree to the GigConnect <a href="#" className="text-primary font-semibold hover:underline">Terms of Service</a> and to occasionally receive emails from us. Please read our <a href="#" className="text-primary font-semibold hover:underline">Privacy Policy</a> to learn how we use your personal data.
                 </p>
                 
                 {step === 0 && (
-                  <div className="mt-4 text-center">
-                    <p className="text-sm font-semibold text-slate-600">
-                      Already have an account? <button type="button" onClick={() => { onClose(); setIsLoginModalOpen(true); }} className="text-primary hover:underline">Sign In</button>
+                  <div className="mt-2.5 text-center">
+                    <p className="text-xs font-semibold text-slate-600">
+                      Already have an account? <button type="button" onClick={() => { onClose(); setIsLoginModalOpen(true); }} className="text-primary hover:underline font-bold">Sign In</button>
                     </p>
                   </div>
                 )}

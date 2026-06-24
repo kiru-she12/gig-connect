@@ -104,7 +104,7 @@ const StudentDashboard = () => {
       }
       if (jobsData?.success) setAllJobs(jobsData.jobs);
       if (notifsData?.success) setNotifications(notifsData.notifications);
-      if (deliveryData?.success) setDeliveries(deliveryData.deliveries);
+      if (deliveryData?.success) setDeliveries([]);
       setReceivedReviews(recReviews);
       setGivenReviews(givReviews);
 
@@ -296,13 +296,7 @@ const StudentDashboard = () => {
       </div>
 
       <Routes>
-        <Route path="" element={
-          <AnalyticsTab
-            profile={profile}
-            applications={applications}
-            receivedReviews={receivedReviews}
-          />
-        } />
+        <Route path="" element={<Navigate to="applications" replace />} />
         <Route path="analytics" element={
           <AnalyticsTab
             profile={profile}
@@ -353,7 +347,7 @@ const StudentDashboard = () => {
             fetchDashboardData={fetchDashboardData}
           />
         } />
-        <Route path="*" element={<Navigate to="" replace />} />
+        <Route path="*" element={<Navigate to="applications" replace />} />
       </Routes>
 
       {/* Application and Delivery Setup Modal */}
@@ -472,291 +466,7 @@ const StudentDashboard = () => {
    SUB-PAGES & TAB COMPONENTS
    ========================================================================== */
 
-/* 1. HOME TAB (CONSOLIDATED DISCOVERY HUB) */
-const HomeTab = ({ profile, applications, recommendations, allJobs, notifications, onApply }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [minPay, setMinPay] = useState('');
-  const [maxPay, setMaxPay] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Calculations for stats
-  const activeAppsCount = applications.filter(app => 
-    app.status === 'applied' || app.status === 'shortlisted' || app.status === 'accepted'
-  ).length;
-
-  const completedCount = applications.filter(app => 
-    app.status === 'Completed' || app.status === 'completed' || app.job_status === 'completed'
-  ).length;
-
-  const unreadNotifsCount = notifications.filter(n => n.status === 'unread' || n.status === 'pending').length;
-  const ratingVal = parseFloat(profile?.student_details?.rating || 0);
-
-  // Filter jobs dynamically
-  const activeJobs = allJobs.filter(job => job.status === 'active');
-  
-  // Sort Boosted jobs first
-  const sortedJobs = [...activeJobs].sort((a, b) => b.is_boosted - a.is_boosted);
-
-  const filteredJobs = sortedJobs.filter(job => {
-    const matchesSearch = searchTerm.trim() === '' || 
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      (job.skills && job.skills.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesCategory = categoryFilter === '' || job.category === categoryFilter;
-    const matchesType = typeFilter === '' || job.job_type === typeFilter;
-    const matchesMin = minPay === '' || parseFloat(job.payment) >= parseFloat(minPay);
-    const matchesMax = maxPay === '' || parseFloat(job.payment) <= parseFloat(maxPay);
-
-    return matchesSearch && matchesCategory && matchesType && matchesMin && matchesMax;
-  });
-
-  return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-primary-dark to-slate-900 text-white p-8 md:p-10 shadow-2xl border border-white/10">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-primary/10 blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-emerald-500/10 blur-3xl"></div>
-        
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight">
-              Welcome back, {profile?.name ? profile.name.split(' ')[0] : 'Student'}! 👋
-            </h1>
-            <p className="text-primary-light/80 mt-1.5 text-sm md:text-base font-medium">
-              Here's what's happening with your gigs today.
-            </p>
-          </div>
-          <span className="badge bg-white/10 text-white border border-white/20 px-4 py-2 text-xs font-bold rounded-2xl backdrop-blur-md">
-            Student Account
-          </span>
-        </div>
-
-        {/* Welcome Stat Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 pt-8 border-t border-white/10">
-          {[
-            { label: 'Active Apps', value: activeAppsCount, color: 'text-emerald-300' },
-            { label: 'Completed Gigs', value: completedCount, color: 'text-emerald-300' },
-            { 
-              label: 'Rating', 
-              value: ratingVal === 0 ? (
-                <span className="bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">New</span>
-              ) : (
-                <span className="flex items-center gap-1">
-                  {ratingVal.toFixed(1)} <Star size={14} className="fill-amber-300 text-amber-300 inline" />
-                </span>
-              ),
-              color: 'text-amber-300' 
-            },
-            { label: 'Unread Notifications', value: unreadNotifsCount, color: 'text-rose-300' }
-          ].map((stat, i) => (
-            <div key={i} className="flex flex-col gap-1 p-3 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm">
-              <span className="text-[10px] md:text-xs font-bold text-white/60 uppercase tracking-widest">{stat.label}</span>
-              <span className={`text-xl md:text-2xl font-heading font-black ${stat.color}`}>{stat.value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Discovery, Search & Advanced Filter Section */}
-      <section className="bg-white border border-slate-100 rounded-3xl p-6 shadow-md space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Search size={18} className="text-primary" /> Discover & Browse Jobs
-          </h2>
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
-          >
-            {showAdvanced ? 'Hide Filters' : 'Advanced Filters'}
-          </button>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-            <input
-              type="text"
-              placeholder="Search jobs by title or skill..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-primary/50 focus:bg-white transition-all text-sm font-medium"
-            />
-          </div>
-          <div className="w-full md:w-56">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-primary/50 focus:bg-white transition-all text-sm font-bold cursor-pointer"
-            >
-              <option value="">All Categories</option>
-              <option value="Design">Design</option>
-              <option value="Data Entry">Data Entry</option>
-              <option value="Photography">Photography</option>
-              <option value="Web Dev">Web Dev</option>
-              <option value="Translation">Translation</option>
-              <option value="Academic & Tutoring">Academic & Tutoring</option>
-              <option value="Local Services">Local Services</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Expandable Advanced Filters */}
-        {showAdvanced && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-slate-100 animate-slideDown">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Job Type</label>
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none cursor-pointer"
-              >
-                <option value="">Any Type</option>
-                <option value="onsite">Onsite</option>
-                <option value="remote">Remote</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Min Pay (LKR)</label>
-              <input
-                type="number"
-                placeholder="0"
-                value={minPay}
-                onChange={(e) => setMinPay(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Max Pay (LKR)</label>
-              <input
-                type="number"
-                placeholder="Any"
-                value={maxPay}
-                onChange={(e) => setMaxPay(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"
-              />
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* Recommended For You Section */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-heading font-black text-slate-800 flex items-center gap-2">
-          <Sparkles size={20} className="text-amber-500 fill-amber-500 animate-pulse" /> Personal Recommendations
-        </h2>
-
-        {!profile?.student_details?.skills ? (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center text-amber-800">
-            <p className="font-semibold text-sm">Add your skills in Profile Settings to get personalized recommendations</p>
-            <Link to="/dashboard/student/settings" className="btn-primary inline-flex items-center gap-2 mt-3 text-xs py-2 px-4">
-              Go to Settings <ChevronRight size={14} />
-            </Link>
-          </div>
-        ) : recommendations.length === 0 ? (
-          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 text-center text-slate-500 text-xs">
-            No recommendations matching your skills found. Try adding more skills in settings.
-          </div>
-        ) : (
-          <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-thin">
-            {recommendations.slice(0, 8).map((job) => {
-              const formattedJob = {
-                id: job.job_ID,
-                title: job.title,
-                category: job.category || 'General',
-                type: job.job_type,
-                clientName: job.provider_name || 'GigConnect Partner',
-                clientEmail: job.provider_email || '',
-                skills: job.skills ? job.skills.split(', ') : [],
-                pay: job.payment,
-                duration: job.job_date ? `${job.job_date} @ ${job.start_time} - ${job.end_time}` : 'Short Term',
-                description: job.description,
-                job_date: job.job_date || null,
-                start_time: job.start_time || null,
-                end_time: job.end_time || null
-              };
-              return (
-                <div key={job.job_ID} className="min-w-[280px] md:min-w-[350px] max-w-[400px] shrink-0">
-                  <JobCard 
-                    job={formattedJob}
-                    onApply={() => onApply(formattedJob)}
-                    applied={applications.some(a => a.job_ID === job.job_ID)}
-                    matchScore={job.match_score}
-                    isRecommended={true}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* General Opportunities Grid */}
-      <section className="space-y-6">
-        <h2 className="text-xl font-heading font-black text-slate-800">Browse Available Opportunities</h2>
-        
-        {filteredJobs.length === 0 ? (
-          <div className="bg-white border border-slate-100 rounded-3xl p-12 text-center text-slate-500">
-            <Briefcase size={40} className="mx-auto mb-3 text-slate-300" />
-            <p className="font-bold">No opportunities found</p>
-            <p className="text-xs text-slate-400 mt-1">Try adjusting your filters or search terms.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredJobs.map((job) => {
-              const formattedJob = {
-                id: job.job_ID,
-                title: job.title,
-                category: job.category || 'General',
-                type: job.job_type,
-                clientName: job.provider_name || 'GigConnect Partner',
-                clientEmail: job.provider_email || '',
-                skills: job.skills ? job.skills.split(', ') : [],
-                pay: job.payment,
-                duration: job.job_date ? `${job.job_date} @ ${job.start_time} - ${job.end_time}` : 'Short Term',
-                description: job.description,
-                job_date: job.job_date || null,
-                start_time: job.start_time || null,
-                end_time: job.end_time || null
-              };
-              return (
-                <JobCard 
-                  key={job.job_ID}
-                  job={formattedJob}
-                  onApply={() => onApply(formattedJob)}
-                  applied={applications.some(a => a.job_ID === job.job_ID)}
-                  isRecommended={job.is_boosted == 1}
-                />
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* How It Works */}
-      <section className="bg-slate-50 border border-slate-100 rounded-3xl p-8">
-        <h2 className="text-xl font-heading font-black text-slate-800 text-center mb-8">How GigConnect Works</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { step: '1', title: 'Create your profile', desc: 'Register with UWU email, add your skills and availability.', icon: User, color: 'bg-primary-light text-primary' },
-            { step: '2', title: 'Get matched', desc: 'Our smart system recommends jobs based on your skills and ratings.', icon: Award, color: 'bg-primary-light text-primary' },
-            { step: '3', title: 'Apply & get hired', desc: 'Apply with one click, communicate with clients securely.', icon: CheckCircle, color: 'bg-emerald-100 text-emerald-700' },
-            { step: '4', title: 'Get paid & rated', desc: 'Complete the job, receive payment, and build your rating.', icon: DollarSign, color: 'bg-amber-100 text-amber-700' }
-          ].map((item, i) => (
-            <div key={i} className="flex flex-col items-center text-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <div className={`w-12 h-12 rounded-full ${item.color} flex items-center justify-center font-bold text-lg mb-4`}>
-                <item.icon size={20} />
-              </div>
-              <h3 className="font-bold text-sm text-slate-800 mb-2">{item.title}</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-};
 
 /* 2. APPLICATIONS TAB */
 const ApplicationsTab = ({ applications, fetchDashboardData }) => {
@@ -1594,6 +1304,8 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
   const [skillsStr, setSkillsStr] = useState(profile?.student_details?.skills || '');
   const [customSkill, setCustomSkill] = useState('');
   const [degree, setDegree] = useState(profile?.student_details?.degree || '');
+  const [year, setYear] = useState(profile?.student_details?.year || '');
+  const [gender, setGender] = useState(profile?.student_details?.gender || '');
 
   useEffect(() => {
     if (profile) {
@@ -1602,6 +1314,8 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
       setPreference(profile.student_details?.preference || '');
       setSkillsStr(profile.student_details?.skills || '');
       setDegree(profile.student_details?.degree || '');
+      setYear(profile.student_details?.year || '');
+      setGender(profile.student_details?.gender || '');
     }
   }, [profile]);
   
@@ -1656,7 +1370,9 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
           phone,
           skills: skillsStr,
           preference,
-          degree
+          degree,
+          year,
+          gender
         })
       });
 
@@ -1759,6 +1475,19 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
                   disabled
                 />
               </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Gender</label>
+                <select 
+                  className="input-field text-sm"
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -1781,6 +1510,21 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
                   value={degree}
                   onChange={(e) => setDegree(e.target.value)}
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Academic Year</label>
+                <select 
+                  className="input-field text-sm"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                >
+                  <option value="">Select Academic Year</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
             </div>
           </div>

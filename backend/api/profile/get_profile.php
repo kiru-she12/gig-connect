@@ -24,7 +24,7 @@ class Profile {
 
         // get extra info based on role
         if($user->role === 'student') {
-            $stmt = $this->pdo->prepare("SELECT student_ID, skills, rating, preference, is_delivery_available, degree FROM student WHERE user_ID = ?");
+            $stmt = $this->pdo->prepare("SELECT student_ID, skills, rating, preference, is_delivery_available, degree, year, gender FROM student WHERE user_ID = ?");
             $stmt->execute([$user->user_ID]);
             $extra = $stmt->fetch(PDO::FETCH_ASSOC);
             $profile['student_details'] = $extra;

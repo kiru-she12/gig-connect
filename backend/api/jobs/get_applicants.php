@@ -34,13 +34,15 @@ class Application {
         // get applicants with student details
         $stmt = $this->pdo->prepare("
             SELECT a.application_ID, a.status, a.applied_date,
-                   s.student_ID, s.skills, s.rating,
+                   s.student_ID, s.skills, s.rating, s.year, s.degree, s.bio, s.languages, s.gender,
+                   (SELECT COUNT(*) FROM application a2 JOIN job j2 ON a2.job_ID = j2.job_ID WHERE a2.student_ID = s.student_ID AND (LOWER(a2.status) = 'completed' OR LOWER(j2.status) = 'completed')) AS completed_jobs_count,
+                   (SELECT GROUP_CONCAT(j3.title SEPARATOR ', ') FROM application a3 JOIN job j3 ON a3.job_ID = j3.job_ID WHERE a3.student_ID = s.student_ID AND (LOWER(a3.status) = 'completed' OR LOWER(j3.status) = 'completed')) AS completed_jobs_list,
                    u.name, u.email
             FROM application a
             JOIN student s ON a.student_ID = s.student_ID
             JOIN users u ON s.user_ID = u.user_ID
             WHERE a.job_ID = ?
-            ORDER BY s.rating DESC
+            ORDER BY a.applied_date ASC
         ");
         $stmt->execute([$job_ID]);
         $applicants = $stmt->fetchAll(PDO::FETCH_ASSOC);

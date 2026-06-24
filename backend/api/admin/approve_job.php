@@ -45,7 +45,12 @@ class Job {
         if($action === 'approve') {
             $stmt = $this->pdo->prepare("UPDATE job SET status = 'active' WHERE job_ID = ?");
             $stmt->execute([$job_ID]);
-            return ["success" => "Job approved successfully!"];
+            
+            // Also verify the provider
+            $stmtProv = $this->pdo->prepare("UPDATE job_provider SET is_verified = 1 WHERE provider_ID = ?");
+            $stmtProv->execute([$job['provider_ID']]);
+
+            return ["success" => "Job approved and provider verified successfully!"];
 
         } else if($action === 'reject') {
             $stmt = $this->pdo->prepare("UPDATE job SET status = 'closed' WHERE job_ID = ?");

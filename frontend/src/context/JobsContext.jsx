@@ -35,12 +35,20 @@ export const JobsProvider = ({ children }) => {
 
   const refreshJobs = async () => {
     try {
-      const role = localStorage.getItem('role');
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const role = storedUser?.role;
+      const token = localStorage.getItem('token');
       const isAdminOrManager = role === 'admin' || role === 'manager';
       const url = isAdminOrManager 
         ? `${import.meta.env.VITE_API_BASE_URL}/api/jobs/get_jobs.php?all=1`
         : `${import.meta.env.VITE_API_BASE_URL}/api/jobs/get_jobs.php`;
-      const response = await fetch(url);
+
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url, { headers });
       if (response.ok) {
         const data = await response.json();
         const rawJobs = Array.isArray(data) ? data : (data.jobs || []);
@@ -62,13 +70,18 @@ export const JobsProvider = ({ children }) => {
               type: job.job_type || job.type,
               pay: job.payment || job.budget,
               duration: job.job_date ? `${job.job_date} @ ${job.start_time} - ${job.end_time}` : (job.duration || 'Short Term'),
-              status: job.status,
+              status: job.status === 'pending' ? 'Pending Approval' :
+                      job.status === 'active' ? 'Active' :
+                      job.status === 'completed' ? 'Completed' :
+                      job.status === 'closed' ? 'Closed' : job.status,
               skills: parsedSkills,
               description: job.description,
               postedAt: job.created_at,
               deadline: job.deadline,
               is_product_based: job.is_product_based == 1 || job.is_product_based === true,
-              isBoosted: job.is_boosted == 1 || job.isBoosted
+              isBoosted: job.is_boosted == 1 || job.isBoosted,
+              seekers_needed: job.seekers_needed || 1,
+              payment_status: job.payment_status || 'unpaid'
             };
           });
 
@@ -110,7 +123,15 @@ export const JobsProvider = ({ children }) => {
           skills: job.skills.join(', '),
           payment: parseFloat(job.pay),
           job_type: job.type.toLowerCase().replace('-', ''),
-          deadline: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split('T')[0] // 7 days from now
+          deadline: job.deadline || new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split('T')[0],
+          job_date: job.job_date || null,
+          start_time: job.start_time || null,
+          end_time: job.end_time || null,
+          business_reg_no: job.business_reg_no,
+          address: job.address,
+          latitude: job.latitude,
+          longitude: job.longitude,
+          seekers_needed: parseInt(job.seekers_needed || 1)
         })
       });
 
@@ -258,7 +279,7 @@ export const JobsProvider = ({ children }) => {
         const data = await response.json();
         if (data.success) {
           setJobs(prevJobs => prevJobs.map(job => 
-            job.id === jobId ? { ...job, status: 'active' } : job
+            job.id === jobId ? { ...job, status: 'Active' } : job
           ));
           return data;
         } else {
@@ -291,7 +312,7 @@ export const JobsProvider = ({ children }) => {
         const data = await response.json();
         if (data.success) {
           setJobs(prevJobs => prevJobs.map(job => 
-            job.id === jobId ? { ...job, status: 'closed' } : job
+            job.id === jobId ? { ...job, status: 'Closed' } : job
           ));
           return data;
         } else {
@@ -324,7 +345,7 @@ export const JobsProvider = ({ children }) => {
         const data = await response.json();
         if (data.success) {
           setJobs(prevJobs => prevJobs.map(job => 
-            job.id === jobId ? { ...job, status: 'completed' } : job
+            job.id === jobId ? { ...job, status: 'Completed' } : job
           ));
           return data;
         } else {

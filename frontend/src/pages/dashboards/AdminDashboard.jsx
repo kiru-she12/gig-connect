@@ -130,6 +130,9 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchAnalytics();
+    if (refreshJobs) {
+      refreshJobs();
+    }
   }, []);
 
   return (
@@ -1582,7 +1585,7 @@ const RevenueTab = ({ analytics }) => {
 
         <div className="card p-5 border border-slate-100 bg-white">
           <p className="text-xs font-bold text-text-muted uppercase tracking-wider">Platform Take-rate</p>
-          <p className="text-3xl font-heading font-black text-slate-800 mt-2">10%</p>
+          <p className="text-3xl font-heading font-black text-slate-800 mt-2">5%</p>
           <div className="mt-3 flex items-center justify-between text-xs font-bold">
             <span className="text-text-muted">Student fee:</span>
             <span className="text-emerald-600 font-extrabold">0% (Free)</span>

@@ -2,8 +2,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginModal from './components/auth/LoginModal';
 import RegisterModal from './components/auth/RegisterModal';
+import ContactModal from './components/auth/ContactModal';
 import { JobsProvider } from './context/JobsContext';
 import { NotificationsProvider } from './context/NotificationsContext';
+import { AlertProvider } from './context/AlertContext';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -83,6 +85,7 @@ const AppContent = () => {
         isOpen={isRegisterModalOpen} 
         onClose={() => setIsRegisterModalOpen(false)} 
       />
+      <ContactModal />
     </div>
   );
 };
@@ -90,13 +93,15 @@ const AppContent = () => {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <JobsProvider>
-          <NotificationsProvider>
-            <AppContent />
-          </NotificationsProvider>
-        </JobsProvider>
-      </AuthProvider>
+      <AlertProvider>
+        <AuthProvider>
+          <JobsProvider>
+            <NotificationsProvider>
+              <AppContent />
+            </NotificationsProvider>
+          </JobsProvider>
+        </AuthProvider>
+      </AlertProvider>
     </Router>
   );
 }

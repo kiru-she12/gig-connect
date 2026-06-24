@@ -72,7 +72,7 @@ const DetailedStudentJobCard = ({ job, onApply, applied = false, matchScore = nu
         <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-text-secondary">
           <span>Posted recently</span>
           <span>•</span>
-          <span>Proposals: 5-10</span>
+          <span>{job.seekers_needed ? `${job.seekers_needed} Seeker${job.seekers_needed > 1 ? 's' : ''} Needed` : '1 Seeker Needed'}</span>
 
           {isRecommended && (
             <span className="ml-auto md:ml-0 bg-accent/20 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-accent/30 flex items-center gap-1.5 animate-pulse">
@@ -132,7 +132,7 @@ const DetailedStudentJobCard = ({ job, onApply, applied = false, matchScore = nu
             <span className="font-bold text-slate-700">LKR 15k+</span> spent
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[11px] font-medium">Client: <strong>{job.clientName}</strong> {job.clientEmail && <span className="text-slate-400 font-normal">({job.clientEmail})</span>}</span>
+            <span className="text-[11px] font-medium">Job Provider: <strong>{job.clientName}</strong> {job.clientEmail && <span className="text-slate-400 font-normal">({job.clientEmail})</span>}</span>
           </div>
         </div>
       </div>
@@ -350,7 +350,7 @@ const LandingPage = () => {
     if (!user) {
       setIsLoginModalOpen(true);
     } else if (user.role === 'student') {
-      navigate('/dashboard/student/overview');
+      navigate('/dashboard/student/applications');
     } else {
       setWarningMessage("You must be logged in as a Student to apply for a job. Please log in with a Student account.");
     }
@@ -429,8 +429,7 @@ const LandingPage = () => {
     : {
       home: 'Launch',
       about: 'Heritage',
-      jobs: 'Opportunities',
-      collaboration: 'Process'
+      jobs: 'Opportunities'
     };
 
   // Section Tracking Logic
@@ -566,7 +565,7 @@ const LandingPage = () => {
 
         {/* Hero Section Container */}
         <section id="home" className="max-w-7xl mx-auto w-full px-6 sm:px-10 lg:px-16 py-8 relative">
-          <div className="bg-gradient-to-br from-[#0ABAB5] via-[#099A95] to-[#07807D] rounded-[2.5rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between min-h-[450px] shadow-2xl border border-white/10 gap-8 text-left">
+          <div className="bg-gradient-to-br from-[#2E7D5C] via-[#1A5C41] to-[#0D3826] rounded-[2.5rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between min-h-[450px] shadow-2xl border border-white/10 gap-8 text-left">
             {/* Outlined text in background */}
             <div className="absolute inset-0 flex items-center justify-start pl-8 sm:pl-16 pointer-events-none select-none overflow-hidden">
               <span className="text-[15vw] font-black text-white/[0.07] uppercase tracking-widest font-sans leading-none select-none">
@@ -609,14 +608,14 @@ const LandingPage = () => {
                 <span className="font-bold opacity-90 mr-1 text-white text-xs">Popular skills:</span>
                 {['All', 'Design', 'Data Entry', 'Photography', 'Web Dev', 'Translation'].map((cat) => (
                   <button
-                    key={cat}
-                    onClick={() => {
-                      navigate('/jobs', { state: { category: cat } });
-                    }}
-                    className="px-3.5 py-1.5 rounded-full border text-[11px] font-bold transition-all whitespace-nowrap bg-white/20 text-white border-white/10 hover:bg-white hover:text-[#0ABAB5]"
-                  >
-                    {cat}
-                  </button>
+                     key={cat}
+                     onClick={() => {
+                       navigate('/jobs', { state: { category: cat } });
+                     }}
+                     className="px-3.5 py-1.5 rounded-full border text-[11px] font-bold transition-all whitespace-nowrap bg-white/20 text-white border-white/10 hover:bg-white hover:text-[#2E7D5C]"
+                   >
+                     {cat}
+                   </button>
                 ))}
               </div>
 
@@ -748,7 +747,7 @@ const LandingPage = () => {
                             {job.title}
                           </h3>
                           <div className="text-[11px] text-slate-400 font-bold mt-1 flex items-center gap-1 flex-wrap">
-                            <span>{job.provider_name || 'Client'}</span>
+                            <span>{job.provider_name || 'Job Provider'}</span>
                             {job.provider_email && (
                               <span className="text-slate-300 text-[9px] font-normal">({job.provider_email})</span>
                             )}
@@ -900,8 +899,8 @@ const LandingPage = () => {
                     desc: 'One-day and part-time jobs that fit your timetable, not the other way around.'
                   },
                   {
-                    title: 'Verified Clients Only',
-                    desc: 'Every client is verified with NIC and OTP, so you know who you\'re working with.'
+                    title: 'Verified Job Providers Only',
+                    desc: 'Every job provider is verified with NIC and OTP, so you know who you\'re working with.'
                   },
                   {
                     title: 'Safe, Monitored Chats & Deals',
@@ -1059,7 +1058,7 @@ const LandingPage = () => {
                 {
                   step: '04',
                   title: 'Apply & Get Shortlisted',
-                  desc: 'Apply with one click. Clients review your profile, skills, and ratings to shortlist candidates.',
+                  desc: 'Apply with one click. Job providers review your profile, skills, and ratings to shortlist candidates.',
                   bg: 'bg-[#EEF5FC]', // Light Blue
                   border: 'border-[#D0E2F7]/30',
                   logoText: 'A',
@@ -1083,12 +1082,12 @@ const LandingPage = () => {
                 {
                   step: '06',
                   title: 'Get Paid & Rated',
-                  desc: 'Receive payment, leave a review for the client, and build your rating for future opportunities.',
+                  desc: 'Receive payment, leave a review for the job provider, and build your rating for future opportunities.',
                   bg: 'bg-[#F8F9FA]', // Grey
                   border: 'border-[#E9ECEF]/30',
                   logoText: 'E',
                   label: 'Direct Payments',
-                  tags: ['Secure Pay', 'Client Reviews', 'Rating Boost'],
+                  tags: ['Secure Pay', 'Provider Reviews', 'Rating Boost'],
                   rate: 'Instant Deposit',
                   location: '5-Star System'
                 }

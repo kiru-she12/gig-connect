@@ -17,7 +17,7 @@ export const ADMIN_LINKS = [
 ];
 
 export const STUDENT_LINKS = [
-  { to: '/dashboard/student', icon: TrendingUp, label: 'Analytics' },
+  { to: '/dashboard/student/analytics', icon: TrendingUp, label: 'Analytics' },
   { to: '/dashboard/student/applications', icon: Briefcase, label: 'My Applications' },
   { to: '/dashboard/student/past-history', icon: List, label: 'Past History' },
   { to: '/dashboard/student/delivery', icon: Truck, label: 'Deliveries' },
@@ -34,7 +34,6 @@ export const CLIENT_LINKS = [
   { to: '/dashboard/client/applicants', icon: Users, label: 'Applicants' },
   { to: '/dashboard/client/messages', icon: MessageSquare, label: 'Messages' },
   { to: '/dashboard/client/ratings', icon: Star, label: 'Ratings' },
-  { to: '/dashboard/client/complaints', icon: AlertCircle, label: 'Report / Complain' },
   { to: '/dashboard/client/settings', icon: Settings, label: 'Profile Settings' },
 ];
 

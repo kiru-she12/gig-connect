@@ -223,7 +223,7 @@ const FindJobs = () => {
       job.description.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = categoryFilter === 'All' || job.category === categoryFilter;
-    const matchesType = typeFilter === '' || job.type.toLowerCase().replace('-', '') === typeFilter.toLowerCase().replace('-', '');
+    const matchesType = typeFilter === '' || (job.type || '').toLowerCase().replace('-', '') === typeFilter.toLowerCase().replace('-', '');
     const matchesMin = minPay === '' || parseFloat(job.pay) >= parseFloat(minPay);
     const matchesMax = maxPay === '' || parseFloat(job.pay) <= parseFloat(maxPay);
     
@@ -448,7 +448,7 @@ const FindJobs = () => {
                         <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
                           <span>{job.clientName || 'GigConnect Partner'}</span>
                           <span>•</span>
-                          <span>5-10 Applicants</span>
+                          <span>{job.seekers_needed ? `${job.seekers_needed} Seeker${job.seekers_needed > 1 ? 's' : ''} Needed` : '1 Seeker Needed'}</span>
                         </div>
                       </div>
 

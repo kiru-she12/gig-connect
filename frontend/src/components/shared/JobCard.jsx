@@ -30,6 +30,14 @@ const JobCard = ({ job, onApply, applied = false, matchScore = null, isRecommend
           <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{job.category}</span>
           <span className="w-1 h-1 bg-border rounded-full"></span>
           <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{job.type}</span>
+          {job.seekers_needed && (
+            <>
+              <span className="w-1 h-1 bg-border rounded-full"></span>
+              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                👥 {job.seekers_needed} {job.seekers_needed > 1 ? 'Seekers' : 'Seeker'} Needed
+              </span>
+            </>
+          )}
         </div>
         <h3 className="font-heading font-bold text-xl text-text-primary group-hover:text-primary transition-colors leading-tight">{job.title}</h3>
         <div className="flex items-center gap-1.5 mt-2 flex-wrap">

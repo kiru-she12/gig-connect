@@ -6,9 +6,10 @@ import { useNotifications } from '../../context/NotificationsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { getLinksByRole } from '../../data/navigation';
+import logoImage from '../../assets/logo/logo.png';
 
 const Navbar = ({ dashboard = false }) => {
-  const { user, logout, isLoginModalOpen, setIsLoginModalOpen, setIsRegisterModalOpen } = useAuth();
+  const { user, logout, isLoginModalOpen, setIsLoginModalOpen, setIsRegisterModalOpen, setIsContactModalOpen } = useAuth();
   const { notifications, markAllRead, markAsRead } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -77,7 +78,7 @@ const Navbar = ({ dashboard = false }) => {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="flex-shrink-0 flex items-center"
           >
-            <Link to="/" onClick={(e) => scrollToSection(e, '')} className="flex items-center gap-2.5 group">
+            <Link to="/" onClick={(e) => scrollToSection(e, '')} className="flex items-center gap-2 group">
               <span className={`font-heading font-black tracking-tight transition-all duration-300 ${
                 user?.role === 'student'
                   ? 'text-xl md:text-2xl text-slate-900'
@@ -85,6 +86,11 @@ const Navbar = ({ dashboard = false }) => {
               }`}>
                 GigConnect
               </span>
+              <img 
+                src={logoImage} 
+                alt="Logo" 
+                className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              />
             </Link>
           </motion.div>
 
@@ -109,12 +115,12 @@ const Navbar = ({ dashboard = false }) => {
                   { name: 'Home', id: '#home' },
                   { name: 'Find Jobs', to: '/jobs' },
                   { name: 'How It Works', id: '#how-it-works' },
-                  { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
+                  { name: 'Contact', action: 'contact' }
                 ] : [
                   { name: 'Home', id: '#home' },
                   { name: 'About', id: '#about' },
                   { name: 'Find Jobs', to: '/jobs' },
-                  { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
+                  { name: 'Contact', action: 'contact' }
                 ]).map((link) => 
                   link.to ? (
                     <Link
@@ -133,6 +139,23 @@ const Navbar = ({ dashboard = false }) => {
                         user?.role === 'student' ? 'bg-accent' : showScrolledStyle ? 'bg-primary' : 'bg-white'
                       }`}></span>
                     </Link>
+                  ) : link.action === 'contact' ? (
+                    <button
+                      key={link.name}
+                      onClick={() => setIsContactModalOpen(true)}
+                      className={`group relative transition-all duration-300 flex items-center gap-1 ${
+                        user?.role === 'student'
+                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-accent'
+                          : showScrolledStyle 
+                            ? 'text-sm lg:text-base text-slate-600 hover:text-primary' 
+                            : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
+                      }`}
+                    >
+                      {link.name}
+                      <span className={`absolute -bottom-1 left-0 w-0 h-[2px] rounded-full transition-all duration-300 group-hover:w-full ${
+                        user?.role === 'student' ? 'bg-accent' : showScrolledStyle ? 'bg-primary' : 'bg-white'
+                      }`}></span>
+                    </button>
                   ) : (
                     <motion.a 
                       variants={{
@@ -140,9 +163,8 @@ const Navbar = ({ dashboard = false }) => {
                         visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
                       }}
                       key={link.name}
-                      href={link.email ? 'mailto:' + link.email : link.id || '/'}
+                      href={link.id || '/'}
                       onClick={(e) => {
-                        if (link.email) return;
                         scrollToSection(e, link.id);
                       }}
                       className={`group relative transition-all duration-300 flex items-center gap-1 ${
@@ -395,12 +417,12 @@ const Navbar = ({ dashboard = false }) => {
                 { name: 'Home', id: '#home' },
                 { name: 'Find Jobs', to: '/jobs' },
                 { name: 'How It Works', id: '#how-it-works' },
-                { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
+                { name: 'Contact', action: 'contact' }
               ] : [
                 { name: 'Home', id: '#home' },
                 { name: 'About', id: '#about' },
                 { name: 'Find Jobs', to: '/jobs' },
-                { name: 'Contact', email: 'gigconnectsystem@gmail.com' }
+                { name: 'Contact', action: 'contact' }
               ]).map((item) => 
                 item.to ? (
                   <Link
@@ -411,13 +433,23 @@ const Navbar = ({ dashboard = false }) => {
                   >
                     {item.name}
                   </Link>
+                ) : item.action === 'contact' ? (
+                  <button
+                    key={item.name}
+                    className="w-full text-left block px-4 py-3 text-lg font-medium text-text-primary hover:bg-slate-50 rounded-xl transition-colors"
+                    onClick={() => {
+                      setIsContactModalOpen(true);
+                      setShowMobileMenu(false);
+                    }}
+                  >
+                    {item.name}
+                  </button>
                 ) : (
                   <a 
                     key={item.name}
-                    href={item.email ? 'mailto:' + item.email : item.id}
+                    href={item.id}
                     className="block px-4 py-3 text-lg font-medium text-text-primary hover:bg-slate-50 rounded-xl transition-colors"
                     onClick={(e) => {
-                      if (item.email) return;
                       scrollToSection(e, item.id);
                     }}
                   >

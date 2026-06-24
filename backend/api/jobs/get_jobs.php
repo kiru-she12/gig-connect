@@ -1,8 +1,27 @@
 <?php
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit(0); }
 
 include '../../config/db.php';
+include '../../middleware/auth.php';
+
+function getOptionalUser() {
+    $headers = getallheaders();
+    if (!isset($headers['Authorization'])) {
+        return null;
+    }
+    $token = str_replace("Bearer ", "", $headers['Authorization']);
+    $key = $_ENV['JWT_SECRET'] ?? '';
+    try {
+        return \Firebase\JWT\JWT::decode($token, new \Firebase\JWT\Key($key, 'HS256'));
+    } catch (Exception $e) {
+        return null;
+    }
+}
 
 function getCategory($title, $skills) {
     $t = strtolower($title);
@@ -35,7 +54,7 @@ class JobService {
         $this->pdo = $pdo;
     }
 
-    public function getJobs($filters) {
+    public function getJobs($filters, $currentUser = null) {
         $category = $filters['category'] ?? null;
         $job_type = $filters['job_type'] ?? null;
         $min_payment = $filters['min_payment'] ?? null;
@@ -44,13 +63,24 @@ class JobService {
         $all = $filters['all'] ?? null;
         $status = $filters['status'] ?? null;
 
+        $provider_ID = null;
+        if ($currentUser && $currentUser->role === 'job_provider') {
+            $stmt = $this->pdo->prepare("SELECT provider_ID FROM job_provider WHERE user_ID = ?");
+            $stmt->execute([$currentUser->user_ID]);
+            $provider_ID = $stmt->fetchColumn();
+        }
+
         $query = "SELECT j.*, u.name AS provider_name, u.email AS provider_email 
                   FROM job j 
                   LEFT JOIN users u ON j.provider_ID = u.user_ID 
                   WHERE 1=1";
 
         if (!$all && !$status) {
-            $query .= " AND j.status = 'active'";
+            if ($provider_ID) {
+                $query .= " AND (j.status = 'active' OR j.provider_ID = " . $this->pdo->quote($provider_ID) . ")";
+            } else {
+                $query .= " AND j.status = 'active'";
+            }
         } else if ($status) {
             $query .= " AND j.status = '$status'";
         }
@@ -101,7 +131,7 @@ $filters = [
     'status' => $_GET['status'] ?? null
 ];
 
+$currentUser = getOptionalUser();
 $jobService = new JobService($pdo);
-$result = $jobService->getJobs($filters);
+$result = $jobService->getJobs($filters, $currentUser);
 echo json_encode($result);
-?>

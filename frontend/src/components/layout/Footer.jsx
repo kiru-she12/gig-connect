@@ -1,7 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Mail, Phone, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const Footer = () => {
+  const { setIsContactModalOpen } = useAuth();
+  
   return (
     <footer className="bg-black pt-20 pb-10 relative overflow-hidden text-white w-full mt-auto">
       {/* Subtle background texture */}
@@ -11,11 +15,11 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-16">
           {/* Brand */}
-          <div className="col-span-1 md:col-span-2">
+          <div className="col-span-1">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-2xl font-heading font-black text-white tracking-tight">GigConnect</span>
             </div>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-sm font-light">
+            <p className="text-slate-400 text-sm leading-relaxed font-light">
               Empowering university students to build their careers, gain real-world experience, and connect with top businesses.
             </p>
           </div>
@@ -36,8 +40,53 @@ const Footer = () => {
             <ul className="space-y-4 text-sm text-slate-400 font-light">
               <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="mailto:gigconnectsystem@gmail.com" className="hover:text-white transition-colors">Contact Support</a></li>
+              <li>
+                <button 
+                  onClick={() => setIsContactModalOpen(true)} 
+                  className="hover:text-white transition-colors text-left"
+                >
+                  Contact Support
+                </button>
+              </li>
             </ul>
+          </div>
+
+          {/* Contact & Socials */}
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-white font-black mb-6 tracking-wide">Contact Us</h4>
+              <ul className="space-y-4 text-sm text-slate-400 font-light">
+                <li className="flex items-center gap-2.5">
+                  <Mail size={16} className="text-[#89D7B7]" />
+                  <a href="mailto:gigconnectsystem@gmail.com" className="hover:text-white transition-colors">
+                    gigconnectsystem@gmail.com
+                  </a>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Phone size={16} className="text-[#89D7B7]" />
+                  <a href="tel:+94774252261" className="hover:text-white transition-colors">
+                    +94 774252261
+                  </a>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="pt-2">
+              <div className="flex gap-4">
+                <a href="#" className="p-2 rounded-full bg-white/5 hover:bg-white/10 hover:text-[#89D7B7] transition-all text-slate-400">
+                  <Facebook size={18} />
+                </a>
+                <a href="#" className="p-2 rounded-full bg-white/5 hover:bg-white/10 hover:text-[#89D7B7] transition-all text-slate-400">
+                  <Twitter size={18} />
+                </a>
+                <a href="#" className="p-2 rounded-full bg-white/5 hover:bg-white/10 hover:text-[#89D7B7] transition-all text-slate-400">
+                  <Instagram size={18} />
+                </a>
+                <a href="#" className="p-2 rounded-full bg-white/5 hover:bg-white/10 hover:text-[#89D7B7] transition-all text-slate-400">
+                  <Linkedin size={18} />
+                </a>
+              </div>
+            </div>
           </div>
         </div>
 

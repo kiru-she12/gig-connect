@@ -28,14 +28,18 @@ class Profile {
             $preference = $data['preference'] ?? null;
             $is_delivery_available = $data['is_delivery_available'] ?? null;
             $degree = $data['degree'] ?? null;
+            $year = $data['year'] ?? null;
+            $gender = $data['gender'] ?? null;
 
             $stmt = $this->pdo->prepare("UPDATE student SET 
                 skills = COALESCE(?, skills),
                 preference = COALESCE(?, preference),
                 is_delivery_available = COALESCE(?, is_delivery_available),
-                degree = COALESCE(?, degree)
+                degree = COALESCE(?, degree),
+                year = COALESCE(?, year),
+                gender = COALESCE(?, gender)
                 WHERE user_ID = ?");
-            $stmt->execute([$skills, $preference, $is_delivery_available, $degree, $user->user_ID]);
+            $stmt->execute([$skills, $preference, $is_delivery_available, $degree, $year, $gender, $user->user_ID]);
         }
 
         // update job provider details

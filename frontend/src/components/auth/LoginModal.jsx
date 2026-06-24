@@ -89,7 +89,7 @@ const LoginModal = ({ isOpen, onClose }) => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-[900px] h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
+          className="relative w-full max-w-[800px] h-auto md:h-[520px] max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
         >
           {/* Close Button - Outside the layout flow, pinned to top right */}
           <button 
@@ -100,42 +100,32 @@ const LoginModal = ({ isOpen, onClose }) => {
           </button>
 
           {/* Left Pane (Branded) */}
-          <div className="hidden md:flex flex-col w-[45%] bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 relative overflow-hidden text-white pt-12 px-10">
+          <div className="hidden md:flex flex-col w-[45%] bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 relative overflow-hidden text-white justify-center items-center p-8 text-center">
             {/* Decorative circles */}
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/5 blur-3xl"></div>
             <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl"></div>
 
-            <h2 className="text-3xl font-bold mb-8 tracking-tight relative z-10">Welcome to<br/>GigConnect</h2>
+            <h2 className="text-3xl font-bold mb-8 tracking-tight relative z-10 text-center">Welcome to<br/>GigConnect</h2>
             
-            <div className="space-y-6 mb-10 relative z-10">
-              <div className="flex items-start gap-3">
-                <div className="p-1 rounded-full bg-white/10 mt-0.5">
+            <div className="space-y-6 relative z-10 w-full max-w-[280px]">
+              <div className="flex items-center gap-3">
+                <div className="p-1 rounded-full bg-white/10 shrink-0">
                   <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-emerald-50">Exclusive student opportunities</span>
+                <span className="text-lg font-medium text-emerald-50 text-left leading-snug">Exclusive student opportunities</span>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="p-1 rounded-full bg-white/10 mt-0.5">
+              <div className="flex items-center gap-3">
+                <div className="p-1 rounded-full bg-white/10 shrink-0">
                   <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-emerald-50">Build your reputation</span>
+                <span className="text-lg font-medium text-emerald-50 text-left leading-snug">Build your reputation</span>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="p-1 rounded-full bg-white/10 mt-0.5">
+              <div className="flex items-center gap-3">
+                <div className="p-1 rounded-full bg-white/10 shrink-0">
                   <Check size={16} className="text-emerald-200" />
                 </div>
-                <span className="text-lg font-medium text-emerald-50 leading-snug">Connect with local clients</span>
+                <span className="text-lg font-medium text-emerald-50 text-left leading-snug">Connect with local job providers</span>
               </div>
-            </div>
-
-            {/* Bottom Image */}
-            <div className="absolute bottom-0 left-0 right-0 h-[45%] z-0 border-t border-white/10">
-              <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/80 to-transparent z-10"></div>
-              <img 
-                src="https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&q=80" 
-                alt="Working" 
-                className="w-full h-full object-cover object-top opacity-90"
-              />
             </div>
           </div>
 
