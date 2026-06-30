@@ -9,33 +9,46 @@ class AuthMiddleware {
 
     private static function getSecretKey() {
         if (self::$secret_key === null) {
-            self::$secret_key = $_ENV['JWT_SECRET'] ?? '';
+            self::$secret_key = $_ENV['JWT_SECRET'] ?? null;
+            if (!self::$secret_key || trim(self::$secret_key) === '') {
+                header("Content-Type: application/json");
+                echo json_encode(["error" => "Server configuration error: JWT Secret missing."]);
+                exit();
+            }
         }
         return self::$secret_key;
     }
 
     public static function authenticate() {
         $headers = getallheaders();
+        $token = null;
 
-        if (!isset($headers['Authorization'])) {
+        if (isset($_COOKIE['token']) && $_COOKIE['token'] !== '') {
+            $token = $_COOKIE['token'];
+        } elseif (isset($headers['Authorization']) && stripos($headers['Authorization'], 'Bearer ') === 0) {
+            $extracted = trim(substr($headers['Authorization'], 7));
+            if ($extracted !== '' && $extracted !== 'null' && $extracted !== 'undefined') {
+                $token = $extracted;
+            }
+        }
+
+        if (!$token) {
             echo json_encode(["error" => "Token not provided!"]);
             exit();
         }
 
-        $token = str_replace("Bearer ", "", $headers['Authorization']);
         $key = self::getSecretKey();
 
         try {
             $decoded = JWT::decode($token, new Key($key, 'HS256'));
             return $decoded;
         } catch (Exception $e) {
+            header("Content-Type: application/json");
             echo json_encode(["error" => "Invalid token!"]);
             exit();
         }
     }
 }
-
-// Wrapper for backward compatibility
 function authenticate() {
     return AuthMiddleware::authenticate();
 }

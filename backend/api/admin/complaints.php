@@ -1,9 +1,6 @@
 <?php
+require_once __DIR__ . '/../../config/cors.php';
 header("Access-Control-Allow-Origin: " . ($_SERVER['HTTP_ORIGIN'] ?? "*"));
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-if($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit(0); }
-
 header("Content-Type: application/json");
 
 include '../../config/db.php';

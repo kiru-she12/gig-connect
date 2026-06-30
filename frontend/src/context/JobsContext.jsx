@@ -37,18 +37,14 @@ export const JobsProvider = ({ children }) => {
     try {
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       const role = storedUser?.role;
-      const token = localStorage.getItem('token');
       const isAdminOrManager = role === 'admin' || role === 'manager';
       const url = isAdminOrManager 
         ? `${import.meta.env.VITE_API_BASE_URL}/api/jobs/get_jobs.php?all=1`
         : `${import.meta.env.VITE_API_BASE_URL}/api/jobs/get_jobs.php`;
 
-      const headers = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(url, { headers });
+      const response = await fetch(url, { 
+        credentials: 'include' 
+      });
       if (response.ok) {
         const data = await response.json();
         const rawJobs = Array.isArray(data) ? data : (data.jobs || []);
@@ -110,13 +106,12 @@ export const JobsProvider = ({ children }) => {
 
   const addJob = async (job) => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/post_job.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: job.title,
           description: job.description,
@@ -162,13 +157,12 @@ export const JobsProvider = ({ children }) => {
 
   const applyForJob = async (jobId, studentId) => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/apply_jobs.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           job_ID: jobId
         })
@@ -208,7 +202,6 @@ export const JobsProvider = ({ children }) => {
 
   const updateApplicationStatus = async (appId, status) => {
     try {
-      const token = localStorage.getItem('token');
       const actionMap = {
         'shortlisted': 'shortlist',
         'accepted': 'accept',
@@ -228,9 +221,9 @@ export const JobsProvider = ({ children }) => {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/update_applicant.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           application_ID: appId,
           action: action
@@ -263,13 +256,12 @@ export const JobsProvider = ({ children }) => {
 
   const approveJob = async (jobId) => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve_job.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           job_ID: jobId,
           action: 'approve'
@@ -296,13 +288,12 @@ export const JobsProvider = ({ children }) => {
 
   const rejectJob = async (jobId) => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve_job.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           job_ID: jobId,
           action: 'reject'
@@ -329,13 +320,12 @@ export const JobsProvider = ({ children }) => {
 
   const markJobCompleted = async (jobId) => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve_job.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           job_ID: jobId,
           status: 'completed'

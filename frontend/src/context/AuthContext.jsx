@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ email, password, role: requestedRole }),
       });
       
@@ -43,10 +44,8 @@ export const AuthProvider = ({ children }) => {
         name: data.name,
         role: mappedRole,
         email: email,
-        token: data.token,
       };
 
-      localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       return userData;
@@ -58,8 +57,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const logout = async () => {
+    try {
+      await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/logout.php`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     localStorage.removeItem('user');
     setUser(null);
   };

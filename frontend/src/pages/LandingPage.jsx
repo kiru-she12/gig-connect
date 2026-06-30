@@ -264,11 +264,14 @@ const LandingPage = () => {
         tags.push('General');
       }
 
+      // Deduplicate tags to avoid visual replication
+      const uniqueTags = Array.from(new Set(tags));
+
       return {
         id: dbJob.id,
         title: dbJob.title,
         price: formattedPrice,
-        tags: tags.slice(0, 3),
+        tags: uniqueTags.slice(0, 3),
         desc: dbJob.description || '',
         isFeatured: isFeatured,
         date: dbJob.job_date || 'Flexible Schedule',
@@ -1607,8 +1610,8 @@ const LandingPage = () => {
                     <h3 className="text-xl font-black text-slate-900 mb-2 group-hover:text-primary transition-colors leading-tight">{job.title}</h3>
                     <p className="text-slate-600 text-xs leading-relaxed mb-4 line-clamp-2">{job.desc}</p>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {job.tags.map(t => (
-                        <span key={t} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-200">{t}</span>
+                      {job.tags.map((t, i) => (
+                        <span key={`${t}-${i}`} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-200">{t}</span>
                       ))}
                     </div>
                   </div>
@@ -1689,8 +1692,8 @@ const LandingPage = () => {
                     <h3 className="text-xl font-black text-slate-900 mb-2 group-hover:text-primary transition-colors leading-tight">{job.title}</h3>
                     <p className="text-slate-600 text-xs leading-relaxed mb-4 line-clamp-2">{job.desc}</p>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {job.tags.map(t => (
-                        <span key={t} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-200">{t}</span>
+                      {job.tags.map((t, i) => (
+                        <span key={`${t}-${i}`} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-200">{t}</span>
                       ))}
                     </div>
                   </div>
