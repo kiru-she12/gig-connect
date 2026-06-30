@@ -5,7 +5,12 @@ require_once __DIR__ . '/../models/UserModel.php';
 require_once __DIR__ . '/../views/JsonView.php';
 
 class AuthController extends BaseController {
-    public function login($data) {
+    public function login() {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data || !isset($data['email']) || !isset($data['password'])) {
+            JsonView::render(["error" => "Invalid email or password input data!"]);
+        }
+
         $userModel = new UserModel($this->pdo);
         $result = $userModel->authenticate($data['email'], $data['password']);
 
@@ -31,7 +36,12 @@ class AuthController extends BaseController {
         ]);
     }
 
-    public function register($data) {
+    public function register() {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data) {
+            JsonView::render(["error" => "Invalid input data!"]);
+        }
+
         $userModel = new UserModel($this->pdo);
         $result = $userModel->register($data);
         JsonView::render($result);

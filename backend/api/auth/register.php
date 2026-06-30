@@ -9,12 +9,6 @@ include '../../config/sms.php';
 
 require_once '../../controllers/AuthController.php';
 
-$data = json_decode(file_get_contents("php://input"), true);
-if (!$data) {
-    require_once '../../views/JsonView.php';
-    JsonView::render(["error" => "Invalid input data!"]);
-}
-
 $authController = new AuthController($pdo);
-$authController->register($data);
+$authController->register();
 ?>
