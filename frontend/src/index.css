@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #0F172A;
+    --primary-dark: #1E293B;
+    --primary-light: #FFFFFF;
+    --accent: #0D9488;
+    --accent-emerald: #10B981;
+    --surface: #FFFFFF;
+    --background: #F8FAFC;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+    --border: rgba(226, 232, 240, 0.8);
+    --danger: #EF4444;
+  }
+
+  body {
+    @apply antialiased text-slate-900 bg-slate-50 font-sans selection:bg-teal-500/20 selection:text-teal-900;
+  }
+
+  input[type="checkbox"], input[type="radio"] {
+    accent-color: var(--accent);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 active:scale-[0.98] transition-all duration-200 font-semibold shadow-lg shadow-slate-900/15 flex items-center justify-center gap-2 border border-slate-800;
+  }
+
+  .btn-gradient {
+    @apply px-6 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-xl active:scale-[0.98] transition-all duration-200 font-semibold shadow-lg shadow-teal-600/25 flex items-center justify-center gap-2 border border-teal-500/30;
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-100/80 active:scale-[0.98] transition-all duration-200 font-semibold flex items-center justify-center gap-2 shadow-sm;
+  }
+
+  .btn-accent {
+    @apply px-6 py-2.5 bg-teal-600 text-white rounded-xl hover:bg-teal-700 active:scale-[0.98] transition-all duration-200 font-semibold shadow-lg shadow-teal-600/20 flex items-center justify-center gap-2;
+  }
+  
+  .card {
+    @apply bg-white border border-slate-200/80 rounded-2xl shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-teal-900/10 transition-all duration-300 overflow-hidden;
+  }
+
+  /* Dashboard content card */
+  .dash-card {
+    @apply bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all duration-200 font-medium text-slate-800 placeholder:text-slate-400;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200 font-medium text-[13.5px];
+  }
+
+  .sidebar-link-active {
+    @apply bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-lg shadow-teal-600/20 font-semibold;
+  }
+
+  .badge {
+    @apply px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider;
+  }
+
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-slate-900/10;
+  }
+
+  .glass-dark {
+    @apply bg-slate-900/80 backdrop-blur-xl border border-slate-800 shadow-2xl;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300/80 rounded-full hover:bg-slate-400 transition-colors;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes slideRight {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.animate-slideRight {
+  animation: slideRight 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
