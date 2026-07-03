@@ -15,3 +15,6 @@ backend/config/db.php
 .idea/
 *.log
 node_modules
+scratch/
+backend/sent_emails/
+

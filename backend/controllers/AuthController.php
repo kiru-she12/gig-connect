@@ -16,6 +16,7 @@ class AuthController extends BaseController {
 
         if (isset($result['error'])) {
             JsonView::render($result);
+            return;
         }
 
         // Set HttpOnly, SameSite=Lax cookie for token expiration in 24 hours
@@ -30,6 +31,7 @@ class AuthController extends BaseController {
 
         JsonView::render([
             "success" => true,
+            "token" => $result['token'],
             "user_ID" => $result['user_ID'],
             "name" => $result['name'],
             "role" => $result['role']
@@ -58,6 +60,39 @@ class AuthController extends BaseController {
         ]);
 
         JsonView::render(["success" => "Logged out successfully!"]);
+    }
+
+    public function forgetPassword() {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data || !isset($data['email'])) {
+            JsonView::render(["error" => "Email is required!"]);
+        }
+
+        $userModel = new UserModel($this->pdo);
+        $result = $userModel->sendOTP($data);
+        JsonView::render($result);
+    }
+
+    public function resetPassword() {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data) {
+            JsonView::render(["error" => "Invalid input data!"]);
+        }
+
+        $userModel = new UserModel($this->pdo);
+        $result = $userModel->resetPassword($data);
+        JsonView::render($result);
+    }
+
+    public function verifyOTP() {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data) {
+            JsonView::render(["error" => "Invalid input data!"]);
+        }
+
+        $userModel = new UserModel($this->pdo);
+        $result = $userModel->verifyOTP($data);
+        JsonView::render($result);
     }
 }
 ?>

@@ -154,14 +154,11 @@ const AnalyticsTab = ({ profile, applications, receivedReviews }) => {
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard icon={Briefcase}   label="Total Applications" value={apps.length}
           sub="all time"                  color="bg-emerald-50 text-emerald-600" />
         <StatCard icon={TrendingUp}  label="Jobs Completed"     value={completedCount}
           sub="finished gigs"             color="bg-emerald-50 text-emerald-600" />
-        <StatCard icon={DollarSign}  label="Total Earned"
-          value={`LKR ${totalEarned.toLocaleString()}`}
-          sub="from completed jobs"       color="bg-primary-light text-primary" />
         <StatCard icon={Star}        label="Avg Rating"
           value={avgRating === 0 ? '—' : avgRating.toFixed(1)}
           sub={avgRating === 0 ? 'No reviews yet' : `${reviews.length} review${reviews.length !== 1 ? 's' : ''}`}

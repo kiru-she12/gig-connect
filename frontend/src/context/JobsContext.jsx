@@ -59,6 +59,13 @@ export const JobsProvider = ({ children }) => {
               clientId: job.provider_ID || job.client_ID,
               clientName: job.provider_name || 'GigConnect Partner',
               clientEmail: job.provider_email || '',
+              clientPhone: job.provider_phone || '',
+              clientNic: job.provider_nic || '',
+              clientBusinessRegNo: job.provider_business_reg_no || '',
+              clientBusinessType: job.provider_business_type || '',
+              clientAddress: job.provider_address || '',
+              jobAddress: job.address || '',
+              clientIsVerified: job.provider_is_verified == 1,
               job_date: job.job_date || null,
               start_time: job.start_time || null,
               end_time: job.end_time || null,
@@ -77,7 +84,8 @@ export const JobsProvider = ({ children }) => {
               is_product_based: job.is_product_based == 1 || job.is_product_based === true,
               isBoosted: job.is_boosted == 1 || job.isBoosted,
               seekers_needed: job.seekers_needed || 1,
-              payment_status: job.payment_status || 'unpaid'
+              payment_status: job.payment_status || 'unpaid',
+              provider_rating: job.provider_rating || null
             };
           });
 
@@ -126,7 +134,8 @@ export const JobsProvider = ({ children }) => {
           address: job.address,
           latitude: job.latitude,
           longitude: job.longitude,
-          seekers_needed: parseInt(job.seekers_needed || 1)
+          seekers_needed: parseInt(job.seekers_needed || 1),
+          is_product_based: job.is_product_based || 0
         })
       });
 

@@ -46,6 +46,9 @@ export const AuthProvider = ({ children }) => {
         email: email,
       };
 
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       return userData;
@@ -67,6 +70,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', err);
     }
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     setUser(null);
   };
 

@@ -10,6 +10,15 @@ class MailService {
         $mail = new PHPMailer(true);
 
         try {
+            // Save a local copy of the email for verification and offline development
+            $dir = __DIR__ . '/../sent_emails';
+            if (!file_exists($dir)) {
+                mkdir($dir, 0777, true);
+            }
+            $filename = $dir . '/' . time() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '_', $to) . '.html';
+            $meta = "<!-- \nTo: {$to}\nSubject: {$subject}\nDate: " . date('Y-m-d H:i:s') . "\n-->\n";
+            file_put_contents($filename, $meta . $body);
+
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
@@ -17,6 +26,16 @@ class MailService {
             $mail->Password = $_ENV['GMAIL_PASSWORD'] ?? 'ymfn gpzx sixs abmr';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
+            $mail->Timeout = 2; // Short timeout to prevent freezing if network/port is blocked
+
+            // Bypass SSL/TLS peer verification for local XAMPP/PHP development compatibility
+            $mail->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+            );
 
             $mail->setFrom($_ENV['GMAIL'] ?? 'gigconnectsystem@gmail.com', 'GigConnect System');
             $mail->addAddress($to);
@@ -27,6 +46,7 @@ class MailService {
             $mail->send();
             return true;
         } catch (Exception $e) {
+            error_log(date('[Y-m-d H:i:s] ') . "Mail send failed to {$to}. Error: " . $mail->ErrorInfo . " | Exception: " . $e->getMessage() . "\n", 3, __DIR__ . '/../mail_error.log');
             return false;
         }
     }

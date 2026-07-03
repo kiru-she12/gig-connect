@@ -142,9 +142,9 @@ const AdminDashboard = () => {
         <Route path="users" element={<UserManagementTab />} />
         <Route path="approvals" element={<ApprovalsTab jobs={jobs} approve={approveJob} reject={rejectJob} />} />
         <Route path="monitoring" element={<JobMonitoringTab jobs={jobs} refreshJobs={refreshJobs} />} />
-        <Route path="revenue" element={<RevenueTab analytics={analytics} />} />
+        <Route path="revenue" element={<RevenueTab jobs={jobs} analytics={analytics} />} />
         <Route path="communications" element={<CommunicationsTab />} />
-        <Route path="delivery" element={<PlaceholderTab title="Delivery Management" icon={Truck} message="Oversee all active campus delivery routes and delivery staff status." />} />
+        <Route path="delivery" element={<DeliveryManagementTab />} />
         <Route path="complaints" element={<ComplaintsAdminTab />} />
         <Route path="analytics" element={<AnalyticsTab analytics={analytics} loading={analyticsLoading} />} />
         {role === 'admin' && (
@@ -294,64 +294,166 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
 
 const ApprovalsTab = ({ jobs, approve, reject }) => {
   const pendingJobs = jobs.filter(j => j.status === 'Pending Approval');
+  const [selectedProvider, setSelectedProvider] = useState(null);
   
   return (
-    <div className="space-y-8 animate-fadeIn">
-      <div>
-        <h1 className="text-3xl font-heading font-bold text-text-primary">Job Approvals</h1>
-        <p className="text-text-secondary mt-1">Review new job submissions before they go public to students.</p>
+    <>
+      <div className="space-y-8 animate-fadeIn">
+        <div>
+          <h1 className="text-3xl font-heading font-bold text-text-primary">Job Approvals</h1>
+          <p className="text-text-secondary mt-1">Review new job submissions before they go public to students.</p>
+        </div>
+
+        <div className="card overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 border-b border-border">
+              <tr>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Job Info</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Client</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Provider Details</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Amount</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {pendingJobs.map((job) => (
+                <tr key={job.id} className="hover:bg-slate-50/50">
+                  <td className="px-6 py-4">
+                    <p className="font-bold text-text-primary">{job.title}</p>
+                    <p className="text-xs text-text-muted">{job.category} • {job.type}</p>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-text-secondary">{job.clientName || 'Partner Business'}</td>
+                  <td className="px-6 py-4">
+                    <button 
+                      onClick={() => setSelectedProvider(job)}
+                      className="px-3 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5"
+                    >
+                      <Eye size={12} /> View Details
+                    </button>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold">LKR {parseFloat(job.pay || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => approve(job.id)}
+                        className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"
+                        title="Approve Job"
+                      >
+                        <CheckCircle size={18} />
+                      </button>
+                      <button 
+                        onClick={() => reject(job.id)}
+                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"
+                        title="Reject Job"
+                      >
+                        <AlertCircle size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {pendingJobs.length === 0 && (
+            <div className="p-16 text-center text-text-muted">
+              <CheckCircle size={36} className="text-emerald-500 mx-auto mb-3" />
+              <p className="font-bold text-text-primary">All Caught Up!</p>
+              <p className="text-xs mt-0.5">No jobs are pending approval at the moment.</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="card overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-border">
-            <tr>
-              <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Job Info</th>
-              <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Client</th>
-              <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Amount</th>
-              <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {pendingJobs.map((job) => (
-              <tr key={job.id} className="hover:bg-slate-50/50">
-                <td className="px-6 py-4">
-                  <p className="font-bold text-text-primary">{job.title}</p>
-                  <p className="text-xs text-text-muted">{job.category} • {job.type}</p>
-                </td>
-                <td className="px-6 py-4 text-sm text-text-secondary">{job.clientName || 'Partner Business'}</td>
-                <td className="px-6 py-4 text-sm font-bold">LKR {parseFloat(job.pay || 0).toLocaleString()}</td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => approve(job.id)}
-                      className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"
-                      title="Approve Job"
-                    >
-                      <CheckCircle size={18} />
-                    </button>
-                    <button 
-                      onClick={() => reject(job.id)}
-                      className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"
-                      title="Reject Job"
-                    >
-                      <AlertCircle size={18} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {pendingJobs.length === 0 && (
-          <div className="p-16 text-center text-text-muted">
-            <CheckCircle size={36} className="text-emerald-500 mx-auto mb-3" />
-            <p className="font-bold text-text-primary">All Caught Up!</p>
-            <p className="text-xs mt-0.5">No jobs are pending approval at the moment.</p>
+      {selectedProvider && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl relative border border-slate-100 animate-slideUp">
+            <button 
+              onClick={() => setSelectedProvider(null)}
+              className="absolute right-5 top-5 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-50 transition-all"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary font-bold text-lg">
+                {selectedProvider.clientName?.charAt(0) || 'P'}
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Job Provider Profile</span>
+                <h2 className="text-xl font-heading font-bold text-slate-800 leading-tight">
+                  {selectedProvider.clientName}
+                </h2>
+              </div>
+            </div>
+
+            <div className="space-y-4 my-6 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Email Address</span>
+                  <span className="font-semibold text-slate-700 block truncate mt-0.5">{selectedProvider.clientEmail || 'N/A'}</span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Phone Number</span>
+                  <span className="font-semibold text-slate-700 block mt-0.5">{selectedProvider.clientPhone || 'No phone number'}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">NIC Number</span>
+                  <span className="font-semibold text-slate-700 block mt-0.5">{selectedProvider.clientNic || 'N/A'}</span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Business Reg No</span>
+                  <span className="font-semibold text-slate-700 block mt-0.5">{selectedProvider.clientBusinessRegNo || 'Individual Provider'}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Business Type</span>
+                  <span className="font-semibold text-slate-700 block mt-0.5 capitalize">{selectedProvider.clientBusinessType || 'Individual'}</span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Verification status</span>
+                  <span className={`inline-flex items-center gap-1 text-xs font-bold mt-1 ${selectedProvider.clientIsVerified ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {selectedProvider.clientIsVerified ? (
+                      <>
+                        <CheckCircle size={12} /> Verified Partner
+                      </>
+                    ) : (
+                      <>
+                        <Clock size={12} /> Pending Verification
+                      </>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Business Address</span>
+                <span className="font-semibold text-slate-700 block mt-0.5 leading-relaxed">{selectedProvider.clientAddress || 'No registered address'}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4 border-t border-slate-100">
+              <button 
+                onClick={() => setSelectedProvider(null)}
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all"
+              >
+                Close Profile
+              </button>
+              <button 
+                onClick={() => { approve(selectedProvider.id); setSelectedProvider(null); }}
+                className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
+              >
+                <CheckCircle size={14} /> Approve Job
+              </button>
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 };
 
@@ -714,7 +816,8 @@ const UserManagementTab = () => {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <>
+      <div className="space-y-8 animate-fadeIn">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-heading font-bold text-text-primary">User Management</h1>
@@ -769,85 +872,89 @@ const UserManagementTab = () => {
 
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-text-muted">Loading users...</div>
-        ) : users.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-border">
-                <tr>
-                  <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Name</th>
-                  <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Email</th>
-                  <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Joined At</th>
-                  <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Status</th>
-                  <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {users.map((u) => (
-                  <tr key={u.user_ID} className="hover:bg-slate-50/30">
-                    <td className="px-6 py-4 font-bold text-text-primary">{u.name}</td>
-                    <td className="px-6 py-4 text-text-secondary text-sm">{u.email}</td>
-                    <td className="px-6 py-4 text-text-muted text-sm">{u.created_at}</td>
-                    <td className="px-6 py-4">
-                      <span className={`badge ${
-                        u.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
-                        u.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
-                      }`}>
-                        {u.status || 'pending'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        {(u.status === 'pending' || !u.status) ? (
-                          <button
-                            onClick={() => handleAction(u.user_ID, 'approve')}
-                            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all"
-                          >
-                            Approve
-                          </button>
-                        ) : null}
-                        {u.status === 'active' ? (
-                          <button
-                            onClick={() => handleAction(u.user_ID, 'disable')}
-                            disabled={userRole !== 'admin'}
-                            className={`px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-lg transition-all ${userRole !== 'admin' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            title={userRole !== 'admin' ? "Only Admin can disable accounts" : ""}
-                          >
-                            Disable
-                          </button>
-                        ) : null}
-                        {u.status === 'banned' ? (
-                          <button
-                            onClick={() => handleAction(u.user_ID, 'enable')}
-                            disabled={userRole !== 'admin'}
-                            className={`px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all ${userRole !== 'admin' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            title={userRole !== 'admin' ? "Only Admin can enable accounts" : ""}
-                          >
-                            Enable
-                          </button>
-                        ) : null}
-                        {activeTab === 'student' && (
-                          <button
-                            onClick={() => setSelectedStudent(u)}
-                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg transition-all"
-                          >
-                            View Details
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex flex-col items-center justify-center p-16">
+            <Loader2 className="animate-spin text-primary mb-3" size={32} />
+            <p className="text-xs font-bold text-text-secondary">Retrieving user accounts...</p>
           </div>
+        ) : users.length > 0 ? (
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 border-b border-border">
+              <tr>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Name</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Email</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Role</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Status</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {users.map((u) => (
+                <tr key={u.user_ID} className="hover:bg-slate-50/50">
+                  <td className="px-6 py-4 font-bold text-text-primary">{u.name}</td>
+                  <td className="px-6 py-4 text-sm text-text-secondary">{u.email}</td>
+                  <td className="px-6 py-4 text-xs font-bold capitalize text-slate-500">
+                    {u.role?.replace('_', ' ')}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      u.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                      u.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+                    }`}>
+                      {u.status || 'pending'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      {(u.status === 'pending' || !u.status) ? (
+                        <button
+                          onClick={() => handleAction(u.user_ID, 'approve')}
+                          className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all"
+                        >
+                          Approve
+                        </button>
+                      ) : null}
+                      {u.status === 'active' ? (
+                        <button
+                          onClick={() => handleAction(u.user_ID, 'disable')}
+                          disabled={userRole !== 'admin'}
+                          className={`px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-lg transition-all ${userRole !== 'admin' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={userRole !== 'admin' ? "Only Admin can disable accounts" : ""}
+                        >
+                          Disable
+                        </button>
+                      ) : null}
+                      {u.status === 'banned' ? (
+                        <button
+                          onClick={() => handleAction(u.user_ID, 'enable')}
+                          disabled={userRole !== 'admin'}
+                          className={`px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all ${userRole !== 'admin' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={userRole !== 'admin' ? "Only Admin can enable accounts" : ""}
+                        >
+                          Enable
+                        </button>
+                      ) : null}
+                      {activeTab === 'student' && (
+                        <button
+                          onClick={() => setSelectedStudent(u)}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg transition-all"
+                        >
+                          View Details
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
           <div className="p-12 text-center text-text-muted">No users found.</div>
         )}
       </div>
+    </div>
 
       {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl relative border border-border animate-slideUp max-h-[90vh] overflow-y-auto">
             <button 
               onClick={() => setSelectedStudent(null)}
@@ -927,7 +1034,7 @@ const UserManagementTab = () => {
       )}
 
       {isAddStaffOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative border border-border animate-slideUp">
             <button 
               onClick={() => setIsAddStaffOpen(false)}
@@ -1022,7 +1129,7 @@ const UserManagementTab = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
@@ -1186,7 +1293,8 @@ const JobMonitoringTab = ({ jobs, refreshJobs }) => {
   });
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <>
+      <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-heading font-bold text-text-primary">Job Lifecycle Monitoring</h1>
@@ -1462,85 +1570,88 @@ const JobMonitoringTab = ({ jobs, refreshJobs }) => {
           </div>
         </div>
       )}
+    </div>
 
-      {selectedJob && (
-        <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl relative border border-border animate-slideUp">
-            <button 
-              onClick={() => setSelectedJob(null)}
-              className="absolute right-4 top-4 text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-slate-100"
-            >
-              <X size={20} />
-            </button>
-            
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">Job Moderation Panel</span>
-            <h2 className="text-xl font-bold mt-1 text-text-primary">
-              {selectedJob.title}
-            </h2>
-            
-            <div className="mt-4 space-y-4 text-sm">
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-2">
-                <p className="text-text-secondary"><strong className="text-text-primary font-bold">Category:</strong> {selectedJob.category}</p>
-                <p className="text-text-secondary"><strong className="text-text-primary font-bold">Type:</strong> {selectedJob.type}</p>
-                <p className="text-text-secondary"><strong className="text-text-primary font-bold">Budget:</strong> LKR {parseFloat(selectedJob.pay || 0).toLocaleString()}</p>
-                <p className="text-text-secondary"><strong className="text-text-primary font-bold">Deadline:</strong> {selectedJob.deadline ? new Date(selectedJob.deadline).toLocaleString() : 'N/A'}</p>
-                <p className="text-text-secondary"><strong className="text-text-primary font-bold">Current Status:</strong> <span className="font-bold uppercase text-primary">{selectedJob.status}</span></p>
-              </div>
-
-              <div>
-                <strong className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">Intervene & Change Status</strong>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {[
-                    { status: 'pending', label: 'Reset to Pending', bg: 'bg-amber-100 text-amber-700 hover:bg-amber-200' },
-                    { status: 'active', label: 'Approve / Active', bg: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' },
-                    { status: 'in_progress', label: 'In Progress', bg: 'bg-teal-100 text-teal-700 hover:bg-teal-200' },
-                    { status: 'completed', label: 'Complete Job', bg: 'bg-green-100 text-green-700 hover:bg-green-200' },
-                    { status: 'closed', label: 'Close / Reject', bg: 'bg-rose-100 text-rose-700 hover:bg-rose-200' }
-                  ].map(act => (
-                    <button
-                      key={act.status}
-                      disabled={moderating || selectedJob.status?.toLowerCase() === act.status}
-                      onClick={() => handleStatusChange(selectedJob.id, act.status)}
-                      className="py-2 px-3 text-xs font-bold rounded-lg transition-all bg-slate-100 hover:bg-slate-200 text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {act.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+    {selectedJob && (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+        <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl relative border border-border animate-slideUp">
+          <button 
+            onClick={() => setSelectedJob(null)}
+            className="absolute right-4 top-4 text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-slate-100"
+          >
+            <X size={20} />
+          </button>
+          
+          <span className="text-xs font-bold uppercase tracking-wider text-primary">Job Moderation Panel</span>
+          <h2 className="text-xl font-bold mt-1 text-text-primary">
+            {selectedJob.title}
+          </h2>
+          
+          <div className="mt-4 space-y-4 text-sm">
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-2">
+              <p className="text-text-secondary"><strong className="text-text-primary font-bold">Category:</strong> {selectedJob.category}</p>
+              <p className="text-text-secondary"><strong className="text-text-primary font-bold">Type:</strong> {selectedJob.type}</p>
+              <p className="text-text-secondary"><strong className="text-text-primary font-bold">Budget:</strong> LKR {parseFloat(selectedJob.pay || 0).toLocaleString()}</p>
+              <p className="text-text-secondary"><strong className="text-text-primary font-bold">Deadline:</strong> {selectedJob.deadline ? new Date(selectedJob.deadline).toLocaleString() : 'N/A'}</p>
+              <p className="text-text-secondary"><strong className="text-text-primary font-bold">Current Status:</strong> <span className="font-bold uppercase text-primary">{selectedJob.status}</span></p>
             </div>
 
-            <div className="mt-6 flex justify-end">
-              <button 
-                onClick={() => setSelectedJob(null)}
-                className="px-5 py-2 bg-slate-150 hover:bg-slate-200 text-text-secondary rounded-lg font-bold text-xs"
-              >
-                Close Panel
-              </button>
+            <div>
+              <strong className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">Intervene & Change Status</strong>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { status: 'pending', label: 'Reset to Pending', bg: 'bg-amber-100 text-amber-700 hover:bg-amber-200' },
+                  { status: 'active', label: 'Approve / Active', bg: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' },
+                  { status: 'in_progress', label: 'In Progress', bg: 'bg-teal-100 text-teal-700 hover:bg-teal-200' },
+                  { status: 'completed', label: 'Complete Job', bg: 'bg-green-100 text-green-700 hover:bg-green-200' },
+                  { status: 'closed', label: 'Close / Reject', bg: 'bg-rose-100 text-rose-700 hover:bg-rose-200' }
+                ].map(act => (
+                  <button
+                    key={act.status}
+                    disabled={moderating || selectedJob.status?.toLowerCase() === act.status}
+                    onClick={() => handleStatusChange(selectedJob.id, act.status)}
+                    className="py-2 px-3 text-xs font-bold rounded-lg transition-all bg-slate-100 hover:bg-slate-200 text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {act.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+
+          <div className="mt-6 flex justify-end">
+            <button 
+              onClick={() => setSelectedJob(null)}
+              className="px-5 py-2 bg-slate-150 hover:bg-slate-200 text-text-secondary rounded-lg font-bold text-xs"
+            >
+              Close Panel
+            </button>
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    )}
+  </>
   );
 };
 
 // AUDIT & REVENUE MONITORING TAB
-const RevenueTab = ({ analytics }) => {
+const RevenueTab = ({ jobs = [], analytics }) => {
   const navigate = useNavigate();
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const role = storedUser?.role || 'admin';
-  const [withdrawals, setWithdrawals] = useState([
-    { id: 'W-9024', name: 'UWU Student Union', amount: 8000, account: 'BOC Badulla - 120401', status: 'Completed', date: '2026-06-11' },
-    { id: 'W-9023', name: 'Kirushika T.', amount: 4500, account: 'People Bank - 405928', status: 'Completed', date: '2026-06-10' },
-    { id: 'W-9022', name: 'R. Perera', amount: 12000, account: 'Commercial Bank - 88102', status: 'Pending Approval', date: '2026-06-12' },
-  ]);
 
-  const handleApproveWithdrawal = (id) => {
-    setWithdrawals(prev => prev.map(w => w.id === id ? { ...w, status: 'Completed' } : w));
-  };
+  // Approved jobs are those that are active, completed, or in progress (not pending approval or closed)
+  const approvedJobs = jobs.filter(j => j.status !== 'Pending Approval' && j.status !== 'Closed');
 
-  const revenueVal = analytics ? analytics.revenue.total_revenue : 98750;
+  // Dynamically calculate actual commission from approved jobs
+  const calculatedCommissions = approvedJobs.reduce((sum, j) => {
+    const pay = parseFloat(j.pay || 0);
+    return sum + (j.payment_status === 'paid' ? pay * 0.05 : 0);
+  }, 0);
+
+  // If there is dynamic commission, let's add it to base revenue, otherwise fallback to 98750
+  const baseRevenue = analytics ? parseFloat(analytics.revenue.total_revenue) : 98750;
+  const revenueVal = calculatedCommissions > 0 ? calculatedCommissions : baseRevenue;
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -1602,48 +1713,68 @@ const RevenueTab = ({ analytics }) => {
         </div>
       </div>
 
-      <div className="card p-6">
-        <h3 className="font-extrabold text-sm text-text-primary uppercase tracking-wider mb-4">Pending Student Withdrawals</h3>
+      {/* Approved Jobs & Platform Commissions Section */}
+      <div className="card overflow-hidden">
+        <div className="p-6 border-b border-border bg-slate-50/50 flex justify-between items-center">
+          <div>
+            <h3 className="font-bold text-lg text-text-primary">Approved Jobs & Commission Details</h3>
+            <p className="text-xs text-text-muted mt-0.5">Track commissions and payment status for approved gigs.</p>
+          </div>
+          <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full font-heading">
+            {approvedJobs.length} Approved Jobs
+          </span>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b border-slate-150">
+            <thead className="bg-gray-50 border-b border-border">
               <tr>
-                <th className="px-4 py-3 text-xs font-bold text-text-muted uppercase">Reference ID</th>
-                <th className="px-4 py-3 text-xs font-bold text-text-muted uppercase">Recipient Student</th>
-                <th className="px-4 py-3 text-xs font-bold text-text-muted uppercase">Payout Amount</th>
-                <th className="px-4 py-3 text-xs font-bold text-text-muted uppercase">Bank Account</th>
-                <th className="px-4 py-3 text-xs font-bold text-text-muted uppercase">Date</th>
-                <th className="px-4 py-3 text-xs font-bold text-text-muted uppercase">Status</th>
-                <th className="px-4 py-3 text-xs font-bold text-text-muted uppercase">Action</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Job Title</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Provider</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Total Budget</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Commission (5%)</th>
+                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase">Payment Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {withdrawals.map((w) => (
-                <tr key={w.id} className="text-sm">
-                  <td className="px-4 py-3.5 font-bold text-slate-800">{w.id}</td>
-                  <td className="px-4 py-3.5 font-semibold text-slate-700">{w.name}</td>
-                  <td className="px-4 py-3.5 font-black text-slate-800">LKR {w.amount.toLocaleString()}</td>
-                  <td className="px-4 py-3.5 text-text-secondary text-xs">{w.account}</td>
-                  <td className="px-4 py-3.5 text-text-muted text-xs">{w.date}</td>
-                  <td className="px-4 py-3.5">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${w.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                      {w.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    {w.status === 'Pending Approval' ? (
-                      <button 
-                        onClick={() => handleApproveWithdrawal(w.id)}
-                        className="px-3 py-1 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-lg transition-all"
-                      >
-                        Approve Payout
-                      </button>
-                    ) : (
-                      <span className="text-xs text-emerald-600 font-bold flex items-center gap-1"><Check size={12} /> Disbursed</span>
-                    )}
+            <tbody className="divide-y divide-border">
+              {approvedJobs.map((job) => {
+                const totalBudget = parseFloat(job.pay || 0);
+                const commission = totalBudget * 0.05;
+                const isPaid = job.payment_status === 'paid';
+                
+                return (
+                  <tr key={job.id} className="hover:bg-slate-50/50">
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-text-primary">{job.title}</p>
+                      <p className="text-xs text-text-muted">{job.category} • {job.type}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-text-secondary font-medium">{job.clientName || 'Partner Business'}</p>
+                      <p className="text-[10px] text-text-muted">{job.clientEmail}</p>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-slate-800">
+                      LKR {totalBudget.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-extrabold text-primary">
+                      LKR {commission.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`badge ${
+                        isPaid ? 'bg-emerald-100 text-emerald-700 font-bold' : 'bg-amber-100 text-amber-700 font-bold animate-pulse'
+                      }`}>
+                        {isPaid ? 'Paid' : 'Unpaid'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+              {approvedJobs.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="p-12 text-center text-text-muted">
+                    No approved jobs found.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -2311,7 +2442,8 @@ const ComplaintsAdminTab = () => {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <>
+      <div className="space-y-8 animate-fadeIn">
       <div>
         <h1 className="text-3xl font-heading font-bold text-text-primary">Complaints & Alerts</h1>
         <p className="text-text-secondary mt-1">Audit complaints submitted directly to gigconnect@gmail.com and system-generated student schedule completion alerts.</p>
@@ -2385,63 +2517,300 @@ const ComplaintsAdminTab = () => {
           </table>
         </div>
       </div>
+    </div>
 
-      {/* DETAIL MODAL OVERLAY */}
-      {selectedComplaint && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 flex flex-col gap-4 animate-scaleUp">
-            <div className="flex justify-between items-start">
-              <div>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${selectedComplaint.status === 'Resolved' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                  {selectedComplaint.status}
-                </span>
-                <h3 className="font-heading font-black text-lg text-slate-900 mt-2">{selectedComplaint.reason}</h3>
-              </div>
-              <button 
-                onClick={() => setSelectedComplaint(null)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1"
-              >
-                ✕
-              </button>
+    {/* DETAIL MODAL OVERLAY */}
+    {selectedComplaint && (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+        <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 flex flex-col gap-4 animate-scaleUp">
+          <div className="flex justify-between items-start">
+            <div>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${selectedComplaint.status === 'Resolved' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                {selectedComplaint.status}
+              </span>
+              <h3 className="font-heading font-black text-lg text-slate-900 mt-2">{selectedComplaint.reason}</h3>
             </div>
+            <button 
+              onClick={() => setSelectedComplaint(null)}
+              className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1"
+            >
+              ✕
+            </button>
+          </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl space-y-2 text-xs border border-slate-100">
-              <p className="text-slate-600"><strong className="text-slate-800">Complainer:</strong> {selectedComplaint.complainer}</p>
-              <p className="text-slate-600"><strong className="text-slate-800">Target User (Vs):</strong> {selectedComplaint.about}</p>
-              <p className="text-slate-600"><strong className="text-slate-800">Incident Date:</strong> {selectedComplaint.date}</p>
-            </div>
+          <div className="bg-slate-50 p-4 rounded-xl space-y-2 text-xs border border-slate-100">
+            <p className="text-slate-600"><strong className="text-slate-800">Complainer:</strong> {selectedComplaint.complainer}</p>
+            <p className="text-slate-600"><strong className="text-slate-800">Target User (Vs):</strong> {selectedComplaint.about}</p>
+            <p className="text-slate-600"><strong className="text-slate-800">Incident Date:</strong> {selectedComplaint.date}</p>
+          </div>
 
-            <div className="space-y-1">
-              <h4 className="text-xs font-bold text-slate-800 uppercase">Alert/Complaint Details</h4>
-              <p className="text-sm text-slate-600 leading-relaxed bg-white border border-slate-100 p-4 rounded-xl max-h-48 overflow-y-auto font-medium font-sans">
-                {selectedComplaint.text}
-              </p>
-            </div>
+          <div className="space-y-1">
+            <h4 className="text-xs font-bold text-slate-800 uppercase">Alert/Complaint Details</h4>
+            <p className="text-sm text-slate-600 leading-relaxed bg-white border border-slate-100 p-4 rounded-xl max-h-48 overflow-y-auto font-medium font-sans">
+              {selectedComplaint.text}
+            </p>
+          </div>
 
-            <div className="flex gap-2 justify-end pt-2 border-t border-slate-100">
-              <button
-                onClick={() => setSelectedComplaint(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all"
-              >
-                Close View
-              </button>
-              {selectedComplaint.status !== 'Resolved' && (
-                <>
-                  <button
-                    onClick={() => handleResolve(selectedComplaint.id, 'Read')}
-                    className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold rounded-xl transition-all"
-                  >
-                    Mark as Read
-                  </button>
-                  <button
-                    onClick={() => handleResolve(selectedComplaint.id, 'Resolved')}
-                    className="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-md"
-                  >
-                    Mark Resolved
-                  </button>
-                </>
-              )}
-            </div>
+          <div className="flex gap-2 justify-end pt-2 border-t border-slate-100">
+            <button
+              onClick={() => setSelectedComplaint(null)}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all"
+            >
+              Close View
+            </button>
+            {selectedComplaint.status !== 'Resolved' && (
+              <>
+                <button
+                  onClick={() => handleResolve(selectedComplaint.id, 'Read')}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold rounded-xl transition-all"
+                >
+                  Mark as Read
+                </button>
+                <button
+                  onClick={() => handleResolve(selectedComplaint.id, 'Resolved')}
+                  className="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-md"
+                >
+                  Mark Resolved
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+  </>
+  );
+};
+
+const DeliveryManagementTab = () => {
+  const [deliveries, setDeliveries] = useState([]);
+  const [riders, setRiders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [ridersLoading, setRidersLoading] = useState(false);
+  const [assigningId, setAssigningId] = useState(null);
+  const [selectedRiderId, setSelectedRiderId] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const fetchDeliveries = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delivery/get_pending_assignments.php`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success && Array.isArray(data.deliveries)) {
+        setDeliveries(data.deliveries);
+      }
+    } catch (err) {
+      console.error("Failed to load deliveries:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRiders = async () => {
+    setRidersLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/get_users.php?role=delivery_staff&status=available`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success && Array.isArray(data.users)) {
+        setRiders(data.users);
+      }
+    } catch (err) {
+      console.error("Failed to load delivery staff:", err);
+    } finally {
+      setRidersLoading(false);
+    }
+  };
+
+  const handleAssignRider = async (delivery_ID) => {
+    if (!selectedRiderId) {
+      alert("Please select a delivery rider first.");
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delivery/assign_staff.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          delivery_ID,
+          delivery_staff_ID: selectedRiderId
+        })
+      });
+      const data = await response.json();
+      if (data.success || data.message) {
+        alert(data.success || data.message || "Rider assigned successfully!");
+        setAssigningId(null);
+        setSelectedRiderId('');
+        fetchDeliveries();
+      } else {
+        alert(data.error || "Failed to assign rider.");
+      }
+    } catch (err) {
+      alert("Error assigning rider.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDeliveries();
+    fetchRiders();
+  }, []);
+
+  return (
+    <div className="space-y-8 animate-fadeIn">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-heading font-black text-slate-800 flex items-center gap-2">
+            <Truck size={28} className="text-primary" /> Delivery Management
+          </h1>
+          <p className="text-text-secondary mt-1">Oversee campus deliveries and assign platform riders to product orders.</p>
+        </div>
+        <button 
+          onClick={fetchDeliveries}
+          className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+        >
+          Refresh Deliveries
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-text-secondary mt-2 text-sm font-medium">Loading deliveries...</p>
+        </div>
+      ) : deliveries.length === 0 ? (
+        <div className="bg-white border border-slate-100 rounded-3xl p-16 text-center text-slate-500 shadow-sm max-w-2xl mx-auto">
+          <Truck size={48} className="mx-auto mb-4 text-slate-300" />
+          <h3 className="font-bold text-lg text-slate-700">No Pending Campus Deliveries</h3>
+          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
+            Deliveries requiring platform riders will list here once jobs are marked completed by students.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Job Details</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Student</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Client Phone</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Addresses</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Date Requested</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {deliveries.map((del) => {
+                  const isPlatform = del.delivery_type === 'platform';
+                  const showAssign = isPlatform && (del.status === 'pending_assignment' || del.status === 'assigned');
+                  return (
+                    <tr key={del.delivery_ID} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className="font-bold text-slate-800 text-sm block">{del.job_title}</span>
+                        <div className="flex flex-wrap gap-2 items-center text-[10px] text-slate-400 mt-0.5">
+                          <span className="font-mono">ID: {del.delivery_ID}</span>
+                          {parseFloat(del.distance) > 0 && (
+                            <>
+                              <span>•</span>
+                              <span>{parseFloat(del.distance).toFixed(2)} km</span>
+                              <span>•</span>
+                              <span className="text-emerald-600 font-black">LKR {parseFloat(del.delivery_fee || del.distance * 30).toLocaleString()}</span>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-bold text-slate-800 text-sm block">{del.student_name}</span>
+                        <span className="text-xs text-slate-500">{del.student_phone}</span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-700">
+                        {del.client_phone || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 space-y-1">
+                        <div className="text-[11px] text-slate-600">
+                          <strong className="text-slate-400">From:</strong> {del.pickup_address}
+                        </div>
+                        <div className="text-[11px] text-slate-600">
+                          <strong className="text-slate-400">To:</strong> {del.delivery_address}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-500">
+                        {del.date_requested ? new Date(del.date_requested).toLocaleDateString() : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`badge ${
+                          del.status === 'delivered'  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                          del.status === 'picked_up'  ? 'bg-primary-light text-primary' :
+                          del.status === 'assigned'   ? 'bg-primary-light text-primary' :
+                          'bg-amber-50 text-amber-700 border border-amber-100'
+                        } text-xs font-bold uppercase px-3 py-1 rounded-full`}>
+                          {del.status === 'pending_assignment' ? 'Pending Assignment' : del.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {showAssign && (
+                          assigningId === del.delivery_ID ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <select
+                                value={selectedRiderId}
+                                onChange={(e) => setSelectedRiderId(e.target.value)}
+                                className="text-xs px-2 py-1.5 border border-slate-200 rounded-lg outline-none focus:border-primary"
+                              >
+                                <option value="">Select Rider...</option>
+                                {riders.map((rider) => (
+                                  <option key={rider.user_ID} value={rider.user_ID}>
+                                    {rider.name} ({rider.vehicle_type || 'Walk'})
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => handleAssignRider(del.delivery_ID)}
+                                disabled={actionLoading}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all"
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setAssigningId(null);
+                                  setSelectedRiderId('');
+                                }}
+                                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-all"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setAssigningId(del.delivery_ID);
+                                setSelectedRiderId(del.delivery_person_ID || '');
+                              }}
+                              className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-lg transition-all"
+                            >
+                              Assign Delivery Staff
+                            </button>
+                          )
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

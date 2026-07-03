@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -6,12 +7,24 @@ import { useJobs } from '../../context/JobsContext';
 import JobCard from '../../components/shared/JobCard';
 import ChatTab from '../../components/shared/ChatTab';
 import AnalyticsTab from './AnalyticsTab';
+import { motion } from 'framer-motion';
 import { 
   TrendingUp, Briefcase, DollarSign, Star, Search, Clock, 
   CheckCircle2, MessageSquare, Truck, Settings, Bell, CheckCircle,
   AlertTriangle, Shield, Check, X, Award, ChevronRight, Send, ArrowRight,
-  List, LogOut, Lock, User, PlusCircle, RefreshCw, Eye, Sparkles, MapPin
+  List, LogOut, Lock, User, PlusCircle, Plus, RefreshCw, Eye, Sparkles, MapPin, Package
 } from 'lucide-react';
+
+const PRODUCT_KEYWORDS = [
+  'cake', 'crochet', 'bakery', 'bake', 'craft', 'knit', 'sew', 'tailor', 'food', 'pastry', 'cookie', 'snack', 'meal', 'lunch', 'box', 'parcel', 'package', 'jewelry', 'handmade', 'product', 'deliver', 'item',
+  'bag', 'tote', 'canvas', 'paint', 'print', 'drawing', 'sketch', 'shirt', 'clothing', 'cup', 'mug', 'gift', 'art', 'decor', 'hand-paint', 'screen-print', 't-shirt', 'bottle', 'pottery', 'toy', 'woodwork', 'knitting', 'sewing', 'embroidery', 'sweet'
+];
+
+const isProductBased = (job) => {
+  if (job.is_product_based === true || job.is_product_based == 1) return true;
+  const combined = ((job.title || '') + ' ' + (job.description || '')).toLowerCase();
+  return PRODUCT_KEYWORDS.some(kw => combined.includes(kw));
+};
 
 const StudentDashboard = () => {
   const { user, logout } = useAuth();
@@ -104,7 +117,7 @@ const StudentDashboard = () => {
       }
       if (jobsData?.success) setAllJobs(jobsData.jobs);
       if (notifsData?.success) setNotifications(notifsData.notifications);
-      if (deliveryData?.success) setDeliveries([]);
+      if (deliveryData?.success) setDeliveries(deliveryData.deliveries || []);
       setReceivedReviews(recReviews);
       setGivenReviews(givReviews);
 
@@ -122,8 +135,9 @@ const StudentDashboard = () => {
 
   // Handle click on job card "Apply" button
   const handleApplyClick = (job) => {
-    setApplyModalJob(job);
-    setIsDeliveryJob(false);
+    const productJob = isProductBased(job);
+    setApplyModalJob({ ...job, _isProduct: productJob });
+    setIsDeliveryJob(productJob);
     setDeliveryType('self');
     setPickupAddress('');
     setDeliveryAddress('');
@@ -142,11 +156,14 @@ const StudentDashboard = () => {
         'Content-Type': 'application/json'
       };
 
-      // 1. Submit Application
+      // Submit Application — addresses are collected AFTER job completion for platform delivery
       const applyRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/apply_jobs.php`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ job_ID: applyModalJob.id })
+        body: JSON.stringify({ 
+          job_ID: applyModalJob.id,
+          delivery_needed: applyModalJob._isProduct ? (deliveryType === 'platform' ? 1 : 0) : null
+        })
       });
       const applyData = await applyRes.json();
 
@@ -156,28 +173,7 @@ const StudentDashboard = () => {
         return;
       }
 
-      // 2. If it is a product delivery job, create delivery record
-      if (isDeliveryJob) {
-        const deliveryRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delivery/create_delivery.php`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            job_ID: applyModalJob.id,
-            delivery_type: deliveryType,
-            pickup_address: pickupAddress,
-            delivery_address: deliveryAddress
-          })
-        });
-        const deliveryData = await deliveryRes.json();
-        if (deliveryData.error) {
-          alert(`Application submitted but delivery setup failed: ${deliveryData.error}`);
-        } else {
-          alert('Application and Delivery setup submitted successfully!');
-        }
-      } else {
-        alert('Application submitted successfully!');
-      }
-
+      alert('Application submitted successfully!');
       setApplyModalJob(null);
       fetchDashboardData(true);
     } catch (err) {
@@ -351,112 +347,125 @@ const StudentDashboard = () => {
       </Routes>
 
       {/* Application and Delivery Setup Modal */}
-      {applyModalJob && (
+      {applyModalJob && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setApplyModalJob(null)} />
-          <div className="relative bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl animate-fadeIn space-y-5 border border-slate-100">
-            <div className="flex justify-between items-center pb-3 border-b">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setApplyModalJob(null)} />
+          <div className="relative bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col z-[210]">
+            <div className="flex justify-between items-start pb-3 border-b border-slate-100 shrink-0">
               <div>
-                <h3 className="font-heading font-black text-lg text-slate-800">Apply for Job</h3>
-                <p className="text-xs text-slate-400 font-semibold mt-0.5">{applyModalJob.title}</p>
+                <h3 className="font-heading font-black text-lg text-slate-800">Apply for Gig</h3>
+                <p className="text-sm text-slate-500 font-black mt-0.5">{applyModalJob.title}</p>
+                <div className="text-[10px] text-slate-500 mt-2 space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <p className="flex items-center gap-1">
+                    <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] w-20 inline-block">Provider:</span>
+                    <strong className="text-slate-700">{applyModalJob.clientName}</strong>
+                  </p>
+                  <p className="flex items-center gap-1">
+                    <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] w-20 inline-block">Rating:</span>
+                    <span className="flex items-center gap-0.5 text-amber-500 font-bold text-[10px]">
+                      ⭐ {applyModalJob.provider_rating ? `${applyModalJob.provider_rating} / 5.0` : 'No reviews yet'}
+                    </span>
+                  </p>
+                  {applyModalJob.clientBusinessRegNo && (
+                    <p className="flex items-center gap-1">
+                      <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] w-20 inline-block">Reg No:</span>
+                      <strong className="text-slate-700">{applyModalJob.clientBusinessRegNo}</strong>
+                      <span className="text-[9px] text-slate-400 font-medium">({applyModalJob.clientBusinessType})</span>
+                    </p>
+                  )}
+                  {(applyModalJob.jobAddress || applyModalJob.clientAddress) && (
+                    <p className="flex items-start gap-1">
+                      <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] w-20 inline-block shrink-0 mt-0.5">Address:</span>
+                      <span className="text-slate-700 font-semibold">{applyModalJob.jobAddress || applyModalJob.clientAddress}</span>
+                    </p>
+                  )}
+                </div>
               </div>
-              <button onClick={() => setApplyModalJob(null)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-all">
+              <button onClick={() => setApplyModalJob(null)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-all shrink-0">
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleConfirmApplication} className="space-y-4">
-              <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-start gap-3">
-                <AlertTriangle size={20} className="text-amber-500 shrink-0 mt-0.5" />
-                <div className="text-xs text-slate-600 leading-relaxed font-medium">
-                  By applying, you agree to do your best to fulfill the job requirements. Please check if this gig involves delivery of physical products.
-                </div>
-              </div>
-
-              {/* Delivery Toggle Checkbox */}
-              <div className="flex items-center justify-between p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                <div>
-                  <label className="block text-xs font-bold text-slate-800">Product-Based Delivery Gig?</label>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Check this if you need to transport/deliver a product</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={isDeliveryJob}
-                  onChange={(e) => setIsDeliveryJob(e.target.checked)}
-                  className="w-5 h-5 accent-primary cursor-pointer"
-                />
-              </div>
-
-              {/* Delivery Sub-Form */}
-              {isDeliveryJob && (
-                <div className="p-4 bg-primary/[0.02] border border-primary/10 rounded-2xl space-y-4 animate-slideDown">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Delivery Handler</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setDeliveryType('self')}
-                        className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1.5 ${
-                          deliveryType === 'self'
-                            ? 'bg-primary border-primary text-white shadow-sm'
-                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        <User size={16} />
-                        <span>Deliver Myself</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeliveryType('platform')}
-                        className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1.5 ${
-                          deliveryType === 'platform'
-                            ? 'bg-primary border-primary text-white shadow-sm'
-                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        <Truck size={16} />
-                        <span>Rider Staff (Platform)</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Pickup Location</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. UWU Library Canteen"
-                        value={pickupAddress}
-                        onChange={(e) => setPickupAddress(e.target.value)}
-                        required={isDeliveryJob}
-                        className="input-field text-xs py-2.5"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Delivery Destination</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Hostel block C"
-                        value={deliveryAddress}
-                        onChange={(e) => setDeliveryAddress(e.target.value)}
-                        required={isDeliveryJob}
-                        className="input-field text-xs py-2.5"
-                      />
-                    </div>
+            <form onSubmit={handleConfirmApplication} className="flex-1 flex flex-col overflow-hidden mt-4">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1 mb-4">
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-start gap-3">
+                  <AlertTriangle size={20} className="text-amber-500 shrink-0 mt-0.5" />
+                  <div className="text-xs text-slate-600 leading-relaxed font-medium">
+                    By applying, you commit to fulfilling this job to the best of your ability.
+                    {applyModalJob._isProduct && (
+                      <span className="block mt-1.5 text-amber-600 font-bold flex items-center gap-1">
+                        <Package size={12} className="inline" /> This is a <strong>product-based gig</strong> — delivery is required.
+                      </span>
+                    )}
                   </div>
                 </div>
-              )}
+
+                {/* Delivery Section — shown ONLY for product-based jobs */}
+                {applyModalJob._isProduct && (
+                  <div className="p-4 bg-gradient-to-br from-primary-light/50 to-slate-50 border border-primary/20 rounded-2xl space-y-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Truck size={16} className="text-primary" />
+                        <span className="text-xs font-black text-primary-dark uppercase tracking-wider">
+                          Delivery staff needed? / விநியோக ஊழியர் தேவையா?
+                        </span>
+                        <span className="text-[10px] font-bold text-rose-500 ml-auto">Required</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeliveryType('platform');
+                          }}
+                          className={`p-4 rounded-2xl border-2 text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 text-center ${
+                            deliveryType === 'platform'
+                              ? 'bg-primary border-primary text-white shadow-sm'
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="text-sm">YES - I need delivery staff</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeliveryType('self');
+                          }}
+                          className={`p-4 rounded-2xl border-2 text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 text-center ${
+                            deliveryType === 'self'
+                              ? 'bg-primary border-primary text-white shadow-sm'
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="text-sm">NO - I will deliver myself</span>
+                        </button>
+                      </div>
+
+                      {deliveryType === 'platform' ? (
+                        <p className="text-[10px] text-primary font-bold bg-primary-light border border-primary/20 rounded-xl px-3 py-2">
+                          ✓ A GigConnect rider will be assigned once your application is accepted. You will provide pickup &amp; delivery details after the job is complete.
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-slate-500 font-bold bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
+                          ✓ You will deliver the product yourself. An OTP will be shared with you and the job provider upon completion.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <button
                 type="submit"
                 disabled={applying}
-                className="w-full btn-primary py-3 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2"
+                className="w-full btn-primary py-3 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 shrink-0"
               >
                 {applying ? 'Submitting Application...' : 'Confirm Application & Send'}
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </DashboardLayout>
   );
@@ -469,13 +478,362 @@ const StudentDashboard = () => {
 
 
 /* 2. APPLICATIONS TAB */
+/* 2. APPLICATIONS TAB */
 const ApplicationsTab = ({ applications, fetchDashboardData }) => {
   const [activeTab, setActiveTab] = useState('All');
+  
+  // State for Mark as Completed form/modal
+  const [completionModalJob, setCompletionModalJob] = useState(null);
+  const [phone, setPhone] = useState('');
+  const [pickupAddress, setPickupAddress] = useState('');
+  const [dropoffAddress, setDropoffAddress] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [submittingCompletion, setSubmittingCompletion] = useState(false);
+
+  // Map Geocoding states and refs for Completion Modal
+  const [activeAddressField, setActiveAddressField] = useState('pickup');
+  const [locatingPickup, setLocatingPickup] = useState(false);
+  const [locatingDelivery, setLocatingDelivery] = useState(false);
+
+  const modalMapContainerRef = useRef(null);
+  const modalMapRef = useRef(null);
+  const pickupMarkerRef = useRef(null);
+  const deliveryMarkerRef = useRef(null);
+  const activeFieldRef = useRef('pickup');
+  
+  // Keep the ref in sync
+  activeFieldRef.current = activeAddressField;
+
+  const handleModalReverseGeocode = async (lat, lng, field) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ latitude: lat, longitude: lng })
+      });
+      const data = await response.json();
+      if (data && data.success && data.formatted_address) {
+        if (field === 'pickup') {
+          setPickupAddress(data.formatted_address);
+        } else {
+          setDropoffAddress(data.formatted_address);
+        }
+      }
+    } catch (err) {
+      console.error("Modal Reverse geocoding failed:", err);
+    }
+  };
+
+  const handleModalGeocode = async (field) => {
+    const address = field === 'pickup' ? pickupAddress : dropoffAddress;
+    if (!address.trim()) return;
+    
+    if (field === 'pickup') setLocatingPickup(true);
+    else setLocatingDelivery(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ address })
+      });
+      const data = await response.json();
+      if (data && data.success && data.coordinates) {
+        const lat = parseFloat(data.coordinates.latitude);
+        const lon = parseFloat(data.coordinates.longitude);
+        
+        if (field === 'pickup') {
+          setPickupAddress(data.formatted_address || pickupAddress);
+          if (pickupMarkerRef.current) {
+            pickupMarkerRef.current.setLatLng([lat, lon]);
+          }
+        } else {
+          setDropoffAddress(data.formatted_address || dropoffAddress);
+          if (deliveryMarkerRef.current) {
+            deliveryMarkerRef.current.setLatLng([lat, lon]);
+          }
+        }
+
+        if (modalMapRef.current) {
+          modalMapRef.current.setView([lat, lon], 15);
+        }
+      } else {
+        alert("Address not found on map. Try searching for a nearby town or landmark.");
+      }
+    } catch (err) {
+      console.error("Modal Geocoding failed:", err);
+    } finally {
+      if (field === 'pickup') setLocatingPickup(false);
+      else setLocatingDelivery(false);
+    }
+  };
+
+  useEffect(() => {
+    if (completionModalJob && parseInt(completionModalJob.is_product_based) === 1 && completionModalJob.delivery_needed == 1 && window.L && modalMapContainerRef.current) {
+      const timer = setTimeout(() => {
+        if (!modalMapContainerRef.current) return;
+
+        if (modalMapRef.current) {
+          modalMapRef.current.remove();
+          modalMapRef.current = null;
+          pickupMarkerRef.current = null;
+          deliveryMarkerRef.current = null;
+        }
+
+        const initialLat = 6.9812;
+        const initialLng = 81.0763;
+
+        modalMapRef.current = window.L.map(modalMapContainerRef.current).setView([initialLat, initialLng], 13);
+
+        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(modalMapRef.current);
+
+        const greenIcon = new window.L.Icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        });
+
+        const redIcon = new window.L.Icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        });
+
+        pickupMarkerRef.current = window.L.marker([initialLat, initialLng - 0.005], {
+          draggable: true,
+          icon: greenIcon
+        }).addTo(modalMapRef.current).bindPopup('Pickup Location');
+
+        deliveryMarkerRef.current = window.L.marker([initialLat, initialLng + 0.005], {
+          draggable: true,
+          icon: redIcon
+        }).addTo(modalMapRef.current).bindPopup('Delivery Destination');
+
+        pickupMarkerRef.current.on('dragend', async () => {
+          const position = pickupMarkerRef.current.getLatLng();
+          await handleModalReverseGeocode(position.lat, position.lng, 'pickup');
+        });
+
+        deliveryMarkerRef.current.on('dragend', async () => {
+          const position = deliveryMarkerRef.current.getLatLng();
+          await handleModalReverseGeocode(position.lat, position.lng, 'delivery');
+        });
+
+        modalMapRef.current.on('click', async (e) => {
+          const { lat, lng } = e.latlng;
+          if (activeFieldRef.current === 'pickup') {
+            pickupMarkerRef.current.setLatLng([lat, lng]);
+            await handleModalReverseGeocode(lat, lng, 'pickup');
+          } else {
+            deliveryMarkerRef.current.setLatLng([lat, lng]);
+            await handleModalReverseGeocode(lat, lng, 'delivery');
+          }
+        });
+
+        setTimeout(() => {
+          if (modalMapRef.current) {
+            modalMapRef.current.invalidateSize();
+          }
+        }, 300);
+      }, 100);
+
+      return () => {
+        if (modalMapRef.current) {
+          modalMapRef.current.remove();
+          modalMapRef.current = null;
+          pickupMarkerRef.current = null;
+          deliveryMarkerRef.current = null;
+        }
+      };
+    }
+  }, [completionModalJob]);
+
+  // State for OTP entry
+  const [otpVerifyApp, setOtpVerifyApp] = useState(null);
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+  // State for Review modal (for non-product-based jobs)
+  const [selectedAppForReview, setSelectedAppForReview] = useState(null);
+  const [ratingScore, setRatingScore] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const handleOpenReview = (app, clientUserId) => {
+    setSelectedAppForReview({
+      job_ID: app.job_ID,
+      client_user_ID: clientUserId,
+      client_name: app.client_name || 'Job Provider'
+    });
+    setRatingScore(5);
+    setReviewText('');
+  };
+
+  const handleCloseReview = () => {
+    setSelectedAppForReview(null);
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!selectedAppForReview) return;
+
+    setSubmittingReview(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/reviews/submit_review.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          job_ID: selectedAppForReview.job_ID,
+          given_to: selectedAppForReview.client_user_ID,
+          score: ratingScore,
+          review: reviewText
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('Review submitted successfully!');
+        handleCloseReview();
+        fetchDashboardData(true);
+      } else {
+        alert(data.error || 'Failed to submit review.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error submitting review.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const getStudentFacingStatus = (dbStatus) => {
+    const s = (dbStatus || '').toLowerCase();
+    if (s === 'applied' || s === 'shortlisted' || s === 'pending_payment') {
+      return 'applied';
+    }
+    return s; // 'accepted', 'completed', 'delivered', 'rejected'
+  };
 
   const filteredApps = applications.filter((app) => {
+    const facingStatus = getStudentFacingStatus(app.status);
     if (activeTab === 'All') return true;
-    return app.status.toLowerCase() === activeTab.toLowerCase();
+    return facingStatus === activeTab.toLowerCase();
   });
+
+  const handleOpenCompletion = (app) => {
+    setCompletionModalJob(app);
+    setPhone('');
+    setPickupAddress('');
+    setDropoffAddress('');
+    setClientPhone('');
+  };
+
+  const handleCompleteSubmit = async (e) => {
+    e.preventDefault();
+    if (!completionModalJob) return;
+
+    setSubmittingCompletion(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/complete_job.php`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          application_ID: completionModalJob.application_ID,
+          job_ID: completionModalJob.job_ID,
+          phone,
+          pickup_address: pickupAddress,
+          dropoff_address: dropoffAddress,
+          client_phone: clientPhone
+        })
+      });
+      const data = await response.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        const prevJob = completionModalJob;
+        setCompletionModalJob(null);
+        setPhone('');
+        setPickupAddress('');
+        setDropoffAddress('');
+        setClientPhone('');
+        alert(data.message || 'Job marked as completed successfully!');
+        fetchDashboardData(true);
+        if (data.is_product_based === false) {
+          handleOpenReview(prevJob, data.provider_user_ID);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to complete job.');
+    } finally {
+      setSubmittingCompletion(false);
+    }
+  };
+
+  const handleVerifyOtp = async (app) => {
+    if (!enteredOtp) return;
+    setVerifyingOtp(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delivery/confirm_delivery.php`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          delivery_ID: app.delivery_ID,
+          otp: enteredOtp
+        })
+      });
+      const data = await response.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        alert(data.message || 'OTP verified and delivery confirmed successfully!');
+        setOtpVerifyApp(null);
+        setEnteredOtp('');
+        fetchDashboardData(true);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to verify OTP.');
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
+  const statusBadges = {
+    'applied': 'bg-blue-100 text-blue-800 border border-blue-200',
+    'accepted': 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+    'completed': 'bg-purple-100 text-purple-800 border border-purple-200',
+    'delivered': 'bg-orange-100 text-orange-800 border border-orange-200',
+    'rejected': 'bg-rose-100 text-rose-800 border border-rose-200'
+  };
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -486,7 +844,7 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
 
       {/* Filter Tabs */}
       <div className="flex gap-2 border-b border-slate-200 pb-px overflow-x-auto scrollbar-none">
-        {['All', 'Applied', 'Shortlisted', 'Accepted', 'Rejected'].map((tab) => (
+        {['All', 'Applied', 'Accepted', 'Completed', 'Delivered', 'Rejected'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -508,46 +866,401 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
           <p className="text-xs text-slate-400 mt-1">You don't have any applications under this status tab.</p>
         </div>
       ) : (
-        <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Job Title</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Client</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Payment</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Applied Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredApps.map((app) => {
-                  const statusColors = {
-                    'applied': 'bg-primary-light text-primary border border-primary/20',
-                    'shortlisted': 'bg-amber-100 text-amber-700 border border-amber-200',
-                    'accepted': 'bg-emerald-100 text-emerald-700 border border-emerald-200',
-                    'rejected': 'bg-rose-100 text-rose-700 border border-rose-200'
-                  };
-                  return (
-                    <tr key={app.application_ID} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-800 text-sm">{app.job_title}</td>
-                      <td className="px-6 py-4 text-slate-600 text-sm">{app.client_name || 'Partner Client'}</td>
-                      <td className="px-6 py-4 font-black text-slate-800 text-sm">LKR {parseFloat(app.job_payment).toLocaleString()}</td>
-                      <td className="px-6 py-4">
-                        <span className={`badge ${statusColors[app.status.toLowerCase()] || 'bg-slate-100 text-slate-700'}`}>
-                          {app.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-xs text-slate-400 font-semibold">
-                        {new Date(app.applied_date).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredApps.map((app) => {
+            const facingStatus = getStudentFacingStatus(app.status);
+            const isProduct = app.is_product_based == 1;
+
+            return (
+              <div 
+                key={app.application_ID} 
+                className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+              >
+                <div>
+                  <div className="flex justify-between items-start">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusBadges[facingStatus] || 'bg-slate-100 text-slate-700'}`}>
+                      {facingStatus.toUpperCase()}
+                    </span>
+                    <span className="text-xs text-slate-400 font-medium">
+                      Applied: {new Date(app.applied_date).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <h3 className="font-heading font-black text-lg text-slate-800 mt-3">
+                    {app.job_title}
+                  </h3>
+
+                  <div className="flex items-center gap-1 text-xs text-slate-500 mt-1.5">
+                    <span className="font-bold text-slate-600">{app.client_name || 'Partner Client'}</span>
+                    <span>•</span>
+                    <span className="text-[10px] text-amber-500 font-bold flex items-center gap-0.5">
+                      ⭐ {app.provider_rating ? `${app.provider_rating} / 5.0` : 'No reviews yet'}
+                    </span>
+                  </div>
+
+                  {app.provider_address && (
+                    <p className="text-xs text-slate-400 mt-1 flex items-start gap-1">
+                      <MapPin size={12} className="shrink-0 mt-0.5" />
+                      <span>{app.provider_address}</span>
+                    </p>
+                  )}
+
+                  <div className="mt-4 flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                    <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Payment:</span>
+                    <span className="font-black text-slate-800 text-sm">LKR {parseFloat(app.job_payment).toLocaleString()}</span>
+                  </div>
+
+                  {isProduct && (
+                    <div className="mt-3 flex items-center gap-1.5 text-xs text-amber-600 font-bold">
+                      <Package size={12} />
+                      <span>Product-Based Gig ({app.delivery_needed == 1 ? 'Platform Delivery' : 'Self Delivery'})</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Status-specific action panels */}
+                <div className="pt-2 border-t border-slate-100/80 space-y-3">
+                  {facingStatus === 'accepted' && (
+                    <button
+                      onClick={() => handleOpenCompletion(app)}
+                      className="w-full bg-primary text-white py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-primary-dark transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <CheckCircle size={14} />
+                      <span>Mark as Completed</span>
+                    </button>
+                  )}
+
+                  {facingStatus === 'completed' && (
+                    isProduct ? (
+                      <div className="bg-purple-50/50 border border-purple-100/50 rounded-2xl p-4 space-y-3">
+                        {app.delivery_needed == 1 && (
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="font-bold text-purple-700">Verification OTP:</span>
+                            <code className="bg-purple-100 text-purple-800 font-mono font-black text-sm px-2 py-0.5 rounded-lg select-all">
+                              {app.delivery_otp || 'Generating...'}
+                            </code>
+                          </div>
+                        )}
+                        
+                        {app.delivery_needed == 1 ? (
+                          <div className="text-xs text-slate-500 font-medium">
+                            <p className="flex items-center gap-1 text-primary font-bold">
+                              <Truck size={12} />
+                              <span>Platform Rider Status:</span>
+                            </p>
+                            <p className="mt-1 pl-4 font-semibold text-slate-700">
+                              {app.delivery_status === 'pending_assignment' 
+                                ? 'Waiting for admin to assign delivery rider.' 
+                                : `Assigned: ${app.delivery_staff_name || 'Rider'} (${app.delivery_staff_phone || 'N/A'})`}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                              Please physically deliver the product to the client. Enter OTP below once delivered to finalize, or client can confirm.
+                            </p>
+                            {otpVerifyApp?.application_ID === app.application_ID ? (
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  maxLength={6}
+                                  placeholder="Enter 6-digit OTP"
+                                  value={enteredOtp}
+                                  onChange={(e) => setEnteredOtp(e.target.value)}
+                                  className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-primary"
+                                />
+                                <button
+                                  onClick={() => handleVerifyOtp(app)}
+                                  disabled={verifyingOtp}
+                                  className="bg-primary text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-primary-dark transition-all disabled:opacity-60"
+                                >
+                                  {verifyingOtp ? 'Verifying...' : 'Verify'}
+                                </button>
+                                <button
+                                  onClick={() => setOtpVerifyApp(null)}
+                                  className="p-2 border border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setOtpVerifyApp(app);
+                                  setEnteredOtp('');
+                                }}
+                                className="w-full bg-purple-600 text-white py-2 rounded-xl font-bold text-xs hover:bg-purple-700 transition-all flex items-center justify-center gap-1"
+                              >
+                                <Lock size={12} />
+                                <span>Verify Delivery OTP</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      parseInt(app.student_reviewed) > 0 ? (
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-xs text-emerald-700 font-bold flex items-center gap-1.5 justify-center">
+                          <CheckCircle size={14} className="text-emerald-600 shrink-0" />
+                          <span>Completed & Reviewed</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenReview(app, app.client_user_ID)}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 animate-pulse"
+                        >
+                          <Star size={14} className="fill-white" />
+                          <span>Rate & Review Job Provider</span>
+                        </button>
+                      )
+                    )
+                  )}
+
+                  {facingStatus === 'delivered' && (
+                    <div className="bg-orange-50 border border-orange-100 rounded-2xl p-3 text-xs text-orange-700 font-bold flex items-center gap-1.5">
+                      <CheckCircle2 size={14} className="text-orange-600 shrink-0" />
+                      <span>Delivered successfully! Provider has received the product.</span>
+                    </div>
+                  )}
+                  
+                  {facingStatus === 'rejected' && (
+                    <p className="text-xs text-rose-500 font-medium italic">
+                      This application was rejected by the provider.
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
+      )}
+
+      {/* Completion Details Modal */}
+      {completionModalJob && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={() => setCompletionModalJob(null)} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100/80 flex flex-col"
+          >
+            {/* Modal Header */}
+            <div className="p-6 pb-4 bg-gradient-to-r from-primary/5 to-transparent border-b border-slate-100 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-sm">
+                  <CheckCircle size={20} className="stroke-[2.5]" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-black text-base text-slate-800">Complete Gig</h3>
+                  <p className="text-xs text-slate-500 font-bold mt-0.5">{completionModalJob.job_title}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCompletionModalJob(null)} 
+                className="w-8 h-8 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-center text-slate-400 hover:text-slate-600"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleCompleteSubmit} className="p-6 space-y-5 max-h-[70vh] overflow-y-auto scrollbar-none">
+              {parseInt(completionModalJob.is_product_based) === 1 ? (
+                completionModalJob.delivery_needed == 1 ? (
+                  <div className="space-y-4">
+                    <div className="p-3.5 bg-blue-50/60 border border-blue-100/50 rounded-2xl flex gap-3 items-start">
+                      <Truck className="text-primary shrink-0 mt-0.5" size={16} />
+                      <p className="text-xs text-primary-dark leading-relaxed font-semibold">
+                        Please provide pickup and dropoff details for the delivery rider.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Your Phone Number</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. 0771234567"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Pickup Address</label>
+                        <div className="relative flex items-center">
+                          <textarea
+                            required
+                            placeholder="Where should the rider collect the product?"
+                            value={pickupAddress}
+                            onChange={(e) => setPickupAddress(e.target.value)}
+                            onFocus={() => setActiveAddressField('pickup')}
+                            rows={2}
+                            className="w-full pl-3.5 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all resize-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleModalGeocode('pickup')}
+                            disabled={locatingPickup}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary/10 hover:bg-primary/20 disabled:bg-slate-100 text-primary hover:text-primary-dark rounded-lg transition-all flex items-center justify-center"
+                            title="Locate address on map"
+                          >
+                            {locatingPickup ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                            ) : (
+                              <Plus size={14} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Delivery Destination Address</label>
+                        <div className="relative flex items-center">
+                          <textarea
+                            required
+                            placeholder="Where should the rider deliver the product?"
+                            value={dropoffAddress}
+                            onChange={(e) => setDropoffAddress(e.target.value)}
+                            onFocus={() => setActiveAddressField('delivery')}
+                            rows={2}
+                            className="w-full pl-3.5 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all resize-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleModalGeocode('delivery')}
+                            disabled={locatingDelivery}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary/10 hover:bg-primary/20 disabled:bg-slate-100 text-primary hover:text-primary-dark rounded-lg transition-all flex items-center justify-center"
+                            title="Locate address on map"
+                          >
+                            {locatingDelivery ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                            ) : (
+                              <Plus size={14} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Map Container */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                            Interactive Map
+                          </label>
+                          <span className="text-[9px] text-primary font-bold uppercase">
+                            Editing: {activeAddressField === 'pickup' ? '🟢 Pickup' : '🔴 Delivery'}
+                          </span>
+                        </div>
+                        <div 
+                          ref={modalMapContainerRef} 
+                          className="w-full h-40 rounded-xl border border-slate-200 overflow-hidden z-10"
+                          style={{ minHeight: '160px' }}
+                        />
+                        <p className="text-[9px] text-slate-400 leading-normal">
+                          * Click the <b>+</b> button to place a marker from typed address, or click/drag markers on the map to set locations directly.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Client Contact Phone (Optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 0779876543"
+                          value={clientPhone}
+                          onChange={(e) => setClientPhone(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-purple-50/70 border border-purple-100/50 rounded-2xl flex gap-3 items-start">
+                    <CheckCircle className="text-purple-600 shrink-0 mt-0.5" size={16} />
+                    <p className="text-xs text-purple-700 leading-relaxed font-semibold">
+                      This job will be marked as completed immediately. We will generate a secure completion OTP. Please collect the OTP from the client upon delivery to verify.
+                    </p>
+                  </div>
+                )
+              ) : (
+                <div className="p-4 bg-purple-50/70 border border-purple-100/50 rounded-2xl flex gap-3 items-start">
+                  <Star className="text-purple-600 shrink-0 mt-0.5 fill-purple-200" size={16} />
+                  <p className="text-xs text-purple-700 leading-relaxed font-semibold">
+                    This job will be marked as completed immediately. After confirming, you will be prompted to leave a rating and review for the job provider.
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submittingCompletion}
+                className="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-3 rounded-2xl font-bold text-xs shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <CheckCircle size={14} />
+                <span>{submittingCompletion ? 'Marking as Completed...' : 'Confirm Job Completed'}</span>
+              </button>
+            </form>
+          </motion.div>
+        </div>,
+        document.body
+      )}
+
+      {/* Review Modal */}
+      {selectedAppForReview && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={handleCloseReview} />
+          <div className="relative bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-6">
+            <div className="flex justify-between items-center pb-3 border-b">
+              <div>
+                <h3 className="font-bold text-slate-800">Leave a Review</h3>
+                <p className="text-xs text-slate-500 mt-0.5">For {selectedAppForReview.client_name}</p>
+              </div>
+              <button onClick={handleCloseReview} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReview} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Rating Score</label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRatingScore(star)}
+                      className="text-amber-400 transition-all hover:scale-110"
+                    >
+                      <Star size={ star <= ratingScore ? 28 : 28 } className={star <= ratingScore ? 'fill-amber-400' : 'text-slate-300'} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Review Message</label>
+                <textarea
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all h-24 resize-none"
+                  placeholder="Describe your experience working with this client..."
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submittingReview}
+                className="w-full bg-primary text-white py-3 rounded-xl font-bold text-xs shadow-md hover:bg-primary-dark transition-all disabled:opacity-60"
+              >
+                {submittingReview ? 'Submitting...' : 'Submit Review'}
+              </button>
+            </form>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -622,10 +1335,9 @@ const PastHistoryTab = ({ applications, profile, fetchDashboardData }) => {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {[
           { label: 'Total Jobs Completed', value: completedJobs.length, icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Total Earnings', value: `LKR ${totalEarned.toLocaleString()}`, icon: DollarSign, color: 'bg-primary-light text-primary' },
           { 
             label: 'Average Client Rating', 
             value: averageRating === 0 ? 'New' : `${averageRating.toFixed(1)} Stars`, 
@@ -693,7 +1405,7 @@ const PastHistoryTab = ({ applications, profile, fetchDashboardData }) => {
       {/* Review Modal */}
       {selectedApp && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={handleCloseReview} />
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={handleCloseReview} />
           <div className="relative bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-fadeIn space-y-6">
             <div className="flex justify-between items-center pb-3 border-b">
               <div>
@@ -751,6 +1463,55 @@ const PastHistoryTab = ({ applications, profile, fetchDashboardData }) => {
 /* 4. DELIVERIES TAB */
 const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
   const [updating, setUpdating] = useState(false);
+  const [otpInputs, setOtpInputs] = useState({});
+  // Modal state for collecting platform delivery details
+  const [deliveryDetailModal, setDeliveryDetailModal] = useState(null); // delivery object
+  const [ddPickup, setDdPickup] = useState('');
+  const [ddDestination, setDdDestination] = useState('');
+  const [ddPhone, setDdPhone] = useState('');
+  const [ddSubmitting, setDdSubmitting] = useState(false);
+
+  const openDeliveryDetailModal = (del) => {
+    setDeliveryDetailModal(del);
+    setDdPickup('');
+    setDdDestination('');
+    setDdPhone(profile?.phone || '');
+  };
+
+  const handleSubmitDeliveryDetails = async (e) => {
+    e.preventDefault();
+    if (!ddPickup.trim() || !ddDestination.trim() || !ddPhone.trim()) {
+      alert('Please fill in all fields.');
+      return;
+    }
+    setDdSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delivery/update_delivery.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          delivery_ID: deliveryDetailModal.delivery_ID,
+          action: 'ready_for_pickup',
+          pickup_address: ddPickup,
+          delivery_address: ddDestination,
+          phone: ddPhone
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert(data.success);
+        setDeliveryDetailModal(null);
+        fetchDashboardData(true);
+      } else {
+        alert(data.error || 'Failed to submit delivery details.');
+      }
+    } catch (err) {
+      alert('Error communicating with backend.');
+    } finally {
+      setDdSubmitting(false);
+    }
+  };
 
   const handleUpdateDeliveryStatus = async (delivery_ID, action) => {
     setUpdating(true);
@@ -767,13 +1528,45 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
 
       const data = await response.json();
       if (data.success) {
-        alert(`Delivery marked as ${action === 'pickup' ? 'Picked Up' : 'Delivered'}!`);
+        alert(data.success || `Delivery updated successfully!`);
         fetchDashboardData(true);
       } else {
         alert(data.error || 'Failed to update delivery status.');
       }
     } catch (err) {
       alert('Error communicating with backend.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleVerifyOtp = async (delivery_ID) => {
+    const otp = otpInputs[delivery_ID];
+    if (!otp || otp.trim().length !== 6) {
+      alert("Please enter a valid 6-digit OTP.");
+      return;
+    }
+    setUpdating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delivery/verify_otp.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ delivery_ID, otp: otp.trim() })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert(data.success || 'OTP verified successfully!');
+        fetchDashboardData(true);
+      } else {
+        alert(data.error || 'Invalid OTP. Please try again.');
+      }
+    } catch (err) {
+      alert('Error verifying OTP.');
     } finally {
       setUpdating(false);
     }
@@ -816,10 +1609,10 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
                       del.status === 'assigned'   ? 'bg-primary-light text-primary border border-primary/20' :
                       'bg-amber-50 text-amber-700 border border-amber-100'
                     } text-xs font-bold uppercase px-3 py-1 rounded-full`}>
-                      {del.status === 'pending'   ? '🕐 Awaiting Pickup'
+                      {del.status === 'pending'   ? '🕐 Awaiting Action'
                       : del.status === 'assigned'  ? '🚴 Rider Assigned'
-                      : del.status === 'picked_up' ? '📦 Picked Up'
-                      : '✅ Delivered'}
+                      : del.status === 'picked_up' ? '📦 Verification Pending / In Transit'
+                      : '✅ Delivered / Completed'}
                     </span>
                   </div>
                 </div>
@@ -854,42 +1647,133 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
                       <span className="font-bold text-slate-700">{parseFloat(del.distance).toFixed(1)} km</span>
                     </div>
                   )}
-
-                  {del.otp && (
-                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center text-xs">
-                      <div>
-                        <span className="font-bold text-slate-800 block">OTP Code: {del.otp}</span>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">Share with Rider to confirm delivery completion</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* Self Delivery Actions */}
-                {isSelf && del.status !== 'delivered' && (
-                  <div className="pt-2 pl-2">
-                    {del.status === 'pending' || del.status === 'assigned' ? (
+                {/* Delivery Action Panel */}
+                <div className="pt-2 pl-2 border-t border-slate-50">
+                  {del.status === 'delivered' ? (
+                    <p className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+                      ✓ Job and delivery completed successfully.
+                    </p>
+                  ) : isSelf ? (
+                    /* Self Delivery Flows */
+                    del.status === 'pending' ? (
                       <button
-                        onClick={() => handleUpdateDeliveryStatus(del.delivery_ID, 'pickup')}
+                        onClick={() => handleUpdateDeliveryStatus(del.delivery_ID, 'complete_self_delivery')}
+                        disabled={updating}
+                        className="w-full btn-primary py-2.5 rounded-xl text-xs font-bold shadow flex items-center justify-center gap-1.5"
+                      >
+                        🚀 Mark Job Done & Send OTP / வேலையை முடித்து OTP அனுப்புக
+                      </button>
+                    ) : del.status === 'picked_up' ? (
+                      <div className="space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        <p className="text-[11px] font-bold text-slate-500">
+                          Enter the 6-digit OTP code received by email to complete:
+                        </p>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            maxLength={6}
+                            placeholder="Enter 6-digit OTP"
+                            value={otpInputs[del.delivery_ID] || ''}
+                            onChange={(e) => setOtpInputs({ ...otpInputs, [del.delivery_ID]: e.target.value })}
+                            className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-center font-bold tracking-widest text-sm focus:border-primary outline-none"
+                          />
+                          <button
+                            onClick={() => handleVerifyOtp(del.delivery_ID)}
+                            disabled={updating}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 rounded-xl transition-all"
+                          >
+                            Verify
+                          </button>
+                        </div>
+                      </div>
+                    ) : null
+                  ) : (
+                    /* Platform Delivery Flows */
+                    del.status === 'pending' ? (
+                      <button
+                        onClick={() => openDeliveryDetailModal(del)}
                         disabled={updating}
                         className="w-full btn-primary py-2.5 rounded-xl text-xs font-bold shadow"
                       >
-                        Mark as Picked Up
+                        ✓ Mark Product Ready for Rider Pickup / தயாரிப்பைத் தயார் செய்
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => handleUpdateDeliveryStatus(del.delivery_ID, 'deliver')}
-                        disabled={updating}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold shadow"
-                      >
-                        Mark as Delivered
-                      </button>
-                    )}
-                  </div>
-                )}
+                    ) : del.status === 'assigned' ? (
+                      <p className="text-xs text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                        ⏳ Rider {del.delivery_staff_name} has been assigned and is on the way to pick up the product.
+                      </p>
+                    ) : del.status === 'picked_up' ? (
+                      <p className="text-xs text-primary font-bold bg-primary-light border border-primary/20 rounded-xl px-3 py-2">
+                        🚴 Rider is currently delivering the product.
+                      </p>
+                    ) : null
+                  )}
+                </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Delivery Details Modal — collects address + phone for platform delivery */}
+      {deliveryDetailModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDeliveryDetailModal(null)} />
+          <div className="relative bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 border border-slate-100 animate-fadeIn">
+            <div className="flex justify-between items-start pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="font-heading font-black text-lg text-slate-800">Delivery Details</h3>
+                <p className="text-sm text-slate-500 font-medium mt-0.5">{deliveryDetailModal.job_title}</p>
+              </div>
+              <button onClick={() => setDeliveryDetailModal(null)} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+            </div>
+            <p className="text-xs text-primary font-bold bg-primary-light border border-primary/20 rounded-xl px-3 py-2">
+              📦 Please provide delivery information so a GigConnect rider can be assigned.
+            </p>
+            <form onSubmit={handleSubmitDeliveryDetails} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Pickup Location / எடுக்குமிடம்</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. UWU Hostel Block A, Room 204"
+                  value={ddPickup}
+                  onChange={(e) => setDdPickup(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-primary text-xs font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Delivery Destination / செல்லுமிடம்</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Client Office, Badulla"
+                  value={ddDestination}
+                  onChange={(e) => setDdDestination(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-primary text-xs font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Your Phone Number / தொலைபேசி எண்</label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="e.g. 0771234567"
+                  value={ddPhone}
+                  onChange={(e) => setDdPhone(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-primary text-xs font-medium"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={ddSubmitting}
+                className="w-full btn-primary py-3 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2"
+              >
+                {ddSubmitting ? 'Submitting...' : '✓ Confirm & Notify Admin'}
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -28,6 +28,12 @@ const LoginModal = ({ isOpen, onClose }) => {
       onClose();
       if (userData.role === 'student') {
         navigate('/');
+      } else if (userData.role === 'admin' || userData.role === 'manager') {
+        navigate('/dashboard/admin/overview');
+      } else if (userData.role === 'client') {
+        navigate('/dashboard/client/home');
+      } else if (userData.role === 'delivery_staff') {
+        navigate('/dashboard/delivery/overview');
       } else {
         navigate(`/dashboard/${userData.role}`);
       }

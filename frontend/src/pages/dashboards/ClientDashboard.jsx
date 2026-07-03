@@ -9,7 +9,7 @@ import ChatTab from '../../components/shared/ChatTab';
 import { 
   PlusCircle, List, Users, MessageSquare, MapPin, Star, Settings, 
   ChevronRight, ChevronLeft, CreditCard, CheckCircle, Clock, DollarSign,
-  Plus
+  Plus, Truck
 } from 'lucide-react';
 
 const ClientDashboard = () => {
@@ -25,11 +25,90 @@ const ClientDashboard = () => {
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
 
+  // Delivery States
+  const [deliveries, setDeliveries] = useState([]);
+  const [deliveriesLoading, setDeliveriesLoading] = useState(false);
+
+  const fetchDeliveries = async () => {
+    setDeliveriesLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/delivery/get_deliveries.php`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success && Array.isArray(data.deliveries)) {
+        setDeliveries(data.deliveries);
+      }
+    } catch (err) {
+      console.error("Failed to load client deliveries:", err);
+    } finally {
+      setDeliveriesLoading(false);
+    }
+  };
+
   const handleProcessPayment = async (e) => {
     e.preventDefault();
     if (!paymentJob) return;
     
     setPaymentLoading(true);
+    
+    // 1. Validate Card Number (Luhn's Algorithm)
+    const cleanCard = cardNumber.replace(/\D/g, '');
+    if (cleanCard.length !== 16) {
+      alert("Invalid Card Number: Card number must be exactly 16 digits.");
+      setPaymentLoading(false);
+      return;
+    }
+
+    let sum = 0;
+    let shouldDouble = false;
+    for (let i = cleanCard.length - 1; i >= 0; i--) {
+      let digit = parseInt(cleanCard.charAt(i), 10);
+      if (shouldDouble) {
+        digit *= 2;
+        if (digit > 9) digit -= 9;
+      }
+      sum += digit;
+      shouldDouble = !shouldDouble;
+    }
+
+    if (sum % 10 !== 0) {
+      alert("Invalid Card Number: The card number failed the Luhn algorithm validation check.");
+      setPaymentLoading(false);
+      return;
+    }
+
+    // 2. Validate Expiry Date (MM / YY)
+    const expiryMatch = expiryDate.trim().match(/^(0[1-9]|1[0-2])\s*\/\s*([0-9]{2})$/);
+    if (!expiryMatch) {
+      alert("Invalid Expiry Date format: Must be MM / YY.");
+      setPaymentLoading(false);
+      return;
+    }
+
+    const expMonth = parseInt(expiryMatch[1], 10);
+    const expYear = parseInt("20" + expiryMatch[2], 10);
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+
+    if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
+      alert("Invalid Expiry Date: This credit card has expired.");
+      setPaymentLoading(false);
+      return;
+    }
+
+    // 3. Validate CVV
+    const cleanCvv = cvv.replace(/\D/g, '');
+    if (cleanCvv.length !== 3 && cleanCvv.length !== 4) {
+      alert("Invalid CVV: CVV must be 3 or 4 digits.");
+      setPaymentLoading(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/jobs/update_payment_status.php`, {
@@ -40,7 +119,10 @@ const ClientDashboard = () => {
         },
         body: JSON.stringify({
           job_ID: paymentJob.id,
-          payment_status: 'paid'
+          payment_status: 'paid',
+          card_number: cleanCard,
+          expiry_date: expiryDate.trim(),
+          cvv: cleanCvv
         })
       });
 
@@ -88,6 +170,7 @@ const ClientDashboard = () => {
 
   useEffect(() => {
     fetchProfile();
+    fetchDeliveries();
     if (refreshJobs) {
       refreshJobs();
     }
@@ -107,7 +190,13 @@ const ClientDashboard = () => {
         <Route path="listings" element={<ListingsTab clientJobs={clientJobs} clientApps={clientApps} onPayJob={setPaymentJob} />} />
         <Route path="applicants" element={<ApplicantsTab clientJobs={clientJobs} updateStatus={updateApplicationStatus} onPayJob={setPaymentJob} />} />
         <Route path="messages" element={<ChatTab />} />
-        <Route path="delivery" element={<PlaceholderTab title="Delivery Tracking" icon={MapPin} message="Track your deliveries in real-time." />} />
+        <Route path="delivery" element={
+          <DeliveryTab 
+            deliveries={deliveries} 
+            loading={deliveriesLoading}
+            refreshDeliveries={fetchDeliveries}
+          />
+        } />
         <Route path="ratings" element={<PlaceholderTab title="Your Ratings" icon={Star} message="View feedback from students you've hired." />} />
         <Route path="settings" element={<SettingsTab user={user} onProfileUpdate={fetchProfile} />} />
         <Route path="*" element={<HomeTab user={user} clientJobs={clientJobs} clientApps={clientApps} />} />
@@ -291,10 +380,18 @@ const SettingsTab = ({ user, onProfileUpdate }) => {
 
   const handleReverseGeocode = async (lat, lng) => {
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ latitude: lat, longitude: lng })
+      });
       const data = await response.json();
-      if (data && data.display_name) {
-        setAddress(data.display_name);
+      if (data && data.success && data.formatted_address) {
+        setAddress(data.formatted_address);
       }
     } catch (err) {
       console.error("Reverse geocoding failed:", err);
@@ -338,13 +435,24 @@ const SettingsTab = ({ user, onProfileUpdate }) => {
     if (!address.trim()) return;
     setLocating(true);
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ address: address })
+      });
       const data = await response.json();
-      if (data && data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
+      if (data && data.success && data.coordinates) {
+        const lat = parseFloat(data.coordinates.latitude);
+        const lon = parseFloat(data.coordinates.longitude);
         setLatitude(lat);
         setLongitude(lon);
+        if (data.formatted_address) {
+          setAddress(data.formatted_address);
+        }
 
         if (mapRef.current && markerRef.current) {
           mapRef.current.setView([lat, lon], 15);
@@ -570,7 +678,8 @@ const PostJobTab = ({ addJob, profile }) => {
     business_reg_no: '',
     latitude: null,
     longitude: null,
-    seekers_needed: 1
+    seekers_needed: 1,
+    is_product_based: 0
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -622,12 +731,20 @@ const PostJobTab = ({ addJob, profile }) => {
 
   const handleReverseGeocode = async (lat, lng) => {
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ latitude: lat, longitude: lng })
+      });
       const data = await response.json();
-      if (data && data.display_name) {
+      if (data && data.success && data.formatted_address) {
         setFormData(prev => ({
           ...prev,
-          address: data.display_name,
+          address: data.formatted_address,
           latitude: lat,
           longitude: lng
         }));
@@ -641,13 +758,22 @@ const PostJobTab = ({ addJob, profile }) => {
     if (!formData.address.trim()) return;
     setLocating(true);
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.address)}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ address: formData.address })
+      });
       const data = await response.json();
-      if (data && data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
+      if (data && data.success && data.coordinates) {
+        const lat = parseFloat(data.coordinates.latitude);
+        const lon = parseFloat(data.coordinates.longitude);
         setFormData(prev => ({
           ...prev,
+          address: data.formatted_address || prev.address,
           latitude: lat,
           longitude: lon
         }));
@@ -901,6 +1027,24 @@ const PostJobTab = ({ addJob, profile }) => {
                 </div>
               </div>
 
+              {formData.type === 'Remote' && (
+                <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl flex items-center justify-between animate-fadeIn">
+                  <div>
+                    <label className="block text-sm font-bold text-text-primary">Product-Based Job?</label>
+                    <span className="text-xs text-text-muted">Select if this job involves creating a physical product that needs delivery</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer"
+                      checked={formData.is_product_based === 1}
+                      onChange={(e) => setFormData({ ...formData, is_product_based: e.target.checked ? 1 : 0 })}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+              )}
+
               {/* Business Registration Number Field */}
               <div>
                 <label className="block text-sm font-bold text-text-secondary mb-1.5">
@@ -953,12 +1097,7 @@ const PostJobTab = ({ addJob, profile }) => {
                   {/* Map Container */}
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-text-secondary block">Location Coordinates (Drag marker to refine)</span>
-                      {formData.latitude && formData.longitude && (
-                        <span className="text-[10px] text-text-muted font-bold">
-                          {parseFloat(formData.latitude).toFixed(4)}, {parseFloat(formData.longitude).toFixed(4)}
-                        </span>
-                      )}
+                      <span className="text-xs font-bold text-text-secondary block">Location Map (Drag marker to refine)</span>
                     </div>
                     <div 
                       ref={mapContainerRef} 
@@ -1210,9 +1349,11 @@ const ListingsTab = ({ clientJobs, clientApps, onPayJob }) => {
       <h1 className="text-3xl font-heading font-bold text-text-primary">My Job Listings</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {clientJobs.map(job => {
+          const selectedCount = clientApps.filter(app => app.jobId === job.id && (app.status === 'accepted' || app.status === 'Accepted' || app.status === 'pending_payment')).length;
           const hiredCount = clientApps.filter(app => app.jobId === job.id && (app.status === 'accepted' || app.status === 'Accepted')).length;
           const seekersNeeded = job.seekers_needed || 1;
-          const isFullyHired = hiredCount >= seekersNeeded;
+          const isFullySelected = selectedCount >= seekersNeeded;
+          const hasPendingPayment = clientApps.some(app => app.jobId === job.id && app.status === 'pending_payment');
           const isPaid = job.payment_status === 'paid';
 
           return (
@@ -1227,7 +1368,7 @@ const ListingsTab = ({ clientJobs, clientApps, onPayJob }) => {
                     }`}>
                       {job.status === 'Active' ? 'Approved' : job.status}
                     </span>
-                    {isFullyHired && (
+                    {isFullySelected && (
                       <span className={`badge ${isPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'} text-[10px] font-bold`}>
                         {isPaid ? '✓ Paid' : '⚠️ Unpaid'}
                       </span>
@@ -1238,8 +1379,11 @@ const ListingsTab = ({ clientJobs, clientApps, onPayJob }) => {
                   <span className="flex items-center gap-1"><Clock size={14}/> {job.duration}</span>
                   <span className="flex items-center gap-1 font-bold text-text-primary">LKR {job.pay}</span>
                   {job.seekers_needed && (
-                    <span className="flex items-center gap-1 text-emerald-600 font-bold">
+                    <span className="flex items-center gap-1 text-emerald-600 font-bold flex-wrap">
                       👥 Hired: {hiredCount} / {seekersNeeded}
+                      {selectedCount > hiredCount && (
+                        <span className="text-amber-600 text-xs ml-1 font-bold">({selectedCount - hiredCount} Selected, Pending Payment)</span>
+                      )}
                     </span>
                   )}
                 </div>
@@ -1251,10 +1395,10 @@ const ListingsTab = ({ clientJobs, clientApps, onPayJob }) => {
                 >
                   View Applicants
                 </button>
-                {isFullyHired && !isPaid && (
+                {!isPaid && (hasPendingPayment || isFullySelected) && (
                   <button 
                     onClick={() => onPayJob(job)}
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm animate-pulse"
                   >
                     💳 Pay Platform Commission (LKR {(job.pay * 0.05).toFixed(2)})
                   </button>
@@ -1271,6 +1415,7 @@ const ListingsTab = ({ clientJobs, clientApps, onPayJob }) => {
 const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
   const location = useLocation();
   const [selectedJobId, setSelectedJobId] = useState(location.state?.jobId || clientJobs[0]?.id || '');
+  const [activeTab, setActiveTab] = useState('All');
 
   useEffect(() => {
     if (location.state?.jobId) {
@@ -1280,6 +1425,63 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
+
+  // States for Provider rating and reviewing student
+  const [selectedAppForReview, setSelectedAppForReview] = useState(null);
+  const [ratingScore, setRatingScore] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const handleOpenReview = (app) => {
+    setSelectedAppForReview({
+      job_ID: app.job_ID,
+      student_user_ID: app.student_user_ID,
+      student_name: app.name || 'Student'
+    });
+    setRatingScore(5);
+    setReviewText('');
+  };
+
+  const handleCloseReview = () => {
+    setSelectedAppForReview(null);
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!selectedAppForReview) return;
+
+    setSubmittingReview(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/reviews/submit_review.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          job_ID: selectedAppForReview.job_ID,
+          given_to: selectedAppForReview.student_user_ID,
+          score: ratingScore,
+          review: reviewText
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('Review submitted successfully!');
+        handleCloseReview();
+        fetchApplicants(selectedJobId);
+      } else {
+        alert(data.error || 'Failed to submit review.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error submitting review.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const fetchApplicants = async (jobId) => {
     if (!jobId) return [];
@@ -1311,27 +1513,46 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
     return [];
   };
 
+  const selectedJob = clientJobs.find(j => j.id === selectedJobId);
+  const paymentStatus = selectedJob?.payment_status;
+
   useEffect(() => {
     fetchApplicants(selectedJobId);
-  }, [selectedJobId]);
+  }, [selectedJobId, paymentStatus]);
 
   const handleUpdateStatus = async (appId, action) => {
     await updateStatus(appId, action);
-    const latestApplicants = await fetchApplicants(selectedJobId);
+    const updatedApplicants = await fetchApplicants(selectedJobId);
 
     if (action === 'Accepted' || action === 'accept') {
       const currentJob = clientJobs.find(j => j.id === selectedJobId);
-      if (currentJob) {
+      if (currentJob && currentJob.payment_status !== 'paid') {
         const seekersNeeded = currentJob.seekers_needed || 1;
-        const hiredCount = latestApplicants.filter(app => app.status === 'accepted' || app.status === 'Accepted').length;
-        
-        if (hiredCount >= seekersNeeded && currentJob.payment_status !== 'paid') {
+        const hiredCount = updatedApplicants.filter(app => app.status === 'accepted' || app.status === 'Accepted' || app.status === 'pending_payment').length;
+        if (hiredCount >= seekersNeeded) {
           if (onPayJob) {
             onPayJob(currentJob);
           }
         }
       }
     }
+  };
+
+  const filteredApplicants = applicants.filter((app) => {
+    if (activeTab === 'All') return true;
+    const status = app.status.toLowerCase();
+    const tabKey = activeTab.toLowerCase().replace(' ', '_');
+    return status === tabKey;
+  });
+
+  const statusColors = {
+    'applied': 'bg-blue-100 text-blue-700 border border-blue-200',
+    'shortlisted': 'bg-amber-100 text-amber-700 border border-amber-200',
+    'pending_payment': 'bg-amber-50 text-amber-600 border border-amber-200',
+    'accepted': 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+    'completed': 'bg-purple-100 text-purple-700 border border-purple-200',
+    'delivered': 'bg-orange-100 text-orange-700 border border-orange-200',
+    'rejected': 'bg-rose-100 text-rose-700 border border-rose-200'
   };
 
   return (
@@ -1347,14 +1568,31 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
         </select>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex gap-2 border-b border-slate-200 pb-px overflow-x-auto scrollbar-none">
+        {['All', 'Applied', 'Shortlisted', 'Pending Payment', 'Accepted', 'Completed', 'Delivered', 'Rejected'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-all ${
+              activeTab === tab 
+                ? 'border-primary text-primary' 
+                : 'border-transparent text-text-secondary hover:text-primary/70'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="text-text-secondary mt-2 text-sm font-medium">Loading applicants...</p>
         </div>
-      ) : applicants.length > 0 ? (
+      ) : filteredApplicants.length > 0 ? (
         <div className="space-y-4">
-          {applicants.map(app => (
+          {filteredApplicants.map(app => (
             <div key={app.application_ID} className="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-primary transition-all">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-primary-light text-primary rounded-2xl flex items-center justify-center font-bold text-xl uppercase">
@@ -1363,7 +1601,14 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h4 className="font-bold text-lg">{app.name || 'Student Applicant'}</h4>
-                    <span className="badge bg-primary-light text-primary text-[10px]">Active Member</span>
+                    <span className={`badge ${statusColors[app.status.toLowerCase()] || 'bg-slate-100 text-slate-700'} text-[10px]`}>
+                      {app.status.toUpperCase()}
+                    </span>
+                    {app.match_score !== undefined && (
+                      <span className="badge bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                        🎯 {app.match_score}% Match
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 text-sm text-text-secondary mt-1">
                     {parseFloat(app.rating || 0) === 0 ? (
@@ -1385,15 +1630,47 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                {app.status === 'accepted' ? (
+              <div className="flex items-center gap-3">
+                {app.status.toLowerCase() === 'completed' ? (
+                  parseInt(app.is_product_based) === 1 ? (
+                    <span className="badge bg-purple-100 text-purple-700 font-bold py-2 px-4 flex items-center gap-1.5">
+                      ⏳ Completed (OTP Verification Pending)
+                    </span>
+                  ) : parseInt(app.provider_reviewed) > 0 ? (
+                    <span className="badge bg-emerald-100 text-emerald-700 font-bold py-2 px-4 flex items-center gap-1.5">
+                      <CheckCircle size={14} /> Completed & Reviewed
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleOpenReview(app)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-2.5 px-5 rounded-xl transition-all shadow-sm flex items-center gap-1.5 animate-pulse"
+                    >
+                      <CheckCircle size={14} /> Confirm Completion & Rate Student
+                    </button>
+                  )
+                ) : app.status.toLowerCase() === 'accepted' ? (
                   <span className="badge bg-emerald-100 text-emerald-700 font-bold py-2 px-4 flex items-center gap-1.5">
                     <CheckCircle size={14} /> Hired
                   </span>
-                ) : app.status === 'rejected' ? (
+                ) : app.status.toLowerCase() === 'rejected' ? (
                   <span className="badge bg-red-100 text-red-700 font-bold py-2 px-4">
                     Rejected
                   </span>
+                ) : app.status.toLowerCase() === 'pending_payment' ? (
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <span className="badge bg-amber-100 text-amber-700 font-bold py-2 px-4 flex items-center gap-1.5">
+                      ⏳ Selected (Pending Payment)
+                    </span>
+                    <button 
+                      onClick={() => {
+                        const targetJob = clientJobs.find(j => j.id === app.job_ID || j.id === selectedJobId);
+                        if (targetJob) onPayJob(targetJob);
+                      }}
+                      className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2 px-4 rounded-xl transition-all flex items-center gap-1 shadow-sm"
+                    >
+                      💳 Pay Commission
+                    </button>
+                  </div>
                 ) : (
                   <>
                     <button 
@@ -1402,10 +1679,10 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
                     >
                       Reject
                     </button>
-                    {app.status !== 'shortlisted' && (
+                    {app.status.toLowerCase() === 'applied' && (
                       <button 
-                        onClick={() => handleUpdateStatus(app.application_ID, 'Shortlisted')}
-                        className="px-4 py-2 text-amber-600 font-bold text-sm bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors"
+                        onClick={() => handleUpdateStatus(app.application_ID, 'shortlist')}
+                        className="px-4 py-2 text-amber-600 font-bold text-sm hover:bg-amber-50 rounded-lg transition-colors"
                       >
                         Shortlist
                       </button>
@@ -1425,9 +1702,65 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
       ) : (
         <div className="card p-20 text-center">
           <Users size={48} className="text-text-muted mx-auto mb-4" />
-          <h3 className="text-xl font-bold">No applicants yet</h3>
-          <p className="text-text-secondary">Share your job post to attract more talent.</p>
+          <h3 className="text-xl font-bold">No applicants found</h3>
+          <p className="text-text-secondary">No candidates are currently under this status filter.</p>
         </div>
+      )}
+
+      {/* Review Modal for Job Provider to review Student */}
+      {selectedAppForReview && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fadeIn">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={handleCloseReview} />
+          <div className="relative bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-6">
+            <div className="flex justify-between items-center pb-3 border-b border-border">
+              <div>
+                <h3 className="font-bold text-text-primary text-lg">Rate & Review Student</h3>
+                <p className="text-xs text-text-muted mt-0.5">For {selectedAppForReview.student_name}</p>
+              </div>
+              <button onClick={handleCloseReview} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400">
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReview} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-text-muted uppercase mb-2">Rating Score</label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRatingScore(star)}
+                      className="text-amber-400 transition-all hover:scale-110"
+                    >
+                      <Star size={28} className={star <= ratingScore ? 'fill-amber-400' : 'text-slate-300'} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-text-muted uppercase mb-1.5">Review Message</label>
+                <textarea
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all h-24 resize-none"
+                  placeholder="Describe the student's work performance and quality..."
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submittingReview}
+                className="w-full bg-primary text-white py-3 rounded-xl font-bold text-xs shadow-md hover:bg-primary-dark transition-all disabled:opacity-60"
+              >
+                {submittingReview ? 'Submitting Review...' : 'Confirm Completion & Submit'}
+              </button>
+            </form>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* View Profile Modal */}
@@ -1552,6 +1885,192 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
           </div>
         </div>,
         document.body
+      )}
+    </div>
+  );
+};
+
+const DeliveryTab = ({ deliveries, loading, refreshDeliveries }) => {
+  const [updating, setUpdating] = useState(false);
+  const [otpInputs, setOtpInputs] = useState({});
+
+  const handleVerifyOtp = async (delivery_ID) => {
+    const otp = otpInputs[delivery_ID];
+    if (!otp || otp.trim().length !== 6) {
+      alert("Please enter a valid 6-digit OTP.");
+      return;
+    }
+    setUpdating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/delivery/verify_otp.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ delivery_ID, otp: otp.trim() })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert(data.success || 'OTP verified successfully! Job completed.');
+        refreshDeliveries();
+      } else {
+        alert(data.error || 'Invalid OTP. Please try again.');
+      }
+    } catch (err) {
+      alert('Error verifying OTP.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8 animate-fadeIn">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-heading font-bold text-text-primary flex items-center gap-2">
+            <Truck size={28} className="text-primary" /> Delivery Orders
+          </h1>
+          <p className="text-text-secondary mt-1">Track deliveries for your product-based gigs.</p>
+        </div>
+        <button 
+          onClick={refreshDeliveries}
+          className="btn-secondary py-2 px-4 text-xs font-bold"
+        >
+          Refresh Deliveries
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-text-secondary mt-2 text-sm font-medium">Loading deliveries...</p>
+        </div>
+      ) : deliveries.length === 0 ? (
+        <div className="card p-20 text-center">
+          <Truck size={48} className="text-text-muted mx-auto mb-4" />
+          <h3 className="text-xl font-bold">No product deliveries yet</h3>
+          <p className="text-text-secondary">Physical orders requiring self or platform delivery will appear here.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {deliveries.map((del) => {
+            const isSelf = del.delivery_type === 'self';
+            return (
+              <div key={del.delivery_ID} className="card p-6 space-y-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
+                
+                <div className="flex justify-between items-start pl-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary-light px-2.5 py-1 rounded-md">
+                      {del.delivery_ID}
+                    </span>
+                    <h3 className="font-bold text-text-primary text-base mt-2">{del.job_title}</h3>
+                    <span className={`badge ${
+                      del.status === 'delivered'  ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                      del.status === 'picked_up'  ? 'bg-primary-light text-primary' :
+                      del.status === 'assigned'   ? 'bg-primary-light text-primary' :
+                      'bg-amber-100 text-amber-700 border border-amber-100'
+                    } text-xs font-bold uppercase px-3 py-1 rounded-full mt-1.5 inline-block`}>
+                      {del.status === 'pending'   ? '🕐 Preparing / Awaiting Action'
+                      : del.status === 'assigned'  ? '🚴 Rider Assigned'
+                      : del.status === 'picked_up' ? '📦 Verification Pending / In Transit'
+                      : '✅ Delivered'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pl-2 text-xs py-3 border-t border-b border-border">
+                  <div>
+                    <p className="text-text-muted font-bold uppercase text-[9px] tracking-wider">Pickup Address</p>
+                    <p className="font-semibold text-text-secondary mt-0.5">{del.pickup_address}</p>
+                  </div>
+                  <div>
+                    <p className="text-text-muted font-bold uppercase text-[9px] tracking-wider">Delivery Destination</p>
+                    <p className="font-semibold text-text-secondary mt-0.5">{del.delivery_address}</p>
+                  </div>
+                </div>
+
+                <div className="pl-2 space-y-2.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-text-muted font-bold">Delivery Mode:</span>
+                    <span className="font-bold text-text-secondary capitalize">{del.delivery_type === 'self' ? 'Self Delivery (Student)' : 'Platform Rider'}</span>
+                  </div>
+
+                  {del.delivery_type === 'platform' && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-text-muted font-bold">Rider Staff:</span>
+                      <span className="font-bold text-text-secondary">{del.delivery_staff_name || 'Awaiting Admin Assignment'}</span>
+                    </div>
+                  )}
+
+                  {del.distance && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-text-muted font-bold">Distance:</span>
+                      <span className="font-bold text-text-secondary">{parseFloat(del.distance).toFixed(1)} km</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Delivery Action Panel for Job Provider */}
+                <div className="pt-2 pl-2 border-t border-border">
+                  {del.status === 'delivered' ? (
+                    <p className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+                      ✓ Job and delivery completed successfully.
+                    </p>
+                  ) : isSelf ? (
+                    /* Self Delivery OTP Verification for Job Provider */
+                    del.status === 'picked_up' ? (
+                      <div className="space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-border">
+                        <p className="text-[11px] font-bold text-text-secondary">
+                          Enter the 6-digit OTP code received by email from the student to complete verification:
+                        </p>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            maxLength={6}
+                            placeholder="Enter 6-digit OTP"
+                            value={otpInputs[del.delivery_ID] || ''}
+                            onChange={(e) => setOtpInputs({ ...otpInputs, [del.delivery_ID]: e.target.value })}
+                            className="flex-1 px-3 py-2 bg-white border border-border rounded-xl text-center font-bold tracking-widest text-sm focus:border-primary outline-none"
+                          />
+                          <button
+                            onClick={() => handleVerifyOtp(del.delivery_ID)}
+                            disabled={updating}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 rounded-xl transition-all"
+                          >
+                            Verify & Complete
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                        ⏳ Awaiting student to mark the job done and generate the OTP.
+                      </p>
+                    )
+                  ) : (
+                    /* Platform Delivery Status updates */
+                    del.status === 'pending' ? (
+                      <p className="text-xs text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                        ⏳ Student is currently preparing the product. Once completed, they will mark it ready.
+                      </p>
+                    ) : del.status === 'assigned' ? (
+                      <p className="text-xs text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                        🚴 Rider assigned. Product is being picked up.
+                      </p>
+                    ) : del.status === 'picked_up' ? (
+                      <p className="text-xs text-primary font-bold bg-primary-light border border-primary/20 rounded-xl px-3 py-2">
+                        🚴 Rider is currently delivering the product to your destination.
+                      </p>
+                    ) : null
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

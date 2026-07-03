@@ -48,10 +48,24 @@ class EmailTemplates {
         $status_color = [
             'shortlisted' => '#F59E0B',
             'accepted' => '#10B981',
-            'rejected' => '#EF4444'
+            'rejected' => '#EF4444',
+            'pending_payment' => '#F59E0B'
         ];
 
         $color = $status_color[$status] ?? '#4F46E5';
+        
+        if ($status === 'accepted') {
+            $status_label = 'Hired';
+        } else if ($status === 'pending_payment') {
+            $status_label = 'Selected (Pending Payment)';
+        } else {
+            $status_label = $status;
+        }
+
+        $extra_message = "";
+        if ($status === 'accepted') {
+            $extra_message = "<p style='font-size: 16px; color: #10B981; font-weight: bold; margin: 15px 0;'>Congratulations! You have been hired / நீங்க hire பண்ணியாச்சு (Neenka hire panniyachchu) for this job!</p>";
+        }
 
         return "
         <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
@@ -64,8 +78,9 @@ class EmailTemplates {
                 <p>Dear $name,</p>
                 <p>Your application for <strong>$job_title</strong> has been updated.</p>
                 <div style='background-color: #F3F4F6; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;'>
-                    <h2 style='color: $color; margin: 0; text-transform: uppercase;'>$status</h2>
+                    <h2 style='color: $color; margin: 0; text-transform: uppercase;'>$status_label</h2>
                 </div>
+                $extra_message
                 <p style='color: #6B7280;'>Login to GigConnect to view more details.</p>
             </div>
             <div style='background-color: #F9FAFB; padding: 15px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #E5E7EB;'>
@@ -117,6 +132,30 @@ class EmailTemplates {
             </div>
         </div>";
     }
+
+    public static function productVerificationOtp($name, $otp, $job_title) {
+        return "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+            <div style='background-color: #4F46E5; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
+                <h1 style='color: white; margin: 0;'>GigConnect</h1>
+                <p style='color: #C7D2FE; margin: 5px 0;'>Uva Wellassa University</p>
+            </div>
+            <div style='background-color: #ffffff; padding: 30px; border: 1px solid #E5E7EB;'>
+                <h2 style='color: #4F46E5;'>Product Delivery OTP</h2>
+                <p>Dear $name,</p>
+                <p>Your OTP to verify and finalize the delivery for the gig <strong>$job_title</strong> is:</p>
+                <div style='background-color: #F3F4F6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;'>
+                    <h1 style='color: #4F46E5; letter-spacing: 10px; margin: 0;'>$otp</h1>
+                </div>
+               
+                <p><strong>$job_title</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>
+                <p style='color: #6B7280; font-size: 12px; margin-top: 20px;'>Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>
+            </div>
+            <div style='background-color: #F9FAFB; padding: 15px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #E5E7EB;'>
+                <p style='color: #9CA3AF; font-size: 12px; margin: 0;'>GigConnect System &copy; 2026 | Sri Lanka</p>
+            </div>
+        </div>";
+    }
 }
 
 // Wrapper functions for backward compatibility
@@ -134,6 +173,10 @@ function applicationStatusEmail($name, $job_title, $status) {
 
 function deliveryOtpEmail($name, $otp, $job_title) {
     return EmailTemplates::deliveryOtp($name, $otp, $job_title);
+}
+
+function productVerificationOtpEmail($name, $otp, $job_title) {
+    return EmailTemplates::productVerificationOtp($name, $otp, $job_title);
 }
 
 function approvalEmail($name, $role) {

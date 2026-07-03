@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Filter, Clock, MapPin, DollarSign, ArrowRight, Sparkles, ChevronDown, X, Briefcase, CheckCircle, Package, Truck, User } from 'lucide-react';
 import { useJobs } from '../context/JobsContext';
 import { useAuth } from '../context/AuthContext';
@@ -8,10 +9,13 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 
 /* ── helpers ── */
-const PRODUCT_KEYWORDS = ['cake', 'crochet', 'bakery', 'bake', 'craft', 'knit', 'sew', 'tailor', 'food', 'pastry', 'cookie', 'snack', 'meal', 'lunch', 'box', 'parcel', 'package', 'jewelry', 'handmade', 'product', 'deliver', 'item'];
+const PRODUCT_KEYWORDS = [
+  'cake', 'crochet', 'bakery', 'bake', 'craft', 'knit', 'sew', 'tailor', 'food', 'pastry', 'cookie', 'snack', 'meal', 'lunch', 'box', 'parcel', 'package', 'jewelry', 'handmade', 'product', 'deliver', 'item',
+  'bag', 'tote', 'canvas', 'paint', 'print', 'drawing', 'sketch', 'shirt', 'clothing', 'cup', 'mug', 'gift', 'art', 'decor', 'hand-paint', 'screen-print', 't-shirt', 'bottle', 'pottery', 'toy', 'woodwork', 'knitting', 'sewing', 'embroidery', 'sweet'
+];
 
 const isProductBased = (job) => {
-  if (job.is_product_based === true || job.is_product_based === 1) return true;
+  if (job.is_product_based === true || job.is_product_based == 1) return true;
   const combined = ((job.title || '') + ' ' + (job.description || '')).toLowerCase();
   return PRODUCT_KEYWORDS.some(kw => combined.includes(kw));
 };
@@ -115,6 +119,18 @@ const FindJobs = () => {
     fetchMyApplications();
   }, [user]);
 
+  useEffect(() => {
+    if (user && user.role !== 'student') {
+      if (user.role === 'client') {
+        navigate('/dashboard/client/home');
+      } else if (user.role === 'admin' || user.role === 'manager') {
+        navigate('/dashboard/admin/overview');
+      } else if (user.role === 'delivery_staff') {
+        navigate('/dashboard/delivery/overview');
+      }
+    }
+  }, [user, navigate]);
+
   // Handle Apply button click — auto-detect product-based
   const handleApplyClick = (job) => {
     if (!user) {
@@ -141,14 +157,6 @@ const FindJobs = () => {
 
     const productJob = applyModalJob._isProduct;
 
-    // Validate delivery for product-based jobs
-    if (productJob) {
-      if (!pickupAddress.trim() || !deliveryAddress.trim()) {
-        alert('Please fill in both pickup and delivery addresses.');
-        return;
-      }
-    }
-
     setApplying(true);
     try {
       const token = localStorage.getItem('token');
@@ -160,9 +168,7 @@ const FindJobs = () => {
       const body = {
         job_ID: applyModalJob.id,
         ...(productJob ? {
-          delivery_preference: deliveryType,
-          pickup_address: pickupAddress,
-          delivery_address: deliveryAddress
+          delivery_needed: deliveryType === 'platform' ? 1 : 0
         } : {})
       };
 
@@ -417,6 +423,7 @@ const FindJobs = () => {
                   (user && user.role === 'student' && job.applications && Array.isArray(job.applications) && job.applications.includes(user.id));
                 
                 const isBoosted = job.isBoosted || job.is_boosted || 0;
+                const isRemote = job.type?.toLowerCase() === 'remote';
 
                 return (
                   <div
@@ -445,10 +452,38 @@ const FindJobs = () => {
                         <h3 className="font-heading font-black text-base text-slate-800 leading-snug group-hover:text-primary transition-colors line-clamp-1">
                           {job.title}
                         </h3>
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
-                          <span>{job.clientName || 'GigConnect Partner'}</span>
-                          <span>•</span>
-                          <span>{job.seekers_needed ? `${job.seekers_needed} Seeker${job.seekers_needed > 1 ? 's' : ''} Needed` : '1 Seeker Needed'}</span>
+                        <div className="flex flex-col gap-1 text-[11px] font-bold text-slate-400">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-slate-700 font-extrabold">{job.clientName || 'GigConnect Partner'}</span>
+                            {job.clientIsVerified && (
+                              <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5 border border-emerald-100">
+                                Verified
+                              </span>
+                            )}
+                            {job.provider_rating && (
+                              <span className="text-amber-500 font-bold flex items-center gap-0.5 text-[10px]">
+                                ⭐ {job.provider_rating}
+                              </span>
+                            )}
+                          </div>
+                          {(!isRemote || isProductBased(job)) && job.clientBusinessType && (
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              Type: <span className="font-semibold text-slate-600">{job.clientBusinessType}</span>
+                            </span>
+                          )}
+                          {(!isRemote || isProductBased(job)) && job.clientBusinessRegNo && (
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              Reg No: <span className="font-semibold text-slate-600">{job.clientBusinessRegNo}</span>
+                            </span>
+                          )}
+                          {(!isRemote || isProductBased(job)) && (job.jobAddress || job.clientAddress) && (
+                            <span className="text-[10px] text-slate-500 font-medium truncate block">
+                              Address: <span className="font-semibold text-slate-600">{job.jobAddress || job.clientAddress}</span>
+                            </span>
+                          )}
+                          <div className="text-[10px] text-slate-400 mt-0.5 font-bold">
+                            {job.seekers_needed ? `${job.seekers_needed} Seeker${job.seekers_needed > 1 ? 's' : ''} Needed` : '1 Seeker Needed'}
+                          </div>
                         </div>
                       </div>
 
@@ -527,121 +562,126 @@ const FindJobs = () => {
       </div>
 
       {/* Application Modal */}
-      {applyModalJob && (
+      {applyModalJob && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setApplyModalJob(null)} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setApplyModalJob(null)} />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 border border-slate-100"
+            className="relative bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col z-[210]"
           >
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+            <div className="flex justify-between items-start pb-3 border-b border-slate-100 shrink-0">
               <div>
                 <h3 className="font-heading font-black text-lg text-slate-800">Apply for Gig</h3>
-                <p className="text-xs text-slate-400 font-semibold mt-0.5">{applyModalJob.title}</p>
+                <p className="text-sm text-slate-500 font-black mt-0.5">{applyModalJob.title}</p>
+                <div className="text-[10px] text-slate-500 mt-2 space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <p className="flex items-center gap-1">
+                    <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] w-20 inline-block">Provider:</span>
+                    <strong className="text-slate-700">{applyModalJob.clientName}</strong>
+                  </p>
+                  <p className="flex items-center gap-1">
+                    <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] w-20 inline-block">Rating:</span>
+                    <span className="flex items-center gap-0.5 text-amber-500 font-bold text-[10px]">
+                      ⭐ {applyModalJob.provider_rating ? `${applyModalJob.provider_rating} / 5.0` : 'No reviews yet'}
+                    </span>
+                  </p>
+                  {applyModalJob.clientBusinessRegNo && (
+                    <p className="flex items-center gap-1">
+                      <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] w-20 inline-block">Reg No:</span>
+                      <strong className="text-slate-700">{applyModalJob.clientBusinessRegNo}</strong>
+                      <span className="text-[9px] text-slate-400 font-medium">({applyModalJob.clientBusinessType})</span>
+                    </p>
+                  )}
+                  {(applyModalJob.jobAddress || applyModalJob.clientAddress) && (
+                    <p className="flex items-start gap-1">
+                      <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] w-20 inline-block shrink-0 mt-0.5">Address:</span>
+                      <span className="text-slate-700 font-semibold">{applyModalJob.jobAddress || applyModalJob.clientAddress}</span>
+                    </p>
+                  )}
+                </div>
               </div>
-              <button onClick={() => setApplyModalJob(null)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-all">
+              <button onClick={() => setApplyModalJob(null)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-all shrink-0">
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleConfirmApplication} className="space-y-4">
-              {/* Job Summary */}
-              <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-start gap-3">
-                <Briefcase size={20} className="text-primary shrink-0 mt-0.5" />
-                <div className="text-xs text-slate-600 leading-relaxed font-medium">
-                  By applying, you commit to fulfilling this job to the best of your ability.
-                  {applyModalJob._isProduct && (
-                    <span className="block mt-1.5 text-amber-600 font-bold flex items-center gap-1">
-                      <Package size={12} className="inline" /> This is a <strong>product-based gig</strong> — delivery is required.
-                    </span>
-                  )}
+            <form onSubmit={handleConfirmApplication} className="flex-1 flex flex-col overflow-hidden mt-4">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1 mb-4">
+                {/* Job Summary */}
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-start gap-3">
+                  <Briefcase size={20} className="text-primary shrink-0 mt-0.5" />
+                  <div className="text-xs text-slate-600 leading-relaxed font-medium">
+                    By applying, you commit to fulfilling this job to the best of your ability.
+                    {applyModalJob._isProduct && (
+                      <span className="block mt-1.5 text-amber-600 font-bold flex items-center gap-1">
+                        <Package size={12} className="inline" /> This is a <strong>product-based gig</strong> — delivery is required.
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {/* Delivery Section — shown ONLY for product-based jobs */}
+                {applyModalJob._isProduct && (
+                  <div className="p-4 bg-gradient-to-br from-primary-light/50 to-slate-50 border border-primary/20 rounded-2xl space-y-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Truck size={16} className="text-primary" />
+                        <span className="text-xs font-black text-primary-dark uppercase tracking-wider">
+                          Delivery staff needed? / விநியோக ஊழியர் தேவையா?
+                        </span>
+                        <span className="text-[10px] font-bold text-rose-500 ml-auto">Required</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeliveryType('platform');
+                          }}
+                          className={`p-4 rounded-2xl border-2 text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 text-center ${
+                            deliveryType === 'platform'
+                              ? 'bg-primary border-primary text-white shadow-sm'
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="text-sm">YES - I need delivery staff</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeliveryType('self');
+                          }}
+                          className={`p-4 rounded-2xl border-2 text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 text-center ${
+                            deliveryType === 'self'
+                              ? 'bg-primary border-primary text-white shadow-sm'
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="text-sm">NO - I will deliver myself</span>
+                        </button>
+                      </div>
+
+                      {deliveryType === 'platform' && (
+                        <p className="text-[10px] text-primary font-bold bg-primary-light border border-primary/20 rounded-xl px-3 py-2">
+                          ✓ A GigConnect rider will be assigned once your application is accepted.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-
-              {/* Delivery Section — shown ONLY for product-based jobs */}
-              {applyModalJob._isProduct && (
-                <div className="p-4 bg-gradient-to-br from-primary-light/50 to-slate-50 border border-primary/20 rounded-2xl space-y-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Truck size={16} className="text-primary" />
-                    <span className="text-xs font-black text-primary-dark uppercase tracking-wider">Delivery Method</span>
-                    <span className="text-[10px] font-bold text-rose-500 ml-auto">Required</span>
-                  </div>
-
-                  {/* Delivery type selector */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryType('self')}
-                      className={`p-4 rounded-2xl border-2 text-xs font-bold transition-all flex flex-col items-center gap-2 ${
-                        deliveryType === 'self'
-                          ? 'bg-primary border-primary text-white shadow-sm'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-                      }`}
-                    >
-                      <User size={20} />
-                      <span>Deliver Myself</span>
-                      <span className={`text-[9px] font-normal ${deliveryType === 'self' ? 'text-slate-300' : 'text-slate-400'}`}>Free</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryType('platform')}
-                      className={`p-4 rounded-2xl border-2 text-xs font-bold transition-all flex flex-col items-center gap-2 ${
-                        deliveryType === 'platform'
-                          ? 'bg-primary border-primary text-white shadow-sm'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-                      }`}
-                    >
-                      <Truck size={20} />
-                      <span>Platform Rider</span>
-                      <span className={`text-[9px] font-normal ${deliveryType === 'platform' ? 'text-primary-light' : 'text-slate-400'}`}>Staff assigned</span>
-                    </button>
-                  </div>
-
-                  {/* Address fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Pickup Location</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. UWU Hostel Block A"
-                        value={pickupAddress}
-                        onChange={(e) => setPickupAddress(e.target.value)}
-                        required
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-primary text-xs font-medium"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Delivery Destination</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Client Office, Badulla"
-                        value={deliveryAddress}
-                        onChange={(e) => setDeliveryAddress(e.target.value)}
-                        required
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-primary text-xs font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  {deliveryType === 'platform' && (
-                    <p className="text-[10px] text-primary font-bold bg-primary-light border border-primary/20 rounded-xl px-3 py-2">
-                      ✓ A GigConnect rider will be assigned once your application is accepted.
-                    </p>
-                  )}
-                </div>
-              )}
 
               <button
                 type="submit"
                 disabled={applying}
-                className="w-full bg-primary text-white py-3 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 hover:bg-primary-dark transition-all disabled:opacity-60"
+                className="w-full bg-primary text-white py-3 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 hover:bg-primary-dark transition-all disabled:opacity-60 shrink-0"
               >
                 {applying ? 'Submitting...' : 'Confirm Application & Send'}
               </button>
             </form>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
       <Footer />
     </div>

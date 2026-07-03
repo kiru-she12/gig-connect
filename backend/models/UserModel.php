@@ -2,6 +2,10 @@
 // backend/models/UserModel.php
 require_once __DIR__ . '/BaseModel.php';
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../config/mail.php';
+require_once __DIR__ . '/../config/email_templates.php';
+require_once __DIR__ . '/../config/sms.php';
+
 use Firebase\JWT\JWT;
 
 class UserModel extends BaseModel {
@@ -97,9 +101,7 @@ class UserModel extends BaseModel {
         ];
 
         $pre = $prefix[$role];
-        $stmt = $this->pdo->query("SELECT COUNT(*) FROM users WHERE role = '$role'");
-        $count = $stmt->fetchColumn();
-        $user_ID = $pre . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        $user_ID = $this->generateNextID('users', 'user_ID', $pre);
 
         // hash password
         $hashed = password_hash($password, PASSWORD_BCRYPT);
@@ -110,7 +112,7 @@ class UserModel extends BaseModel {
 
         // if student insert into student table
         if($role === 'student') {
-            $student_ID = 'STU' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+            $student_ID = $this->generateNextID('student', 'student_ID', 'STU');
             $skills = isset($data['skills']) ? (is_array($data['skills']) ? implode(',', $data['skills']) : $data['skills']) : '';
             $year = $data['year'] ?? '';
             $degree = $data['degree'] ?? '';
@@ -122,7 +124,7 @@ class UserModel extends BaseModel {
 
         // if job provider insert into job_provider table
         if($role === 'job_provider') {
-            $provider_ID = 'CLI' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+            $provider_ID = $this->generateNextID('job_provider', 'provider_ID', 'CLI');
             $nic = $data['nic'];
             $business_reg_no = $data['business_reg_no'] ?? null;
             $stmt = $this->pdo->prepare("INSERT INTO job_provider (provider_ID, user_ID, nic, business_reg_no) VALUES (?, ?, ?, ?)");
@@ -148,6 +150,120 @@ class UserModel extends BaseModel {
             "success" => "Registration successful! Please verify your OTP.",
             "user_ID" => $user_ID,
             "otp" => $otp
+        ];
+    }
+
+    public function sendOTP($data) {
+        $email = $data['email'];
+
+        // find user by email
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if(!$user) {
+            return ["error" => "User not found!"];
+        }
+
+        // generate OTP
+        $otp = rand(100000, 999999);
+        $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+
+        // save OTP
+        $stmt = $this->pdo->prepare("UPDATE users SET otp = ?, otp_expiry = ? WHERE email = ?");
+        $stmt->execute([$otp, $otp_expiry, $email]);
+
+        // send OTP via email
+        $email_body = otpEmail($user['name'], $otp);
+        sendEmail($email, "GigConnect - Password Reset OTP", $email_body);
+
+        // send OTP via SMS if phone exists
+        if($user['phone']) {
+            sendSMS($user['phone'], "Your GigConnect password reset OTP is: " . $otp . ". Valid for 5 minutes.");
+        }
+
+        return [
+            "success" => "OTP sent to your email and phone!",
+            "email" => $email,
+            "otp" => $otp
+        ];
+    }
+
+    public function resetPassword($data) {
+        $email = $data['email'];
+        $otp = $data['otp'];
+        $new_password = $data['new_password'];
+        $confirm_password = $data['confirm_password'];
+
+        // check passwords match
+        if($new_password !== $confirm_password) {
+            return ["error" => "Passwords do not match!"];
+        }
+
+        // find user
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if(!$user) {
+            return ["error" => "User not found!"];
+        }
+
+        // check OTP
+        if($user['otp'] != $otp) {
+            return ["error" => "Invalid OTP!"];
+        }
+
+        // check OTP expiry
+        if(strtotime($user['otp_expiry']) < time()) {
+            return ["error" => "OTP expired! Please request again."];
+        }
+
+        // hash new password
+        $hashed = password_hash($new_password, PASSWORD_BCRYPT);
+
+        // update password
+        $stmt = $this->pdo->prepare("UPDATE users SET password = ?, otp = NULL, otp_expiry = NULL WHERE email = ?");
+        $stmt->execute([$hashed, $email]);
+
+        return ["success" => "Password reset successfully!"];
+    }
+
+    public function verifyOTP($data) {
+        $email = $data['email'];
+        $otp = $data['otp'];
+
+        // find user by email
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if(!$user) {
+            return ["error" => "User not found!"];
+        }
+
+        // check if already verified
+        if($user['is_verified'] == 1) {
+            return ["error" => "Account already verified!"];
+        }
+
+        // check OTP
+        if($user['otp'] != $otp) {
+            return ["error" => "Invalid OTP!"];
+        }
+
+        // check OTP expiry
+        if(strtotime($user['otp_expiry']) < time()) {
+            return ["error" => "OTP expired! Please register again."];
+        }
+
+        // mark as verified
+        $stmt = $this->pdo->prepare("UPDATE users SET is_verified = 1, otp = NULL, otp_expiry = NULL WHERE email = ?");
+        $stmt->execute([$email]);
+
+        return [
+            "success" => "Account verified successfully! Please wait for admin approval.",
+            "user_ID" => $user['user_ID']
         ];
     }
 }

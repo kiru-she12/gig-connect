@@ -7,36 +7,46 @@ import axios from 'axios'
 // Configure Axios to always send credentials (cookies) in cross-origin requests
 axios.defaults.withCredentials = true;
 
-// Intercept Axios requests to strip out Bearer null/undefined authorization headers
+// Intercept Axios requests to inject/sanitize Authorization header
 axios.interceptors.request.use((config) => {
-  if (config.headers && config.headers.Authorization) {
-    const authHeader = config.headers.Authorization;
-    if (authHeader === 'Bearer null' || authHeader === 'Bearer undefined') {
-      delete config.headers.Authorization;
-    }
+  const token = localStorage.getItem('token');
+  if (!config.headers) {
+    config.headers = {};
+  }
+  if (!config.headers.Authorization && token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  } else if (config.headers.Authorization === 'Bearer null' || config.headers.Authorization === 'Bearer undefined') {
+    delete config.headers.Authorization;
   }
   return config;
 }, (error) => {
   return Promise.reject(error);
 });
 
-// Configure global Fetch to always send credentials (cookies) and strip out null/undefined auth headers
+// Configure global Fetch to always send credentials (cookies) and inject/sanitize Authorization header
 const originalFetch = window.fetch;
 window.fetch = async (url, options = {}) => {
   options.credentials = options.credentials || 'include';
   
-  if (options.headers) {
-    if (options.headers instanceof Headers) {
-      const auth = options.headers.get('Authorization');
-      if (auth === 'Bearer null' || auth === 'Bearer undefined') {
-        options.headers.delete('Authorization');
-      }
-    } else if (typeof options.headers === 'object') {
-      const auth = options.headers['Authorization'] || options.headers['authorization'];
-      if (auth === 'Bearer null' || auth === 'Bearer undefined') {
-        delete options.headers['Authorization'];
-        delete options.headers['authorization'];
-      }
+  const token = localStorage.getItem('token');
+  if (!options.headers) {
+    options.headers = {};
+  }
+  
+  if (options.headers instanceof Headers) {
+    const auth = options.headers.get('Authorization');
+    if (!auth && token) {
+      options.headers.set('Authorization', `Bearer ${token}`);
+    } else if (auth === 'Bearer null' || auth === 'Bearer undefined') {
+      options.headers.delete('Authorization');
+    }
+  } else if (typeof options.headers === 'object') {
+    const auth = options.headers['Authorization'] || options.headers['authorization'];
+    if (!auth && token) {
+      options.headers['Authorization'] = `Bearer ${token}`;
+    } else if (auth === 'Bearer null' || auth === 'Bearer undefined') {
+      delete options.headers['Authorization'];
+      delete options.headers['authorization'];
     }
   }
   return originalFetch(url, options);

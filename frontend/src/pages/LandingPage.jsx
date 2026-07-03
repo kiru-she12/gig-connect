@@ -167,6 +167,18 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'client') {
+        navigate('/dashboard/client/home');
+      } else if (user.role === 'admin' || user.role === 'manager') {
+        navigate('/dashboard/admin/overview');
+      } else if (user.role === 'delivery_staff') {
+        navigate('/dashboard/delivery/overview');
+      }
+    }
+  }, [user, navigate]);
+
   // Generate deterministic-looking random particles for the background
   const particles = React.useMemo(() => {
     return Array.from({ length: 30 }).map(() => ({
