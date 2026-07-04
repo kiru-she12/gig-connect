@@ -1,7 +1,7 @@
 import {
   Home, Search, Briefcase, MessageSquare, Truck, Star, Settings,
   Users, CheckCircle, BarChart2, AlertCircle, FileText, LayoutDashboard,
-  PlusCircle, List, MapPin, Bell, LogOut, TrendingUp
+  PlusCircle, List, MapPin, Bell, LogOut, TrendingUp, User
 } from 'lucide-react';
 
 export const ADMIN_LINKS = [
@@ -41,10 +41,8 @@ export const CLIENT_LINKS = [
 
 
 export const DELIVERY_LINKS = [
-  { to: '/dashboard/delivery/active', icon: Truck, label: 'Active Deliveries' },
-  { to: '/dashboard/delivery/history', icon: List, label: 'Delivery History' },
-  { to: '/dashboard/delivery/earnings', icon: BarChart2, label: 'My Earnings' },
-  { to: '/dashboard/delivery/profile', icon: Settings, label: 'Profile Settings' },
+  { to: '/dashboard/delivery', icon: LayoutDashboard, label: 'Overview' },
+  { to: '/dashboard/delivery/profile', icon: User, label: 'My Profile' },
 ];
 
 export const getLinksByRole = (role) => {

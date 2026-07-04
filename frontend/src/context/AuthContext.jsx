@@ -213,7 +213,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ 
-      user, login, logout, register, verifyOtp, forgotPassword, resetPassword, loading, 
+      user, setUser, login, logout, register, verifyOtp, forgotPassword, resetPassword, loading, 
       isLoginModalOpen, setIsLoginModalOpen,
       isRegisterModalOpen, setIsRegisterModalOpen,
       isContactModalOpen, setIsContactModalOpen

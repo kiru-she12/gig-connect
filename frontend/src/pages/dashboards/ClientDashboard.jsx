@@ -323,12 +323,14 @@ const PlaceholderTab = ({ title, icon: Icon, message }) => (
 );
 
 const SettingsTab = ({ user, onProfileUpdate }) => {
+  const { setUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
   // Form states
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [businessRegNo, setBusinessRegNo] = useState('');
   const [type, setType] = useState('');
   const [address, setAddress] = useState('');
@@ -352,6 +354,7 @@ const SettingsTab = ({ user, onProfileUpdate }) => {
       if (data.success && data.profile) {
         setProfile(data.profile);
         setName(data.profile.name || '');
+        setPhone(data.profile.phone || '');
         setBusinessRegNo(data.profile.provider_details?.business_reg_no || '');
         setType(data.profile.provider_details?.type || '');
         setAddress(data.profile.provider_details?.address || '');
@@ -481,6 +484,7 @@ const SettingsTab = ({ user, onProfileUpdate }) => {
         },
         body: JSON.stringify({
           name,
+          phone,
           business_reg_no: businessRegNo,
           type,
           address,
@@ -491,6 +495,14 @@ const SettingsTab = ({ user, onProfileUpdate }) => {
       const data = await response.json();
       if (data.success) {
         alert("Profile details saved successfully!");
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          parsed.name = name;
+          localStorage.setItem('user', JSON.stringify(parsed));
+          setUser(parsed);
+        }
+        await fetchProfile();
         if (onProfileUpdate) {
           onProfileUpdate();
         }
@@ -524,6 +536,7 @@ const SettingsTab = ({ user, onProfileUpdate }) => {
             <div>
               <h3 className="font-bold text-lg text-slate-800">{profile?.name}</h3>
               <p className="text-sm text-text-secondary">{profile?.email}</p>
+              {profile?.phone && <p className="text-xs text-text-muted mt-1">📞 {profile.phone}</p>}
               <span className="badge bg-emerald-100 text-emerald-700 mt-2">Verified Job Provider</span>
             </div>
           </div>
@@ -531,12 +544,22 @@ const SettingsTab = ({ user, onProfileUpdate }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-border">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-text-secondary mb-1.5">Business Name</label>
+                <label className="block text-sm font-bold text-text-secondary mb-1.5">Full Name</label>
                 <input 
                   type="text" 
                   className="input-field" 
                   value={name} 
                   onChange={(e) => setName(e.target.value)} 
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-text-secondary mb-1.5">Phone Number</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)} 
                   required
                 />
               </div>

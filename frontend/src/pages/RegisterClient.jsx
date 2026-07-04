@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Building, Mail, Phone, Lock, FileText, Loader2, X, ShieldCheck, ArrowLeft, ArrowRight, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import logo from '../logo.svg';
+import logo from '../assets/logo/logo.png';
 import Footer from '../components/layout/Footer';
 
 const RegisterClient = () => {

@@ -344,6 +344,13 @@ class DeliveryModel extends BaseModel {
             return ["error" => "Only accepted applications can be marked as completed. Current status: " . $app['status']];
         }
 
+        // Validate required fields for product-based jobs
+        if ($app['is_product_based'] == 1) {
+            if (empty($phone) || empty($pickup_address) || empty($dropoff_address)) {
+                return ["error" => "Your Phone Number, Pickup Address, and Drop-off Address are required!"];
+            }
+        }
+
         // Update student phone if provided
         if (!empty($phone)) {
             $stmt = $this->pdo->prepare("UPDATE users SET phone = ? WHERE user_ID = ?");
@@ -396,12 +403,17 @@ class DeliveryModel extends BaseModel {
         // Prepare OTP message
         $otp_message = "GigConnect Job Completion OTP: {$otp}. Use this to confirm job completion for " . $app['job_title'] . ".";
 
+        $provider_otp_message = $otp_message;
+        if ($app['is_product_based'] == 1 && ($app['delivery_needed'] === '0' || $app['delivery_needed'] === 0 || $app['delivery_needed'] == 0)) {
+            $provider_otp_message = "GigConnect Job Completion OTP: {$otp} for job '" . $app['job_title'] . "'. Student {$student_name} will self-deliver it. Contact student at: {$student_phone}.";
+        }
+
         // Send OTP via SMS
         if (!empty($student_phone)) {
             sendSMS($student_phone, $otp_message);
         }
         if (!empty($provider_phone)) {
-            sendSMS($provider_phone, $otp_message);
+            sendSMS($provider_phone, $provider_otp_message);
         }
 
         // Send OTP via Email
@@ -412,6 +424,15 @@ class DeliveryModel extends BaseModel {
         sendEmail($student_email, "GigConnect - Job Completion OTP", $student_body);
 
         $provider_body = productVerificationOtpEmail($provider_name, $otp, $app['job_title']);
+        if ($app['is_product_based'] == 1 && ($app['delivery_needed'] === '0' || $app['delivery_needed'] === 0 || $app['delivery_needed'] == 0)) {
+            $search_str = "<p><strong>" . htmlspecialchars($app['job_title']) . "</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>";
+            $replace_str = "<p><strong>" . htmlspecialchars($app['job_title']) . "</strong> Please enter this OTP on your dashboard to verify completion. Student <strong>{$student_name}</strong> will deliver the product. Contact student at: <strong>{$student_phone}</strong>.</p>";
+            $provider_body = str_replace($search_str, $replace_str, $provider_body);
+
+            $search_str_raw = "<p><strong>" . $app['job_title'] . "</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>";
+            $replace_str_raw = "<p><strong>" . $app['job_title'] . "</strong> Please enter this OTP on your dashboard to verify completion. Student <strong>{$student_name}</strong> will deliver the product. Contact student at: <strong>{$student_phone}</strong>.</p>";
+            $provider_body = str_replace($search_str_raw, $replace_str_raw, $provider_body);
+        }
         sendEmail($provider_email, "GigConnect - Job Completion OTP", $provider_body);
 
         // Store OTP in delivery table
@@ -457,9 +478,9 @@ class DeliveryModel extends BaseModel {
             $job_ID,
             $user->user_ID,
             $delivery_type,
-            ($app['delivery_needed'] == 1) ? $pickup_address : null,
-            ($app['delivery_needed'] == 1) ? $dropoff_address : null,
-            ($app['delivery_needed'] == 1) ? $client_phone : null,
+            $pickup_address,
+            $dropoff_address,
+            $client_phone,
             $distance,
             $delivery_fee,
             $otp,
@@ -772,7 +793,7 @@ class DeliveryModel extends BaseModel {
         }
 
         $stmt = $this->pdo->prepare("
-            SELECT d.*, j.title as job_title, j.payment as job_payment,
+            SELECT d.*, j.title as job_title, j.payment as job_payment, j.completed_time,
                    u.name as student_name, u.phone as student_phone,
                    COALESCE(NULLIF(d.client_phone, ''), u2.phone) as client_phone
             FROM delivery d

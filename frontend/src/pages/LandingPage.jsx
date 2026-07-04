@@ -284,6 +284,7 @@ const LandingPage = () => {
         title: dbJob.title,
         price: formattedPrice,
         tags: uniqueTags.slice(0, 3),
+        category: dbJob.category || 'General',
         desc: dbJob.description || '',
         isFeatured: isFeatured,
         date: dbJob.job_date || 'Flexible Schedule',
@@ -552,7 +553,6 @@ const LandingPage = () => {
       .sort((a, b) => b.score - a.score);
 
     const generalGigs = scoredJobs
-      .filter(j => j.score === 0)
       .sort((a, b) => b.id - a.id);
 
     const handleSearchSubmit = () => {
@@ -592,7 +592,7 @@ const LandingPage = () => {
             <div className="relative z-10 w-full md:w-3/5 flex flex-col items-start">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-black tracking-tight leading-none mb-6 uppercase text-white">
                 Welcome back, <br />
-                <span className="font-serif italic font-normal text-white">{user.name.split(' ')[0]}</span>! 👋
+                <span className="text-[#89D7B7]">{user.name.split(' ')[0]}</span>!
               </h1>
 
               {/* Integrated Search Input */}
@@ -1591,58 +1591,65 @@ const LandingPage = () => {
             </div>
           </div>
 
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.05 }}
-            variants={{
-              hidden: {},
-              visible: {
-                transition: { staggerChildren: 0.1 }
-              }
-            }}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
             {/* Left Column (2 cards) */}
-            <div className="space-y-6">
-              {dynamicGuestJobs.left.map((job, idx) => (
-                <motion.div
-                  key={job.id || idx}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: { opacity: 1, y: 0 }
-                  }}
-                  whileHover={{ y: -5, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
-                  className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-xl transition-all group h-[calc(50%-12px)] flex flex-col justify-between hover:border-primary/30"
-                >
-                  <div>
-                    <div className="flex justify-end items-start mb-4">
-                      <span className="text-xl font-black text-primary">{job.price}</span>
-                    </div>
-                    <h3 className="text-xl font-black text-slate-900 mb-2 group-hover:text-primary transition-colors leading-tight">{job.title}</h3>
-                    <p className="text-slate-600 text-xs leading-relaxed mb-4 line-clamp-2">{job.desc}</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {job.tags.map((t, i) => (
-                        <span key={`${t}-${i}`} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-200">{t}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate('/jobs')}
-                    className="w-full py-3 bg-white text-[#1A312C] rounded-xl font-black text-xs hover:bg-primary hover:text-white transition-all border border-[#4E8C7E]/20"
+            <div className="flex flex-col gap-6 h-full">
+              {dynamicGuestJobs.left.map((job, idx) => {
+                const iconStyle = getCategoryIcon(job.category || job.tags[0], job.title);
+                return (
+                  <motion.div
+                    key={job.id || idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.05 }}
+                    transition={{ duration: 0.4 }}
+                    whileHover={{ y: -5, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+                    className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-xl transition-all group flex-1 flex flex-col justify-between hover:border-primary/30"
                   >
-                    View Details
-                  </button>
-                </motion.div>
-              ))}
+                    <div className="space-y-3.5">
+                      <div className="flex justify-between items-center">
+                        <div className={`w-9 h-9 rounded-xl ${iconStyle.bg} flex items-center justify-center shrink-0 shadow-sm`}>
+                          {iconStyle.icon}
+                        </div>
+                        <span className="text-xl font-black text-primary">{job.price}</span>
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-slate-900 mb-1 group-hover:text-primary transition-colors leading-tight line-clamp-1">{job.title}</h3>
+                        <p className="text-slate-500 text-[11px] leading-relaxed line-clamp-2">{job.desc}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {job.tags.map((t, i) => (
+                          <span key={`${t}-${i}`} className="px-2.5 py-1 bg-slate-50 text-slate-500 rounded-lg text-[9px] font-bold border border-slate-200/60">{t}</span>
+                        ))}
+                      </div>
+                      <div className="pt-3 border-t border-slate-100 flex flex-col gap-1.5 text-slate-500">
+                        <div className="flex items-center gap-2 text-[10px] font-bold">
+                          <MapPin size={12} className="text-primary/70 shrink-0" />
+                          <span className="truncate">{job.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] font-bold">
+                          <Clock size={12} className="text-primary/70 shrink-0" />
+                          <span className="truncate">{job.duration}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate('/jobs')}
+                      className="w-full py-2.5 mt-3 bg-white text-[#1A312C] rounded-xl font-black text-xs hover:bg-primary hover:text-white transition-all border border-[#4E8C7E]/20"
+                    >
+                      View Details
+                    </button>
+                  </motion.div>
+                );
+              })}
             </div>
 
             {/* Featured Center Card */}
             <motion.div
-              variants={{
-                hidden: { opacity: 0, scale: 0.95 },
-                visible: { opacity: 1, scale: 1 }
-              }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, amount: 0.05 }}
+              transition={{ duration: 0.4 }}
               whileHover={{ scale: 1.02 }}
               className="bg-primary rounded-[2.5rem] p-8 md:p-10 shadow-2xl shadow-primary/30 flex flex-col justify-between relative overflow-hidden group"
             >
@@ -1685,40 +1692,58 @@ const LandingPage = () => {
             </motion.div>
 
             {/* Right Column (2 cards) */}
-            <div className="space-y-6">
-              {dynamicGuestJobs.right.map((job, idx) => (
-                <motion.div
-                  key={job.id || idx}
-                  variants={{
-                    hidden: { opacity: 0, y: 50, rotateX: 15 },
-                    visible: { opacity: 1, y: 0, rotateX: 0 }
-                  }}
-                  whileHover={{ y: -10, rotateY: 5, translateZ: 30 }}
-                  className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-xl transition-all group h-[calc(50%-12px)] flex flex-col justify-between hover:border-primary/30 perspective-1000"
-                  style={{ transformStyle: "preserve-3d" }}
-                >
-                  <div>
-                    <div className="flex justify-end items-start mb-4">
-                      <span className="text-xl font-black text-primary">{job.price}</span>
-                    </div>
-                    <h3 className="text-xl font-black text-slate-900 mb-2 group-hover:text-primary transition-colors leading-tight">{job.title}</h3>
-                    <p className="text-slate-600 text-xs leading-relaxed mb-4 line-clamp-2">{job.desc}</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {job.tags.map((t, i) => (
-                        <span key={`${t}-${i}`} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-200">{t}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate('/jobs')}
-                    className="w-full py-3 bg-white text-[#1A312C] rounded-xl font-black text-xs hover:bg-primary hover:text-white transition-all border border-[#4E8C7E]/20"
+            <div className="flex flex-col gap-6 h-full">
+              {dynamicGuestJobs.right.map((job, idx) => {
+                const iconStyle = getCategoryIcon(job.category || job.tags[0], job.title);
+                return (
+                  <motion.div
+                    key={job.id || idx}
+                    initial={{ opacity: 0, y: 50, rotateX: 15 }}
+                    whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+                    viewport={{ once: true, amount: 0.05 }}
+                    transition={{ duration: 0.4 }}
+                    whileHover={{ y: -10, rotateY: 5, translateZ: 30 }}
+                    className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-xl transition-all group flex-1 flex flex-col justify-between hover:border-primary/30 perspective-1000"
+                    style={{ transformStyle: "preserve-3d" }}
                   >
-                    View Details
-                  </button>
-                </motion.div>
-              ))}
+                    <div className="space-y-3.5">
+                      <div className="flex justify-between items-center">
+                        <div className={`w-9 h-9 rounded-xl ${iconStyle.bg} flex items-center justify-center shrink-0 shadow-sm`}>
+                          {iconStyle.icon}
+                        </div>
+                        <span className="text-xl font-black text-primary">{job.price}</span>
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-slate-900 mb-1 group-hover:text-primary transition-colors leading-tight line-clamp-1">{job.title}</h3>
+                        <p className="text-slate-500 text-[11px] leading-relaxed line-clamp-2">{job.desc}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {job.tags.map((t, i) => (
+                          <span key={`${t}-${i}`} className="px-2.5 py-1 bg-slate-50 text-slate-500 rounded-lg text-[9px] font-bold border border-slate-200/60">{t}</span>
+                        ))}
+                      </div>
+                      <div className="pt-3 border-t border-slate-100 flex flex-col gap-1.5 text-slate-500">
+                        <div className="flex items-center gap-2 text-[10px] font-bold">
+                          <MapPin size={12} className="text-primary/70 shrink-0" />
+                          <span className="truncate">{job.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] font-bold">
+                          <Clock size={12} className="text-primary/70 shrink-0" />
+                          <span className="truncate">{job.duration}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate('/jobs')}
+                      className="w-full py-2.5 mt-3 bg-white text-[#1A312C] rounded-xl font-black text-xs hover:bg-primary hover:text-white transition-all border border-[#4E8C7E]/20"
+                    >
+                      View Details
+                    </button>
+                  </motion.div>
+                );
+              })}
             </div>
-          </motion.div>
+          </div>
 
           <div className="mt-12 text-center">
             <button

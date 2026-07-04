@@ -12,13 +12,23 @@ class MapModel extends BaseModel {
         $this->mapbox_token = $mapbox_token;
     }
 
+    private function shouldVerifySSL() {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $serverAddr = $_SERVER['SERVER_ADDR'] ?? '';
+        $isLocal = in_array($host, ['localhost', '127.0.0.1', '::1']) 
+            || in_array($serverAddr, ['127.0.0.1', '::1'])
+            || preg_match('/^localhost:\d+$/', $host)
+            || php_sapi_name() === 'cli';
+        return !$isLocal;
+    }
+
     private function geocodeAddress($address) {
-        $url = "https://api.mapbox.com/geocoding/v5/mapbox.places/" . urlencode($address) . ".json?access_token=" . $this->mapbox_token . "&limit=1";
+        $url = "https://api.mapbox.com/geocoding/v5/mapbox.places/" . urlencode($address) . ".json?access_token=" . $this->mapbox_token . "&limit=1&country=LK";
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $this->shouldVerifySSL());
         
         $response = curl_exec($ch);
         curl_close($ch);
@@ -32,7 +42,18 @@ class MapModel extends BaseModel {
                 "formatted_address" => $data['features'][0]['place_name']
             ];
         }
-        return null;
+        
+        // Fallback coordinates (Uva Wellassa University, Badulla) for local addresses not indexed in Mapbox
+        $fallback_lat = 6.9819;
+        $fallback_lon = 81.0763;
+        $offset_lat = (rand(-150, 150) / 10000); // ±1.5 km random offset
+        $offset_lon = (rand(-150, 150) / 10000);
+        
+        return [
+            "longitude" => $fallback_lon + $offset_lon,
+            "latitude" => $fallback_lat + $offset_lat,
+            "formatted_address" => $address . " (Estimated)"
+        ];
     }
 
     private function reverseGeocode($latitude, $longitude) {
@@ -41,7 +62,7 @@ class MapModel extends BaseModel {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $this->shouldVerifySSL());
         
         $response = curl_exec($ch);
         curl_close($ch);
@@ -55,6 +76,27 @@ class MapModel extends BaseModel {
         return null;
     }
 
+    private function autocompleteAddress($query) {
+        $url = "https://api.mapbox.com/geocoding/v5/mapbox.places/" . urlencode($query) . ".json?access_token=" . $this->mapbox_token . "&autocomplete=true&limit=5&country=LK";
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $this->shouldVerifySSL());
+        
+        $response = curl_exec($ch);
+        curl_close($ch);
+        
+        $data = json_decode($response, true);
+        $suggestions = [];
+        if (isset($data['features'])) {
+            foreach ($data['features'] as $feature) {
+                $suggestions[] = $feature['place_name'];
+            }
+        }
+        return $suggestions;
+    }
+
     private function getDistance($lat1, $lon1, $lat2, $lon2) {
         $earth_radius = 6371; // Kilometers
         $dLat = deg2rad($lat2 - $lat1);
@@ -65,6 +107,15 @@ class MapModel extends BaseModel {
     }
 
     public function process($data, $user) {
+        // If autocomplete requested
+        if (isset($data['query']) && !empty($data['query'])) {
+            $suggestions = $this->autocompleteAddress($data['query']);
+            return [
+                "success" => true,
+                "suggestions" => $suggestions
+            ];
+        }
+
         // If reverse geocoding requested
         if (isset($data['latitude']) && isset($data['longitude']) && !isset($data['pickup_address'])) {
             $result = $this->reverseGeocode($data['latitude'], $data['longitude']);

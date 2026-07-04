@@ -627,7 +627,7 @@ const FindJobs = () => {
                       <div className="flex items-center gap-2 mb-1">
                         <Truck size={16} className="text-primary" />
                         <span className="text-xs font-black text-primary-dark uppercase tracking-wider">
-                          Delivery staff needed? / விநியோக ஊழியர் தேவையா?
+                          Delivery staff needed?
                         </span>
                         <span className="text-[10px] font-bold text-rose-500 ml-auto">Required</span>
                       </div>

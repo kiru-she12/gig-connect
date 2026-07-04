@@ -1,6 +1,6 @@
 # GigConnect — Student Gig Marketplace
 
-A complete, fully functional multi-page web application prototype built for **Uva Wellassa University (UWU)**.
+A complete, fully functional multi-page web application prototype built for **University**.
 
 ## 🚀 Getting Started
 

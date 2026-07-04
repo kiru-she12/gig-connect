@@ -35,6 +35,7 @@ const DashboardLayout = ({ children }) => {
   const [showNotifs, setShowNotifs]       = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount]     = useState(0);
+  const [avatarError, setAvatarError]     = useState(false);
   const notifRef = useRef(null);
 
   /* Close dropdown on outside click */
@@ -207,9 +208,18 @@ const DashboardLayout = ({ children }) => {
               title="Go to landing page"
               className="flex items-center gap-2 pl-2 ml-1 border-l border-slate-200 hover:opacity-80 transition-opacity"
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white text-xs font-black shadow-sm">
-                {initials}
-              </div>
+              {user?.profile_pic && !avatarError ? (
+                <img 
+                  src={user.profile_pic.startsWith('http') || user.profile_pic.startsWith('/') ? user.profile_pic : `/${user.profile_pic}`}
+                  alt={user?.name || ''} 
+                  onError={() => setAvatarError(true)}
+                  className="w-8 h-8 rounded-xl object-cover shadow-sm border border-slate-200"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white text-xs font-black shadow-sm">
+                  {initials}
+                </div>
+              )}
               <div className="hidden md:block text-left leading-none">
                 <p className="text-xs font-bold text-slate-800">{user?.name?.split(' ')[0] || 'User'}</p>
                 <p className="text-[10px] text-slate-400 capitalize">{(user?.role || '').replace('_', ' ')}</p>

@@ -27,7 +27,7 @@ const isProductBased = (job) => {
 };
 
 const StudentDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const { applyForJob } = useJobs();
   const location = useLocation();
   const navigate = useNavigate();
@@ -71,6 +71,19 @@ const StudentDashboard = () => {
       // 1. Fetch Profile
       const profileRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/profile/get_profile.php`, { headers });
       const profileData = await profileRes.json();
+      
+      // Update local storage and AuthContext user details if profile_pic exists/changed
+      if (profileData.success && profileData.profile) {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          if (parsed.profile_pic !== profileData.profile.profile_pic) {
+            parsed.profile_pic = profileData.profile.profile_pic;
+            localStorage.setItem('user', JSON.stringify(parsed));
+            setUser(parsed);
+          }
+        }
+      }
       
       // 2. Fetch Applications
       const appsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/my_applications.php`, { headers });
@@ -303,6 +316,7 @@ const StudentDashboard = () => {
         <Route path="applications" element={
           <ApplicationsTab 
             applications={applications}
+            profile={profile}
             fetchDashboardData={fetchDashboardData}
           />
         } />
@@ -407,7 +421,7 @@ const StudentDashboard = () => {
                       <div className="flex items-center gap-2 mb-1">
                         <Truck size={16} className="text-primary" />
                         <span className="text-xs font-black text-primary-dark uppercase tracking-wider">
-                          Delivery staff needed? / விநியோக ஊழியர் தேவையா?
+                          Delivery staff needed?
                         </span>
                         <span className="text-[10px] font-bold text-rose-500 ml-auto">Required</span>
                       </div>
@@ -479,7 +493,7 @@ const StudentDashboard = () => {
 
 /* 2. APPLICATIONS TAB */
 /* 2. APPLICATIONS TAB */
-const ApplicationsTab = ({ applications, fetchDashboardData }) => {
+const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
   const [activeTab, setActiveTab] = useState('All');
   
   // State for Mark as Completed form/modal
@@ -501,10 +515,79 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
   const deliveryMarkerRef = useRef(null);
   const activeFieldRef = useRef('pickup');
   
+  // Mapbox autocomplete specific states and token
+  const MAPBOX_TOKEN = "pk.eyJ1Ijoia2lydS1zaGUxMiIsImEiOiJjbXE2YWMxMzYwMDJvMnNzNXE3ODViZTl2In0.gc5SwlhXKWX9RgR4ZzskMw";
+  const [pickupSuggestions, setPickupSuggestions] = useState([]);
+  const [dropoffSuggestions, setDropoffSuggestions] = useState([]);
+
   // Keep the ref in sync
   activeFieldRef.current = activeAddressField;
 
+  const fetchAddressSuggestions = async (query, setSuggestions) => {
+    if (!query || query.trim().length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ query })
+        }
+      );
+      const data = await response.json();
+      if (data && data.success && data.suggestions) {
+        setSuggestions(data.suggestions);
+      } else {
+        setSuggestions([]);
+      }
+    } catch (err) {
+      console.error("Error fetching Mapbox suggestions:", err);
+      setSuggestions([]);
+    }
+  };
+
+  const handleAddressChange = (val, field) => {
+    if (field === 'pickup') {
+      setPickupAddress(val);
+      fetchAddressSuggestions(val, setPickupSuggestions);
+    } else {
+      setDropoffAddress(val);
+      fetchAddressSuggestions(val, setDropoffSuggestions);
+    }
+  };
+
+  const selectSuggestion = (val, field) => {
+    if (field === 'pickup') {
+      setPickupAddress(val);
+      setPickupSuggestions([]);
+      if (completionModalJob?.delivery_needed == 1) {
+        handleModalGeocode('pickup', val);
+      }
+    } else {
+      setDropoffAddress(val);
+      setDropoffSuggestions([]);
+      if (completionModalJob?.delivery_needed == 1) {
+        handleModalGeocode('delivery', val);
+      }
+    }
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+  };
+
   const handleModalReverseGeocode = async (lat, lng, field) => {
+    setPickupSuggestions([]);
+    setDropoffSuggestions([]);
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`, {
@@ -528,9 +611,14 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
     }
   };
 
-  const handleModalGeocode = async (field) => {
-    const address = field === 'pickup' ? pickupAddress : dropoffAddress;
-    if (!address.trim()) return;
+  const handleModalGeocode = async (field, addressValue = null) => {
+    setPickupSuggestions([]);
+    setDropoffSuggestions([]);
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+    const address = addressValue !== null ? addressValue : (field === 'pickup' ? pickupAddress : dropoffAddress);
+    if (!address || !address.trim()) return;
     
     if (field === 'pickup') setLocatingPickup(true);
     else setLocatingDelivery(true);
@@ -551,12 +639,12 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
         const lon = parseFloat(data.coordinates.longitude);
         
         if (field === 'pickup') {
-          setPickupAddress(data.formatted_address || pickupAddress);
+          setPickupAddress(data.formatted_address || address);
           if (pickupMarkerRef.current) {
             pickupMarkerRef.current.setLatLng([lat, lon]);
           }
         } else {
-          setDropoffAddress(data.formatted_address || dropoffAddress);
+          setDropoffAddress(data.formatted_address || address);
           if (deliveryMarkerRef.current) {
             deliveryMarkerRef.current.setLatLng([lat, lon]);
           }
@@ -742,10 +830,12 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
 
   const handleOpenCompletion = (app) => {
     setCompletionModalJob(app);
-    setPhone('');
+    setPhone(profile?.phone || '');
     setPickupAddress('');
     setDropoffAddress('');
     setClientPhone('');
+    setPickupSuggestions([]);
+    setDropoffSuggestions([]);
   };
 
   const handleCompleteSubmit = async (e) => {
@@ -784,6 +874,12 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
         fetchDashboardData(true);
         if (data.is_product_based === false) {
           handleOpenReview(prevJob, data.provider_user_ID);
+        } else {
+          setActiveTab('Completed');
+          if (prevJob.delivery_needed == 0) {
+            setOtpVerifyApp(prevJob);
+            setEnteredOtp('');
+          }
         }
       }
     } catch (err) {
@@ -1051,7 +1147,11 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
                   <CheckCircle size={20} className="stroke-[2.5]" />
                 </div>
                 <div>
-                  <h3 className="font-heading font-black text-base text-slate-800">Complete Gig</h3>
+                  <h3 className="font-heading font-black text-base text-slate-800">
+                    {parseInt(completionModalJob.is_product_based) === 1 && completionModalJob.delivery_needed == 0
+                      ? 'Self Delivery Details'
+                      : 'Complete Gig'}
+                  </h3>
                   <p className="text-xs text-slate-500 font-bold mt-0.5">{completionModalJob.job_title}</p>
                 </div>
               </div>
@@ -1090,21 +1190,22 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
                       
                       <div>
                         <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Pickup Address</label>
-                        <div className="relative flex items-center">
-                          <textarea
+                        <div className="relative">
+                          <input
+                            type="text"
                             required
                             placeholder="Where should the rider collect the product?"
                             value={pickupAddress}
-                            onChange={(e) => setPickupAddress(e.target.value)}
+                            onChange={(e) => handleAddressChange(e.target.value, 'pickup')}
                             onFocus={() => setActiveAddressField('pickup')}
-                            rows={2}
-                            className="w-full pl-3.5 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all resize-none"
+                            onBlur={() => setTimeout(() => setPickupSuggestions([]), 200)}
+                            className="w-full pl-3.5 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
                           />
                           <button
                             type="button"
                             onClick={() => handleModalGeocode('pickup')}
                             disabled={locatingPickup}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary/10 hover:bg-primary/20 disabled:bg-slate-100 text-primary hover:text-primary-dark rounded-lg transition-all flex items-center justify-center"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary/10 hover:bg-primary/20 disabled:bg-slate-100 text-primary hover:text-primary-dark rounded-lg transition-all flex items-center justify-center z-10"
                             title="Locate address on map"
                           >
                             {locatingPickup ? (
@@ -1113,26 +1214,43 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
                               <Plus size={14} />
                             )}
                           </button>
+                          {pickupSuggestions.length > 0 && (
+                            <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-[220] max-h-48 overflow-y-auto">
+                              {pickupSuggestions.map((suggestion, index) => (
+                                <div
+                                  key={index}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    selectSuggestion(suggestion, 'pickup');
+                                  }}
+                                  className="px-3.5 py-2 hover:bg-slate-50 cursor-pointer text-xs text-slate-700 font-semibold border-b border-slate-50 last:border-b-0"
+                                >
+                                  {suggestion}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       <div>
                         <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Delivery Destination Address</label>
-                        <div className="relative flex items-center">
-                          <textarea
+                        <div className="relative">
+                          <input
+                            type="text"
                             required
                             placeholder="Where should the rider deliver the product?"
                             value={dropoffAddress}
-                            onChange={(e) => setDropoffAddress(e.target.value)}
+                            onChange={(e) => handleAddressChange(e.target.value, 'delivery')}
                             onFocus={() => setActiveAddressField('delivery')}
-                            rows={2}
-                            className="w-full pl-3.5 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all resize-none"
+                            onBlur={() => setTimeout(() => setDropoffSuggestions([]), 200)}
+                            className="w-full pl-3.5 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
                           />
                           <button
                             type="button"
                             onClick={() => handleModalGeocode('delivery')}
                             disabled={locatingDelivery}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary/10 hover:bg-primary/20 disabled:bg-slate-100 text-primary hover:text-primary-dark rounded-lg transition-all flex items-center justify-center"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary/10 hover:bg-primary/20 disabled:bg-slate-100 text-primary hover:text-primary-dark rounded-lg transition-all flex items-center justify-center z-10"
                             title="Locate address on map"
                           >
                             {locatingDelivery ? (
@@ -1141,6 +1259,22 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
                               <Plus size={14} />
                             )}
                           </button>
+                          {dropoffSuggestions.length > 0 && (
+                            <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-[220] max-h-48 overflow-y-auto">
+                              {dropoffSuggestions.map((suggestion, index) => (
+                                <div
+                                  key={index}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    selectSuggestion(suggestion, 'delivery');
+                                  }}
+                                  className="px-3.5 py-2 hover:bg-slate-50 cursor-pointer text-xs text-slate-700 font-semibold border-b border-slate-50 last:border-b-0"
+                                >
+                                  {suggestion}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1177,11 +1311,100 @@ const ApplicationsTab = ({ applications, fetchDashboardData }) => {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 bg-purple-50/70 border border-purple-100/50 rounded-2xl flex gap-3 items-start">
-                    <CheckCircle className="text-purple-600 shrink-0 mt-0.5" size={16} />
-                    <p className="text-xs text-purple-700 leading-relaxed font-semibold">
-                      This job will be marked as completed immediately. We will generate a secure completion OTP. Please collect the OTP from the client upon delivery to verify.
-                    </p>
+                  <div className="space-y-4">
+                    <div className="p-3.5 bg-purple-50/60 border border-purple-100/50 rounded-2xl flex gap-3 items-start">
+                      <Truck className="text-purple-600 shrink-0 mt-0.5" size={16} />
+                      <p className="text-xs text-purple-700 leading-relaxed font-semibold">
+                        Please provide self delivery details. The client will receive an OTP along with your phone number to coordinate contact.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Your Phone Number</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. 0771234567"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Pickup Address</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            placeholder="Enter pickup address"
+                            value={pickupAddress}
+                            onChange={(e) => handleAddressChange(e.target.value, 'pickup')}
+                            onBlur={() => setTimeout(() => setPickupSuggestions([]), 200)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                          />
+                          {pickupSuggestions.length > 0 && (
+                            <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-[220] max-h-48 overflow-y-auto">
+                              {pickupSuggestions.map((suggestion, index) => (
+                                <div
+                                  key={index}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    selectSuggestion(suggestion, 'pickup');
+                                  }}
+                                  className="px-3.5 py-2 hover:bg-slate-50 cursor-pointer text-xs text-slate-700 font-semibold border-b border-slate-50 last:border-b-0"
+                                >
+                                  {suggestion}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Drop-off Destination Address</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            placeholder="Enter drop-off destination address"
+                            value={dropoffAddress}
+                            onChange={(e) => handleAddressChange(e.target.value, 'delivery')}
+                            onBlur={() => setTimeout(() => setDropoffSuggestions([]), 200)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                          />
+                          {dropoffSuggestions.length > 0 && (
+                            <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-[220] max-h-48 overflow-y-auto">
+                              {dropoffSuggestions.map((suggestion, index) => (
+                                <div
+                                  key={index}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    selectSuggestion(suggestion, 'delivery');
+                                  }}
+                                  className="px-3.5 py-2 hover:bg-slate-50 cursor-pointer text-xs text-slate-700 font-semibold border-b border-slate-50 last:border-b-0"
+                                >
+                                  {suggestion}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Client Contact Phone (Optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 0779876543"
+                          value={clientPhone}
+                          onChange={(e) => setClientPhone(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+                        />
+                      </div>
+                    </div>
                   </div>
                 )
               ) : (
@@ -1663,7 +1886,7 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
                         disabled={updating}
                         className="w-full btn-primary py-2.5 rounded-xl text-xs font-bold shadow flex items-center justify-center gap-1.5"
                       >
-                        🚀 Mark Job Done & Send OTP / வேலையை முடித்து OTP அனுப்புக
+                        🚀 Mark Job Done & Send OTP
                       </button>
                     ) : del.status === 'picked_up' ? (
                       <div className="space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
@@ -1697,7 +1920,7 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
                         disabled={updating}
                         className="w-full btn-primary py-2.5 rounded-xl text-xs font-bold shadow"
                       >
-                        ✓ Mark Product Ready for Rider Pickup / தயாரிப்பைத் தயார் செய்
+                        ✓ Mark Product Ready for Rider Pickup
                       </button>
                     ) : del.status === 'assigned' ? (
                       <p className="text-xs text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
@@ -1733,7 +1956,7 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
             </p>
             <form onSubmit={handleSubmitDeliveryDetails} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Pickup Location / எடுக்குமிடம்</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Pickup Location</label>
                 <input
                   type="text"
                   required
@@ -1744,7 +1967,7 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Delivery Destination / செல்லுமிடம்</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Delivery Destination</label>
                 <input
                   type="text"
                   required
@@ -1755,7 +1978,7 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Your Phone Number / தொலைபேசி எண்</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Your Phone Number</label>
                 <input
                   type="tel"
                   required
@@ -2209,6 +2432,7 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [settingsAvatarError, setSettingsAvatarError] = useState(false);
 
   const availableSkills = ["Web Dev", "Design", "Data Entry", "Photography", "Translation", "Delivery", "Tutoring", "React", "Tailwind", "Photoshop", "English", "Sinhala", "Tamil"];
 
@@ -2323,9 +2547,18 @@ const SettingsTab = ({ profile, fetchDashboardData }) => {
       {/* Main Settings Card */}
       <div className="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm space-y-8">
         <div className="flex flex-col sm:flex-row items-center gap-4 border-b pb-6">
-          <div className="w-20 h-20 bg-primary/10 text-primary rounded-2xl flex items-center justify-center font-black text-2xl">
-            {profile?.name ? profile.name.split(' ').map(n => n[0]).join('') : 'ST'}
-          </div>
+          {profile?.profile_pic && !settingsAvatarError ? (
+            <img 
+              src={profile.profile_pic.startsWith('http') || profile.profile_pic.startsWith('/') ? profile.profile_pic : `/${profile.profile_pic}`}
+              alt={profile.name}
+              onError={() => setSettingsAvatarError(true)}
+              className="w-20 h-20 rounded-2xl object-cover shadow-md border border-slate-200"
+            />
+          ) : (
+            <div className="w-20 h-20 bg-primary/10 text-primary rounded-2xl flex items-center justify-center font-black text-2xl">
+              {profile?.name ? profile.name.split(' ').map(n => n[0]).join('') : 'ST'}
+            </div>
+          )}
           <div className="text-center sm:text-left">
             <h3 className="font-bold text-lg text-slate-800">{profile?.name}</h3>
             <p className="text-xs text-slate-400 font-semibold">{profile?.email}</p>

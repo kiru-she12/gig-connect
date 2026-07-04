@@ -73,6 +73,7 @@ const AdminDashboard = () => {
             completed_deliveries: Math.max(parseInt(baseAnalytics?.deliveries?.completed_deliveries || 0), 38)
           },
           recent_jobs: baseAnalytics?.recent_jobs || [],
+          recent_actions: baseAnalytics?.recent_actions || [],
           interactions: {
             total_interactions: 1284, // Over 1200 interactions
             student_engagement: 840,
@@ -92,6 +93,7 @@ const AdminDashboard = () => {
           applications: { total_applications: 320 },
           deliveries: { total_deliveries: 42, completed_deliveries: 38 },
           recent_jobs: [],
+          recent_actions: [],
           interactions: {
             total_interactions: 1284,
             student_engagement: 840,
@@ -112,6 +114,7 @@ const AdminDashboard = () => {
         applications: { total_applications: 320 },
         deliveries: { total_deliveries: 42, completed_deliveries: 38 },
         recent_jobs: [],
+        recent_actions: [],
         interactions: {
           total_interactions: 1284,
           student_engagement: 840,
@@ -168,6 +171,27 @@ const PlaceholderTab = ({ title, icon: Icon, message }) => (
   </div>
 );
 
+const formatRelativeTime = (timeStr) => {
+  if (!timeStr) return '';
+  const date = new Date(timeStr.replace(/-/g, '/'));
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  
+  if (isNaN(diffMs) || diffMs < 0) {
+    return 'Just now';
+  }
+  
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+};
+
 const OverviewTab = ({ jobs, applications, analytics, loading }) => {
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const role = storedUser?.role || 'admin';
@@ -192,6 +216,23 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
   ];
 
   const pendingJobsCount = jobs.filter(j => j.status === 'Pending Approval').length;
+
+  const getActionMetadata = (type) => {
+    switch (type) {
+      case 'application':
+        return { icon: Users, color: 'bg-primary-light text-primary' };
+      case 'payment':
+        return { icon: DollarSign, color: 'bg-accent/25 text-[#1A312C]' };
+      case 'job_post':
+        return { icon: FileText, color: 'bg-amber-100 text-amber-600' };
+      case 'complaint':
+        return { icon: AlertCircle, color: 'bg-teal-100 text-teal-600' };
+      default:
+        return { icon: Clock, color: 'bg-slate-100 text-slate-600' };
+    }
+  };
+
+  const recentActionsList = analytics?.recent_actions || [];
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -231,22 +272,24 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
             <Clock size={18} className="text-primary" /> Recent Platform Actions
           </h3>
           <div className="space-y-6">
-            {[
-              { text: 'Student cst23001 applied to "Web Frontend Refactoring"', time: '4 mins ago', icon: Users, color: 'bg-primary-light text-primary' },
-              { text: 'Badulla Grocery paid LKR 8,000 for priority advertising boost', time: '18 mins ago', icon: DollarSign, color: 'bg-accent/25 text-[#1A312C]' },
-              { text: 'Job "UX Redesign" posted by Uva Design Lab', time: '38 mins ago', icon: FileText, color: 'bg-amber-100 text-amber-600' },
-              { text: 'System resolved Complaint #1024 regarding delivery delay', time: '2 hours ago', icon: AlertCircle, color: 'bg-teal-100 text-teal-600' },
-            ].map((item, i) => (
-              <div key={i} className="flex gap-4">
-                <div className={`w-10 h-10 ${item.color} rounded-full flex-shrink-0 flex items-center justify-center`}>
-                  <item.icon size={18} />
-                </div>
-                <div className="flex-1 border-b border-slate-100 pb-4 last:border-0">
-                  <p className="text-sm font-medium text-text-primary leading-tight">{item.text}</p>
-                  <p className="text-xs text-text-muted mt-1">{item.time}</p>
-                </div>
-              </div>
-            ))}
+            {recentActionsList.length > 0 ? (
+              recentActionsList.map((item, i) => {
+                const meta = getActionMetadata(item.action_type);
+                return (
+                  <div key={i} className="flex gap-4">
+                    <div className={`w-10 h-10 ${meta.color} rounded-full flex-shrink-0 flex items-center justify-center`}>
+                      <meta.icon size={18} />
+                    </div>
+                    <div className="flex-1 border-b border-slate-100 pb-4 last:border-0">
+                      <p className="text-sm font-medium text-text-primary leading-tight">{item.action_text}</p>
+                      <p className="text-xs text-text-muted mt-1">{formatRelativeTime(item.action_time)}</p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-sm text-text-muted py-4">No recent platform actions recorded.</p>
+            )}
           </div>
         </div>
 

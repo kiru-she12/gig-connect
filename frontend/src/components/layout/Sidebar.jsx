@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { getLinksByRole } from '../../data/navigation';
 import { useAuth } from '../../context/AuthContext';
@@ -14,8 +14,22 @@ const ROLE_META = {
   delivery_staff:{ label: 'Delivery Staff',  color: 'bg-[#89D7B7] text-[#1A312C]' },
 };
 
-const Avatar = ({ name = '' }) => {
+const Avatar = ({ name = '', profilePic }) => {
+  const [imgError, setImgError] = useState(false);
   const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  if (profilePic && !imgError) {
+    const finalUrl = profilePic.startsWith('http') || profilePic.startsWith('/') ? profilePic : `/${profilePic}`;
+    return (
+      <img 
+        src={finalUrl} 
+        alt={name} 
+        onError={() => setImgError(true)}
+        className="w-9 h-9 rounded-xl object-cover shadow-lg flex-shrink-0 border border-white/20"
+      />
+    );
+  }
+
   return (
     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-light to-primary flex items-center justify-center text-white text-xs font-black shadow-lg flex-shrink-0">
       {initials || '?'}
@@ -96,12 +110,14 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       <div className="px-5 py-6 flex items-center gap-3 border-b border-white/10">
         <div className="leading-none">
           <span className="font-heading font-black text-white text-lg tracking-tight">GigConnect</span>
-          <span className="block text-[10px] font-bold text-primary-light uppercase tracking-widest mt-0.5">UWU Student Hub</span>
+          <span className="block text-[10px] font-bold text-primary-light uppercase tracking-widest mt-0.5">
+            {role === 'delivery_staff' ? 'Delivery Staff Dashboard' : 'UWU Student Hub'}
+          </span>
         </div>
       </div>
 
       {/* Nav links */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-4 space-y-6">
         {/* Section label */}
         <div>
           <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-3 mb-2">
@@ -114,7 +130,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       {/* User card at bottom */}
       <div className="p-3 border-t border-white/10">
         <div className="flex items-center gap-3 px-2 py-2.5 rounded-2xl bg-white/5 border border-white/10">
-          <Avatar name={user?.name || ''} />
+          <Avatar name={user?.name || ''} profilePic={user?.profile_pic} />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-white truncate">{user?.name || 'User'}</p>
             <span className={`inline-block text-[9px] font-black text-white px-1.5 py-0.5 rounded-full mt-0.5 ${roleMeta.color}`}>

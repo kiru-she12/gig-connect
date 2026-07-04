@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { User, Mail, Phone, Lock, CheckCircle, Loader2, X, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SKILLS_LIST } from '../data/mockData';
-import logo from '../logo.svg';
+import logo from '../assets/logo/logo.png';
 import Footer from '../components/layout/Footer';
 
 const RegisterStudent = () => {

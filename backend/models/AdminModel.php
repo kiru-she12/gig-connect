@@ -405,6 +405,84 @@ class AdminModel extends BaseModel {
         $stmt = $this->pdo->query("SELECT job_ID, title, status, created_at FROM job ORDER BY created_at DESC LIMIT 5");
         $recent_jobs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Fetch recent applications
+        $recent_apps = [];
+        try {
+            $stmtApp = $this->pdo->query("
+                SELECT a.applied_date as action_time, 
+                       'application' as action_type, 
+                       CONCAT('Student ', u.name, ' applied to \"', j.title, '\"') as action_text 
+                FROM application a 
+                JOIN student s ON a.student_ID = s.student_ID 
+                JOIN users u ON s.user_ID = u.user_ID 
+                JOIN job j ON a.job_ID = j.job_ID 
+                ORDER BY a.applied_date DESC 
+                LIMIT 5
+            ");
+            if ($stmtApp) {
+                $recent_apps = $stmtApp->fetchAll(PDO::FETCH_ASSOC);
+            }
+        } catch (Exception $e) {}
+
+        // Fetch recent payments
+        $recent_payments = [];
+        try {
+            $stmtPay = $this->pdo->query("
+                SELECT p.created_at as action_time, 
+                       'payment' as action_type, 
+                       CONCAT(u.name, ' paid LKR ', FORMAT(p.amount, 0), ' for ', p.payment_type) as action_text 
+                FROM payment p 
+                JOIN job_provider jp ON p.provider_ID = jp.provider_ID 
+                JOIN users u ON jp.user_ID = u.user_ID 
+                ORDER BY p.created_at DESC 
+                LIMIT 5
+            ");
+            if ($stmtPay) {
+                $recent_payments = $stmtPay->fetchAll(PDO::FETCH_ASSOC);
+            }
+        } catch (Exception $e) {}
+
+        // Fetch recent job postings
+        $recent_job_posts = [];
+        try {
+            $stmtJobPost = $this->pdo->query("
+                SELECT j.created_at as action_time, 
+                       'job_post' as action_type, 
+                       CONCAT('Job \"', j.title, '\" posted by ', u.name) as action_text 
+                FROM job j 
+                JOIN job_provider jp ON j.provider_ID = jp.provider_ID 
+                JOIN users u ON jp.user_ID = u.user_ID 
+                ORDER BY j.created_at DESC 
+                LIMIT 5
+            ");
+            if ($stmtJobPost) {
+                $recent_job_posts = $stmtJobPost->fetchAll(PDO::FETCH_ASSOC);
+            }
+        } catch (Exception $e) {}
+
+        // Fetch recent complaints
+        $recent_complaints = [];
+        try {
+            $stmtComp = $this->pdo->query("
+                SELECT CONCAT(c.date, ' 00:00:00') as action_time, 
+                       'complaint' as action_type, 
+                       CONCAT('System filed Complaint #', c.id, ': ', c.reason) as action_text 
+                FROM complaints c 
+                ORDER BY c.id DESC 
+                LIMIT 5
+            ");
+            if ($stmtComp) {
+                $recent_complaints = $stmtComp->fetchAll(PDO::FETCH_ASSOC);
+            }
+        } catch (Exception $e) {}
+
+        // Merge and sort
+        $all_actions = array_merge($recent_apps, $recent_payments, $recent_job_posts, $recent_complaints);
+        usort($all_actions, function($a, $b) {
+            return strcmp($b['action_time'], $a['action_time']);
+        });
+        $recent_actions = array_slice($all_actions, 0, 5);
+
         return [
             "success" => true,
             "analytics" => [
@@ -429,7 +507,8 @@ class AdminModel extends BaseModel {
                     "total_deliveries" => $total_deliveries,
                     "completed_deliveries" => $completed_deliveries
                 ],
-                "recent_jobs" => $recent_jobs
+                "recent_jobs" => $recent_jobs,
+                "recent_actions" => $recent_actions
             ]
         ];
     }

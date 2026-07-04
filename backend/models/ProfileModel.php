@@ -67,7 +67,7 @@ class ProfileModel extends BaseModel {
     }
 
     public function getProfile($user) {
-        $stmt = $this->pdo->prepare("SELECT user_ID, name, email, role, status, phone, created_at FROM users WHERE user_ID = ?");
+        $stmt = $this->pdo->prepare("SELECT user_ID, name, email, role, status, phone, created_at, profile_pic FROM users WHERE user_ID = ?");
         $stmt->execute([$user->user_ID]);
         $profile = $stmt->fetch(PDO::FETCH_ASSOC);
 

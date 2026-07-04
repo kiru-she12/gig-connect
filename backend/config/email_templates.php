@@ -64,7 +64,7 @@ class EmailTemplates {
 
         $extra_message = "";
         if ($status === 'accepted') {
-            $extra_message = "<p style='font-size: 16px; color: #10B981; font-weight: bold; margin: 15px 0;'>Congratulations! You have been hired / நீங்க hire பண்ணியாச்சு (Neenka hire panniyachchu) for this job!</p>";
+            $extra_message = "<p style='font-size: 16px; color: #10B981; font-weight: bold; margin: 15px 0;'>Congratulations! You have been hired for this job!</p>";
         }
 
         return "
