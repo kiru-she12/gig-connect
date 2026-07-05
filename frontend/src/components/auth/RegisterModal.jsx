@@ -1,0 +1,576 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { X, ArrowLeft, ArrowRight, Spinner, Check, Buildings, Desktop, ShieldCheck, Lock } from '@phosphor-icons/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SKILLS_LIST } from '../../data/mockData';
+
+const RegisterModal = ({ isOpen, onClose }) => {
+  const [role, setRole] = useState('student');
+  // 0: Role Selection, 1: Basic Info, 2: Specifics, 3: Password, 4: OTP Verification, 5: Success
+  const [step, setStep] = useState(0); 
+  const [formData, setFormData] = useState({
+    fullName: '', email: '', phone: '', password: '', confirmPassword: '',
+    skills: [], availability: [], businessName: '', jobType: 'Both', nic: '', businessReg: '', terms: false, emailOtp: '', phoneOtp: ''
+  });
+  
+  const [error, setError] = useState('');
+  const [customSkillInput, setCustomSkillInput] = useState('');
+  const { register, verifyOtp, loading, setIsLoginModalOpen, setIsTermsModalOpen, setIsPrivacyModalOpen } = useAuth();
+  const navigate = useNavigate();
+
+  const handleRoleSelection = (r) => {
+    setRole(r);
+    setStep(1);
+    setError('');
+  };
+
+  const nextStep = () => {
+    if (step === 1) {
+      if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim()) {
+        setError('Please fill in all basic information');
+        return;
+      }
+      if (/\d/.test(formData.fullName) || !/^[a-zA-Z\s\.\'-]{2,100}$/.test(formData.fullName.trim())) {
+        setError('Full Name must only contain letters, spaces, dots, or hyphens and cannot contain numbers');
+        return;
+      }
+      if (!/^0\d{9}$/.test(formData.phone.trim())) {
+        setError('Phone number must be exactly 10 digits (e.g., 0712345678)');
+        return;
+      }
+      if (role === 'student' && !/^[a-z0-9]+@std\.uwu\.ac\.lk$/i.test(formData.email.trim())) {
+        setError('Please use your official university email (@std.uwu.ac.lk)');
+        return;
+      }
+      if (role === 'client' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+        setError('Please enter a valid email address');
+        return;
+      }
+      setError('');
+      setStep(2);
+      return;
+    }
+    if (step === 2) {
+      if (role === 'student' && formData.skills.length === 0) {
+        setError('Please select at least one core skill');
+        return;
+      }
+      if (role === 'client') {
+        if (!formData.nic.trim()) {
+          setError('NIC number is required');
+          return;
+        }
+        if (!/^(?:[0-9]{9}[vVxX]|[0-9]{12})$/.test(formData.nic.trim())) {
+          setError("Invalid NIC format! Must be 9 digits with 'V/X' (e.g., 123456789V) or 12 digits (e.g., 199912345678)");
+          return;
+        }
+      }
+      setError('');
+      setStep(3);
+      return;
+    }
+  };
+
+  const prevStep = () => {
+    setError('');
+    setStep(step - 1);
+  };
+
+  const handleSkillToggle = (skill) => {
+    if (formData.skills.includes(skill)) {
+      setFormData({ ...formData, skills: formData.skills.filter(s => s !== skill) });
+    } else {
+      setFormData({ ...formData, skills: [...formData.skills, skill] });
+    }
+  };
+
+  const handleAddCustomSkill = () => {
+    const trimmed = customSkillInput.trim();
+    if (trimmed) {
+      const skillsToAdd = trimmed.split(',').map(s => s.trim()).filter(Boolean);
+      const newSkills = [...formData.skills];
+      skillsToAdd.forEach(skill => {
+        if (!newSkills.includes(skill)) {
+          newSkills.push(skill);
+        }
+      });
+      setFormData({ ...formData, skills: newSkills });
+      setCustomSkillInput('');
+    }
+  };
+
+  const handleAvailabilityToggle = (item) => {
+    if (formData.availability.includes(item)) {
+      setFormData({ ...formData, availability: formData.availability.filter(a => a !== item) });
+    } else {
+      setFormData({ ...formData, availability: [...formData.availability, item] });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setError('');
+
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim()) {
+      setError('Please fill in all basic information');
+      return;
+    }
+
+    if (/\d/.test(formData.fullName) || !/^[a-zA-Z\s\.\'-]{2,100}$/.test(formData.fullName.trim())) {
+      setError('Full Name must only contain letters, spaces, dots, or hyphens and cannot contain numbers');
+      return;
+    }
+
+    if (!/^0\d{9}$/.test(formData.phone.trim())) {
+      setError('Phone number must be exactly 10 digits (e.g., 0712345678)');
+      return;
+    }
+
+    if (role === 'student' && !/^[a-z0-9]+@std\.uwu\.ac\.lk$/i.test(formData.email.trim())) {
+      setError('Please use your official university email (@std.uwu.ac.lk)');
+      return;
+    }
+
+    if (role === 'client' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (role === 'client') {
+      if (!formData.nic.trim() || !/^(?:[0-9]{9}[vVxX]|[0-9]{12})$/.test(formData.nic.trim())) {
+        setError("Invalid NIC format! Must be 9 digits with 'V/X' (e.g., 123456789V) or 12 digits (e.g., 199912345678)");
+        return;
+      }
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    try {
+      await register({ ...formData, role });
+      setError('');
+      setStep(4); // Move to OTP step
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    if (e) e.preventDefault();
+    setError('');
+
+    // Both fields correspond to the same OTP code generated by backend
+    const otp = formData.emailOtp || formData.phoneOtp;
+    if (!otp || otp.length !== 6) {
+      setError('Please enter the 6-digit verification code');
+      return;
+    }
+
+    try {
+      await verifyOtp(formData.email, otp);
+      setError('');
+      setStep(5); // Success screen
+    } catch (err) {
+      setError(err.message || 'OTP verification failed. Please check the code and try again.');
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        {/* Backdrop */}
+        <motion.div 
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        />
+
+        {/* Modal Content */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="relative w-full max-w-[760px] h-auto md:h-[520px] max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
+        >
+          {/* Close Button */}
+          <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all z-50">
+            <X size={20} />
+          </button>
+
+          {/* Left Pane (Branded) */}
+          <div className="hidden md:flex flex-col w-[45%] bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 relative overflow-hidden text-white justify-center items-center p-8 text-center">
+            {/* Decorative circles */}
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/5 blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl"></div>
+
+            <h2 className="text-3xl font-bold mb-8 tracking-tight relative z-10 text-center">Welcome to<br/>GigConnect</h2>
+            
+            <div className="space-y-6 relative z-10 w-full max-w-[280px]">
+              <div className="flex items-center gap-3">
+                <div className="p-1 rounded-full bg-white/10 shrink-0">
+                  <Check size={16} className="text-emerald-200" />
+                </div>
+                <span className="text-lg font-medium text-emerald-50 text-left leading-snug">Exclusive student opportunities</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-1 rounded-full bg-white/10 shrink-0">
+                  <Check size={16} className="text-emerald-200" />
+                </div>
+                <span className="text-lg font-medium text-emerald-50 text-left leading-snug">Build your reputation</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-1 rounded-full bg-white/10 shrink-0">
+                  <Check size={16} className="text-emerald-200" />
+                </div>
+                 <span className="text-lg font-medium text-emerald-50 text-left leading-snug">Connect with local job providers</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Pane (Form) */}
+          <div className="flex-1 overflow-y-auto p-8 md:p-12 relative flex flex-col bg-emerald-50/10">
+            
+            {step > 0 && step < 5 && (
+              <button onClick={prevStep} className="flex items-center gap-2 text-slate-600 font-bold hover:text-slate-900 transition-colors mb-6 self-start">
+                <ArrowLeft size={18} /> Back
+              </button>
+            )}
+
+            {step === 0 ? (
+              <div className="mb-5 text-center mt-1">
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Join GigConnect</h2>
+                <p className="text-xs text-slate-500">
+                  Which describes you best?
+                </p>
+              </div>
+            ) : step < 5 ? (
+              <div className="mb-5">
+                <h2 className="text-xl font-bold text-slate-900 mb-1.5">Create your {role === 'student' ? 'Student' : 'Business'} account</h2>
+                <p className="text-xs text-slate-500">
+                  {step === 4 ? 'Please verify your contact details to finish' : 'Additional verification may be required at a later stage'}
+                </p>
+              </div>
+            ) : null}
+
+            {error && (
+              <div className="mb-4 p-2.5 bg-rose-50 border border-rose-200 text-rose-600 text-xs rounded-lg flex items-center font-medium">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={step === 4 ? handleVerifyOtp : handleSubmit} className="space-y-4 flex-1">
+              <AnimatePresence mode="wait">
+                
+                {/* Step 0: Role Selection */}
+                {step === 0 && (
+                  <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                    <div className="space-y-3 mt-1">
+                      <button 
+                        type="button" 
+                        onClick={() => handleRoleSelection('client')} 
+                        className="w-full group flex items-center gap-4 border-2 border-slate-100 rounded-xl p-3.5 hover:border-primary hover:shadow-md hover:bg-primary-light/50 transition-all text-left bg-white"
+                      >
+                        <div className="h-12 w-12 shrink-0 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 transition-transform group-hover:scale-105 group-hover:bg-emerald-200">
+                           <Buildings size={24} />
+                        </div>
+                        <div className="flex-1">
+                           <h3 className="font-bold text-base text-slate-900 flex items-center justify-between">
+                             Job Provider / Business
+                            <ArrowRight size={16} className="text-primary opacity-0 -translate-x-3 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5 font-medium">Post jobs and hire</p>
+                        </div>
+                      </button>
+
+                      <button 
+                        type="button" 
+                        onClick={() => handleRoleSelection('student')} 
+                        className="w-full group flex items-center gap-4 border-2 border-slate-100 rounded-xl p-3.5 hover:border-primary hover:shadow-md hover:bg-primary-light/50 transition-all text-left bg-white"
+                      >
+                        <div className="h-12 w-12 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-105 group-hover:bg-primary/20">
+                           <Desktop size={24} />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-base text-slate-900 flex items-center justify-between">
+                            Student
+                            <ArrowRight size={16} className="text-primary opacity-0 -translate-x-3 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5 font-medium">Work and get paid</p>
+                        </div>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Step 1: Basic Info */}
+                {step === 1 && (
+                  <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-800 mb-2">Full Name</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="John Doe" 
+                        className="w-full bg-white border border-slate-300 rounded-lg py-3 px-4 outline-none focus:border-slate-900 transition-all text-sm font-medium placeholder:text-slate-400" 
+                        value={formData.fullName} 
+                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value.replace(/[0-9]/g, '') })} 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-800 mb-2">
+                        {role === 'student' ? 'University Email' : 'Business Email'}
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        placeholder={role === 'student' ? 'e.g. cst23001@std.uwu.ac.lk' : 'name@email.com'}
+                        className={`w-full bg-white border rounded-lg py-3 px-4 outline-none transition-all text-sm font-medium placeholder:text-slate-400 ${
+                          role === 'student' && formData.email
+                            ? formData.email.endsWith('@std.uwu.ac.lk')
+                              ? 'border-emerald-400 focus:border-emerald-500'
+                              : 'border-rose-400 focus:border-rose-500'
+                            : 'border-slate-300 focus:border-slate-900'
+                        }`}
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      />
+                      {role === 'student' && (
+                        <p className={`text-[11px] mt-1.5 font-semibold flex items-center gap-1 ${
+                          formData.email
+                            ? formData.email.endsWith('@std.uwu.ac.lk')
+                              ? 'text-emerald-600'
+                              : 'text-rose-500'
+                            : 'text-slate-400'
+                        }`}>
+                          {formData.email
+                            ? formData.email.endsWith('@std.uwu.ac.lk')
+                              ? '✓ Valid UWU student email'
+                              : '✗ Must be @std.uwu.ac.lk — e.g. cst23001@std.uwu.ac.lk'
+                            : '⚠ Students must use their official UWU email (@std.uwu.ac.lk)'}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-800 mb-2">Phone Number</label>
+                      <input 
+                        type="tel" 
+                        required 
+                        maxLength={10}
+                        placeholder="07XXXXXXXX (10 digits)" 
+                        className="w-full bg-white border border-slate-300 rounded-lg py-3 px-4 outline-none focus:border-slate-900 transition-all text-sm font-medium placeholder:text-slate-400" 
+                        value={formData.phone} 
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })} 
+                      />
+                    </div>
+
+                    <button type="button" onClick={nextStep} disabled={!formData.email || !formData.fullName} className="w-full bg-primary disabled:bg-slate-200 disabled:text-slate-400 hover:bg-primary-dark text-white py-3.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all mt-4 shadow-md shadow-primary/20">
+                      Continue
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Step 2: Specifics */}
+                {step === 2 && role === 'student' && (
+                  <motion.div key="step2-student" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-800 mb-2">Your Expertise</label>
+                      <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto p-1 border border-slate-100 rounded-lg">
+                        {Array.from(new Set([...SKILLS_LIST, ...formData.skills])).map((skill) => (
+                          <button key={skill} type="button" onClick={() => handleSkillToggle(skill)} className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${formData.skills.includes(skill) ? 'bg-primary border-primary text-white shadow-sm' : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400'}`}>
+                            {skill}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1.5">Add other skills (separated by comma):</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          placeholder="e.g. React, Node.js, Video Editing" 
+                          className="flex-1 bg-white border border-slate-300 rounded-lg py-2 px-3 outline-none focus:border-primary transition-all text-xs font-medium" 
+                          value={customSkillInput} 
+                          onChange={(e) => setCustomSkillInput(e.target.value)} 
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddCustomSkill();
+                            }
+                          }}
+                        />
+                        <button 
+                          type="button" 
+                          onClick={handleAddCustomSkill}
+                          className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-800 mb-2">Availability</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['Weekdays', 'Weekends', 'Evenings'].map((item) => (
+                          <button key={item} type="button" onClick={() => handleAvailabilityToggle(item)} className={`p-3 rounded-lg border text-center transition-all ${formData.availability.includes(item) ? 'bg-primary-light border-primary text-primary font-bold shadow-sm' : 'bg-white border-slate-300 text-slate-500 hover:bg-slate-50'}`}>
+                            <span className="text-xs">{item}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <button type="button" onClick={nextStep} disabled={formData.skills.length === 0} className="w-full bg-primary disabled:bg-slate-200 disabled:text-slate-400 hover:bg-primary-dark text-white py-3.5 rounded-lg font-bold text-sm flex items-center justify-center transition-all mt-4 shadow-md shadow-primary/20">
+                      Continue
+                    </button>
+                  </motion.div>
+                )}
+
+                {step === 2 && role === 'client' && (
+                  <motion.div key="step2-client" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-800 mb-2">NIC Number</label>
+                      <input 
+                        type="text" 
+                        required 
+                        maxLength={12}
+                        placeholder="e.g. 123456789V or 199912345678" 
+                        className="w-full bg-white border border-slate-300 rounded-lg py-3 px-4 outline-none focus:border-slate-900 transition-all text-sm font-medium placeholder:text-slate-400" 
+                        value={formData.nic} 
+                        onChange={(e) => setFormData({ ...formData, nic: e.target.value.replace(/[^0-9vVxX]/g, '').slice(0, 12).toUpperCase() })} 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-800 mb-2">Business Registration (if any)</label>
+                      <input type="text" placeholder="BR Number" className="w-full bg-white border border-slate-300 rounded-lg py-3 px-4 outline-none focus:border-slate-900 transition-all text-sm font-medium placeholder:text-slate-400" value={formData.businessReg} onChange={(e) => setFormData({ ...formData, businessReg: e.target.value })} />
+                    </div>
+                    <button type="button" onClick={nextStep} disabled={!formData.nic} className="w-full bg-primary disabled:bg-slate-200 disabled:text-slate-400 hover:bg-primary-dark text-white py-3.5 rounded-lg font-bold text-sm flex items-center justify-center transition-all mt-4 shadow-md shadow-primary/20">
+                      Continue
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Step 3: Password */}
+                {step === 3 && (
+                  <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-800 mb-2">Password</label>
+                      <input type="password" required placeholder="Password" className="w-full bg-white border border-slate-300 rounded-lg py-3 px-4 outline-none focus:border-slate-900 transition-all text-sm font-medium placeholder:text-slate-400" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-800 mb-2">Confirm Password</label>
+                      <input type="password" required placeholder="Confirm Password" className="w-full bg-white border border-slate-300 rounded-lg py-3 px-4 outline-none focus:border-slate-900 transition-all text-sm font-medium placeholder:text-slate-400" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} />
+                    </div>
+
+                    <div className="space-y-2 mt-4 text-slate-500">
+                      <div className="flex items-center gap-2">
+                        <Check size={16} className={formData.password.length >= 8 ? 'text-green-600' : 'text-slate-300'} />
+                        <span className={`text-sm ${formData.password.length >= 8 ? 'text-slate-700' : ''}`}>At least 8 characters</span>
+                      </div>
+                    </div>
+
+                    <button type="submit" disabled={loading || !formData.password || formData.password !== formData.confirmPassword} className="w-full bg-primary hover:bg-primary-dark disabled:bg-slate-200 disabled:text-slate-400 text-white py-3.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all mt-4 shadow-md shadow-primary/20">
+                      {loading ? <Spinner className="animate-spin" size={16} /> : 'Complete Registration & Send OTP'}
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Step 4: OTP Verification */}
+                {step === 4 && (
+                  <motion.div key="step4-otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                        <ShieldCheck size={32} />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900">Verify your Registration</h3>
+                      <p className="text-sm text-slate-500 mt-2">
+                        We've sent a 6-digit verification code to <br/>
+                        <span className="font-semibold text-slate-800">{formData.email}</span>
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-[13px] font-bold text-slate-800 mb-1">6-Digit Verification Code</label>
+                        <input 
+                          type="text" 
+                          maxLength="6" 
+                          required 
+                          placeholder="000000" 
+                          className="w-full text-center tracking-[0.5em] text-xl bg-white border border-slate-300 rounded-lg py-3 px-4 outline-none focus:border-primary transition-all font-bold placeholder:text-slate-300" 
+                          value={formData.emailOtp} 
+                          onChange={(e) => setFormData({ ...formData, emailOtp: e.target.value.replace(/\D/g, '') })} 
+                        />
+                      </div>
+                    </div>
+                    
+                    <button type="submit" disabled={loading || formData.emailOtp?.length !== 6} className="w-full bg-primary disabled:bg-slate-200 disabled:text-slate-400 hover:bg-primary-dark text-white py-3.5 rounded-lg font-bold text-sm flex items-center justify-center transition-all mt-4 shadow-md shadow-primary/20">
+                      {loading ? <Spinner className="animate-spin" size={16} /> : 'Verify Code'}
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Step 5: Success & Verification Wait */}
+                {step === 5 && (
+                  <motion.div key="step5-success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center text-center py-8 space-y-6">
+                    <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Check size={48} strokeWidth={3} />
+                    </div>
+                    <h2 className="text-3xl font-bold text-slate-900">Registration Successful!</h2>
+                    <p className="text-slate-600 text-base max-w-[320px] leading-relaxed">
+                      Your account has been verified and is currently <span className="font-bold text-slate-900">waiting for admin approval</span>.
+                    </p>
+                    <div className="bg-primary-light p-4 rounded-xl border border-primary/20 w-full text-left">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-primary"></div></div>
+                        <p className="text-sm text-primary-dark font-medium leading-relaxed">
+                          You will receive an email confirmation once your account status is activated by our team.
+                        </p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={onClose} className="w-full bg-primary hover:bg-primary-dark text-white py-3.5 rounded-lg font-bold text-sm flex items-center justify-center transition-all mt-4">
+                      Return to Home
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </form>
+
+             {step < 5 && (
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <p className="text-[10px] text-slate-500 leading-normal">
+                  By joining, you agree to the GigConnect{' '}
+                  <button 
+                    type="button" 
+                    onClick={() => setIsTermsModalOpen(true)} 
+                    className="text-primary font-semibold hover:underline inline p-0 m-0 bg-transparent border-none align-baseline cursor-pointer"
+                  >
+                    Terms of Service
+                  </button>{' '}
+                  and to occasionally receive emails from us. Please read our{' '}
+                  <button 
+                    type="button" 
+                    onClick={() => setIsPrivacyModalOpen(true)} 
+                    className="text-primary font-semibold hover:underline inline p-0 m-0 bg-transparent border-none align-baseline cursor-pointer"
+                  >
+                    Privacy Policy
+                  </button>{' '}
+                  to learn how we use your personal data.
+                </p>
+                
+                {step === 0 && (
+                  <div className="mt-2.5 text-center">
+                    <p className="text-xs font-semibold text-slate-600">
+                      Already have an account? <button type="button" onClick={() => { onClose(); setIsLoginModalOpen(true); }} className="text-primary hover:underline font-bold">Sign In</button>
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+};
+
+export default RegisterModal;
