@@ -25,13 +25,13 @@ const Avatar = ({ name = '', profilePic }) => {
         src={finalUrl} 
         alt={name} 
         onError={() => setImgError(true)}
-        className="w-9 h-9 rounded-xl object-cover shadow-lg flex-shrink-0 border border-white/20"
+        className="w-10 h-10 rounded-xl object-cover shadow-lg flex-shrink-0 border-2 border-white/20 transition-transform duration-300 hover:scale-105"
       />
     );
   }
 
   return (
-    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-light to-primary flex items-center justify-center text-white text-xs font-black shadow-lg flex-shrink-0">
+    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-light to-primary flex items-center justify-center text-white text-[13px] font-black shadow-lg flex-shrink-0 border border-white/10 transition-transform duration-300 hover:scale-105">
       {initials || '?'}
     </div>
   );
@@ -128,19 +128,26 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       </div>
 
       {/* User card at bottom */}
-      <div className="p-3 border-t border-white/10">
-        <div className="flex items-center gap-3 px-2 py-2.5 rounded-2xl bg-white/5 border border-white/10">
+      <div className="p-3.5 border-t border-white/10 bg-black/15">
+        <div className="relative group flex items-center gap-3 px-3 py-3 rounded-2xl bg-gradient-to-r from-white/[0.04] to-white/[0.01] border border-white/10 shadow-lg transition-all duration-300 hover:from-white/[0.07] hover:to-white/[0.02] hover:border-white/20 hover:-translate-y-0.5">
+          {/* Gentle hover backdrop glow */}
+          <div className="absolute inset-0 bg-primary/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md pointer-events-none" />
+          
           <Avatar name={user?.name || ''} profilePic={user?.profile_pic} />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-white truncate">{user?.name || 'User'}</p>
-            <span className={`inline-block text-[9px] font-black text-white px-1.5 py-0.5 rounded-full mt-0.5 ${roleMeta.color}`}>
+          
+          <div className="flex-1 min-w-0 z-10">
+            <p className="text-[13px] font-bold text-slate-100 group-hover:text-white transition-colors truncate">
+              {user?.name || 'User'}
+            </p>
+            <span className={`inline-flex items-center text-[9px] font-extrabold text-white px-2 py-0.5 rounded-full mt-1.5 tracking-wider uppercase ${roleMeta.color} shadow-sm`}>
               {roleMeta.label}
             </span>
           </div>
+          
           <button
             onClick={handleLogout}
             title="Logout"
-            className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-red-400 transition-all flex-shrink-0"
+            className="relative z-10 p-2 rounded-xl bg-white/5 hover:bg-red-500/10 text-slate-400 hover:text-red-400 border border-white/5 hover:border-red-500/20 transition-all duration-300 active:scale-95 flex-shrink-0"
           >
             <LogOut size={15} />
           </button>

@@ -49,7 +49,7 @@ class UserModel extends BaseModel {
             "user_ID" => $user['user_ID'],
             "name" => $user['name'],
             "role" => $user['role'],
-            "profile_pic" => $user['profile_pic'],
+            "profile_pic" => $user['profile_pic'] ?? null,
             "exp" => time() + (60 * 60 * 24)
         ];
 
@@ -65,7 +65,7 @@ class UserModel extends BaseModel {
             "user_ID" => $user['user_ID'],
             "name" => $user['name'],
             "role" => $user['role'],
-            "profile_pic" => $user['profile_pic']
+            "profile_pic" => $user['profile_pic'] ?? null
         ];
     }
 
