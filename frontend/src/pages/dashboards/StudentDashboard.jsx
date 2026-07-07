@@ -53,10 +53,10 @@ const StudentDashboard = () => {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [applying, setApplying] = useState(false);
 
-  // Warning Timer states
+  // Warning Timer states - disabled by default to prevent spamming system complaints
   const [timeLeft, setTimeLeft] = useState(25);
-  const [timerActive, setTimerActive] = useState(true);
-  const [timerAlertTriggered, setTimerAlertTriggered] = useState(false);
+  const [timerActive, setTimerActive] = useState(false);
+  const [timerAlertTriggered, setTimerAlertTriggered] = useState(true);
 
   // Fetch all data from real backend endpoints
   const fetchDashboardData = async (silent = false) => {
@@ -777,6 +777,24 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
     setSelectedAppForReview(null);
   };
 
+  const [promptedApps, setPromptedApps] = useState([]);
+
+  useEffect(() => {
+    if (applications && applications.length > 0) {
+      const unreviewedApp = applications.find(app => {
+        const status = (app.status || '').toLowerCase();
+        const isCompleted = status === 'completed' && (app.is_product_based == 0 || app.delivery_needed == 0);
+        const isDelivered = status === 'delivered';
+        return (isCompleted || isDelivered) && parseInt(app.student_reviewed) === 0 && !promptedApps.includes(app.application_ID);
+      });
+
+      if (unreviewedApp) {
+        setPromptedApps(prev => [...prev, unreviewedApp.application_ID]);
+        handleOpenReview(unreviewedApp, unreviewedApp.client_user_ID);
+      }
+    }
+  }, [applications, promptedApps]);
+
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!selectedAppForReview) return;
@@ -1113,9 +1131,25 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
                   )}
 
                   {facingStatus === 'delivered' && (
-                    <div className="bg-orange-50 border border-orange-100 rounded-2xl p-3 text-xs text-orange-700 font-bold flex items-center gap-1.5">
-                      <CheckCircle2 size={14} className="text-orange-600 shrink-0" />
-                      <span>Delivered successfully! Provider has received the product.</span>
+                    <div className="space-y-3">
+                      <div className="bg-orange-50 border border-orange-100 rounded-2xl p-3 text-xs text-orange-700 font-bold flex items-center gap-1.5 justify-center">
+                        <CheckCircle2 size={14} className="text-orange-600 shrink-0" />
+                        <span>Delivered successfully! Provider has received the product.</span>
+                      </div>
+                      {parseInt(app.student_reviewed) > 0 ? (
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-xs text-emerald-700 font-bold flex items-center gap-1.5 justify-center">
+                          <CheckCircle size={14} className="text-emerald-600 shrink-0" />
+                          <span>Completed & Reviewed</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenReview(app, app.client_user_ID)}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 animate-pulse"
+                        >
+                          <Star size={14} className="fill-white" />
+                          <span>Rate & Review Job Provider</span>
+                        </button>
+                      )}
                     </div>
                   )}
                   

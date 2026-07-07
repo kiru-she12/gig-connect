@@ -13,7 +13,6 @@ export const ADMIN_LINKS = [
   { to: '/dashboard/admin/delivery', icon: Truck, label: 'Delivery Management' },
   { to: '/dashboard/admin/revenue', icon: BarChart2, label: 'Payments & Revenue' },
   { to: '/dashboard/admin/communications', icon: MessageSquare, label: 'Communications' },
-  { to: '/dashboard/admin/complaints', icon: AlertCircle, label: 'Complaints & Alerts' },
   { to: '/dashboard/admin/reports', icon: FileText, label: 'Reports' },
 ];
 
@@ -35,13 +34,14 @@ export const CLIENT_LINKS = [
   { to: '/dashboard/client/applicants', icon: Users, label: 'Applicants' },
   { to: '/dashboard/client/delivery', icon: Truck, label: 'Delivery Orders' },
   { to: '/dashboard/client/messages', icon: MessageSquare, label: 'Messages' },
-  { to: '/dashboard/client/ratings', icon: Star, label: 'Ratings' },
+  { to: '/dashboard/client/ratings', icon: Star, label: 'Rating & Review' },
   { to: '/dashboard/client/settings', icon: Settings, label: 'Profile Settings' },
 ];
 
 
 export const DELIVERY_LINKS = [
   { to: '/dashboard/delivery', icon: LayoutDashboard, label: 'Overview' },
+  { to: '/dashboard/delivery/management', icon: Truck, label: 'Delivery Management' },
   { to: '/dashboard/delivery/profile', icon: User, label: 'My Profile' },
 ];
 

@@ -10,17 +10,36 @@ export const AlertProvider = ({ children }) => {
     message: '',
     type: 'info',
   });
+  const [autoCloseTimer, setAutoCloseTimer] = useState(null);
 
   const showAlert = (message, type = 'info') => {
+    // Clear any existing auto-close timer
+    if (autoCloseTimer) {
+      clearTimeout(autoCloseTimer);
+      setAutoCloseTimer(null);
+    }
+
     setAlertState({
       isOpen: true,
       message,
       type,
     });
+
+    // Auto-close success or info alerts after 2.5 seconds
+    if (type === 'success' || type === 'info') {
+      const timer = setTimeout(() => {
+        closeAlert();
+      }, 2500);
+      setAutoCloseTimer(timer);
+    }
   };
 
   const closeAlert = () => {
     setAlertState((prev) => ({ ...prev, isOpen: false }));
+    if (autoCloseTimer) {
+      clearTimeout(autoCloseTimer);
+      setAutoCloseTimer(null);
+    }
   };
 
   // Intercept the browser's default window.alert

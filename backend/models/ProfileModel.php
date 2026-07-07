@@ -55,12 +55,16 @@ class ProfileModel extends BaseModel {
             $this->ensureDeliveryStaffProfile($user->user_ID);
             $vehicle_type = $data['vehicle_type'] ?? null;
             $location = $data['location'] ?? null;
+            $latitude = $data['latitude'] ?? null;
+            $longitude = $data['longitude'] ?? null;
 
             $stmt = $this->pdo->prepare("UPDATE delivery_staff SET 
                 vehicle_type = COALESCE(?, vehicle_type),
-                location = COALESCE(?, location)
+                location = COALESCE(?, location),
+                latitude = COALESCE(?, latitude),
+                longitude = COALESCE(?, longitude)
                 WHERE user_ID = ?");
-            $stmt->execute([$vehicle_type, $location, $user->user_ID]);
+            $stmt->execute([$vehicle_type, $location, $latitude, $longitude, $user->user_ID]);
         }
 
         return ["success" => "Profile updated successfully!"];
@@ -91,7 +95,7 @@ class ProfileModel extends BaseModel {
 
         } else if($user->role === 'delivery_staff') {
             $this->ensureDeliveryStaffProfile($user->user_ID);
-            $stmt = $this->pdo->prepare("SELECT delivery_staff_ID, phone, vehicle_type, location, status FROM delivery_staff WHERE user_ID = ?");
+            $stmt = $this->pdo->prepare("SELECT delivery_staff_ID, phone, vehicle_type, location, status, latitude, longitude FROM delivery_staff WHERE user_ID = ?");
             $stmt->execute([$user->user_ID]);
             $extra = $stmt->fetch(PDO::FETCH_ASSOC);
             $profile['delivery_details'] = $extra;

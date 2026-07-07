@@ -133,7 +133,14 @@ class EmailTemplates {
         </div>";
     }
 
-    public static function productVerificationOtp($name, $otp, $job_title) {
+    public static function productVerificationOtp($name, $otp, $job_title, $rider_name = null, $rider_phone = null) {
+        $rider_info = "";
+        if ($rider_name && $rider_phone) {
+            $rider_info = "<div style='background-color: #EEF2F6; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4F46E5;'>
+                <p style='margin: 0; font-weight: bold; color: #1E293B;'>Assigned Delivery Rider:</p>
+                <p style='margin: 5px 0 0 0; color: #4F46E5; font-weight: bold;'>$rider_name ($rider_phone)</p>
+            </div>";
+        }
         return "
         <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
             <div style='background-color: #4F46E5; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
@@ -148,6 +155,8 @@ class EmailTemplates {
                     <h1 style='color: #4F46E5; letter-spacing: 10px; margin: 0;'>$otp</h1>
                 </div>
                
+                $rider_info
+
                 <p><strong>$job_title</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>
                 <p style='color: #6B7280; font-size: 12px; margin-top: 20px;'>Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>
             </div>
@@ -175,8 +184,8 @@ function deliveryOtpEmail($name, $otp, $job_title) {
     return EmailTemplates::deliveryOtp($name, $otp, $job_title);
 }
 
-function productVerificationOtpEmail($name, $otp, $job_title) {
-    return EmailTemplates::productVerificationOtp($name, $otp, $job_title);
+function productVerificationOtpEmail($name, $otp, $job_title, $rider_name = null, $rider_phone = null) {
+    return EmailTemplates::productVerificationOtp($name, $otp, $job_title, $rider_name, $rider_phone);
 }
 
 function approvalEmail($name, $role) {

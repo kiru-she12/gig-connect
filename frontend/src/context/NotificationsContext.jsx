@@ -21,26 +21,8 @@ export const NotificationsProvider = ({ children }) => {
       const apiUrl = import.meta.env.VITE_API_BASE_URL || '';
 
       if (user.role === 'admin' || user.role === 'manager') {
-        // Fetch complaints/alerts for admin & manager
-        const response = await axios.get(`${apiUrl}/api/admin/complaints.php`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (Array.isArray(response.data)) {
-          const mapped = response.data.map(item => ({
-            id: 'COMPLAINT-' + item.id,
-            originalId: item.id,
-            type: item.complainer.includes('Alert') ? 'alert' : 'complaint',
-            title: item.reason,
-            message: `${item.complainer}: ${item.text}`,
-            time: item.date,
-            read: item.status !== 'Pending Review',
-            icon: item.complainer.includes('Alert') ? '🚨' : '💬'
-          }));
-          setNotifications(mapped);
-        } else {
-          setNotifications([]);
-        }
+        // Complaints & Alerts removed permanently
+        setNotifications([]);
       } else {
         // Fetch user notifications
         const response = await axios.get(`${apiUrl}/api/notifications/get_notifications.php`, {

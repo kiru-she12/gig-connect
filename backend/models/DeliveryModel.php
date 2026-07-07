@@ -31,7 +31,7 @@ class DeliveryModel extends BaseModel {
             return ["error" => "Invalid OTP!"];
         }
 
-        $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'delivered' WHERE delivery_ID = ?");
+        $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'confirmed' WHERE delivery_ID = ?");
         $stmt->execute([$delivery_ID]);
 
         $stmt = $this->pdo->prepare("UPDATE job SET status = 'completed', completed_time = NOW() WHERE job_ID = ?");
@@ -151,13 +151,101 @@ class DeliveryModel extends BaseModel {
 
             return ["success" => "OTP sent to both parties successfully! Please enter the OTP to complete the gig."];
 
+        } else if($action === 'accept') {
+            if($user->role !== 'delivery_staff') {
+                return ["error" => "Unauthorized! Only delivery staff can accept assignments."];
+            }
+
+            if($delivery['status'] !== 'pending_acceptance') {
+                return ["error" => "Delivery is not in pending acceptance status!"];
+            }
+
+            if($delivery['delivery_person_ID'] !== $user->user_ID) {
+                return ["error" => "Unauthorized! You are not the assigned delivery rider for this request."];
+            }
+
+            // Update delivery status to 'assigned'
+            $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'assigned' WHERE delivery_ID = ?");
+            $stmt->execute([$delivery_ID]);
+
+            // Update delivery staff status to 'busy'
+            $stmt = $this->pdo->prepare("UPDATE delivery_staff SET status = 'busy' WHERE user_ID = ?");
+            $stmt->execute([$user->user_ID]);
+
+            // Fetch student/sender details
+            $stmt = $this->pdo->prepare("SELECT name, phone, email FROM users WHERE user_ID = ?");
+            $stmt->execute([$delivery['sender_std_ID']]);
+            $student = $stmt->fetch(PDO::FETCH_ASSOC);
+            $student_name = $student['name'] ?? '';
+            $student_phone = $student['phone'] ?? '';
+            $student_email = $student['email'] ?? '';
+
+            // Fetch provider details
+            $stmt = $this->pdo->prepare("
+                SELECT u.name, u.phone, u.email 
+                FROM users u
+                JOIN job j ON u.user_ID = j.provider_ID
+                WHERE j.job_ID = ?
+            ");
+            $stmt->execute([$delivery['job_ID']]);
+            $provider = $stmt->fetch(PDO::FETCH_ASSOC);
+            $provider_name = $provider['name'] ?? '';
+            $provider_phone = $provider['phone'] ?? '';
+            $provider_email = $provider['email'] ?? '';
+
+            // Fetch delivery rider details
+            $stmt = $this->pdo->prepare("SELECT u.name, u.phone FROM users u WHERE u.user_ID = ?");
+            $stmt->execute([$user->user_ID]);
+            $rider = $stmt->fetch(PDO::FETCH_ASSOC);
+            $rider_name = $rider['name'] ?? '';
+            $rider_phone = $rider['phone'] ?? '';
+
+            $otp = $delivery['otp'];
+
+            // Send OTP via SMS
+            // 1. Student with delivery staff phone number
+            if (!empty($student_phone)) {
+                sendSMS($student_phone, "GigConnect: Delivery rider {$rider_name} ({$rider_phone}) has accepted your delivery. Share this OTP when they arrive: {$otp}");
+            }
+            // 2. Job provider with delivery staff phone number
+            if (!empty($provider_phone)) {
+                sendSMS($provider_phone, "GigConnect: Delivery rider {$rider_name} ({$rider_phone}) has accepted the delivery. Share this OTP: {$otp}");
+            }
+            // 3. Delivery staff
+            if (!empty($rider_phone)) {
+                sendSMS($rider_phone, "GigConnect: You have accepted delivery {$delivery_ID}. Contact: {$student_name} ({$student_phone}). Confirm delivery with OTP: {$otp}");
+            }
+
+            // Send OTP via Email
+            require_once __DIR__ . '/../config/mail.php';
+            require_once __DIR__ . '/../config/email_templates.php';
+
+            if (!empty($student_email)) {
+                $student_body = productVerificationOtpEmail($student_name, $otp, $delivery['job_title'] ?? 'your job', $rider_name, $rider_phone);
+                sendEmail($student_email, "GigConnect - Delivery Accepted & OTP", $student_body);
+            }
+            if (!empty($provider_email)) {
+                $provider_body = productVerificationOtpEmail($provider_name, $otp, $delivery['job_title'] ?? 'your job', $rider_name, $rider_phone);
+                sendEmail($provider_email, "GigConnect - Delivery Accepted & OTP", $provider_body);
+            }
+
+            return ["success" => "Delivery request accepted successfully! Status set to busy and OTPs sent."];
+
         } else if($action === 'pickup') {
             if($user->role !== 'delivery_staff' && !($delivery['delivery_type'] === 'self' && $delivery['sender_std_ID'] === $user->user_ID)) {
                 return ["error" => "Unauthorized!"];
             }
             $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'picked_up' WHERE delivery_ID = ?");
             $stmt->execute([$delivery_ID]);
-            return ["success" => "Product picked up successfully!"];
+            return ["success" => "Product picked up successfully! Status set to picked up."];
+
+        } else if($action === 'start_transit') {
+            if($user->role !== 'delivery_staff' && !($delivery['delivery_type'] === 'self' && $delivery['sender_std_ID'] === $user->user_ID)) {
+                return ["error" => "Unauthorized!"];
+            }
+            $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'in_transit' WHERE delivery_ID = ?");
+            $stmt->execute([$delivery_ID]);
+            return ["success" => "Package is now in transit!"];
 
         } else if($action === 'deliver') {
             if($user->role !== 'delivery_staff' && !($delivery['delivery_type'] === 'self' && $delivery['sender_std_ID'] === $user->user_ID)) {
@@ -165,9 +253,7 @@ class DeliveryModel extends BaseModel {
             }
             $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'delivered' WHERE delivery_ID = ?");
             $stmt->execute([$delivery_ID]);
-            $stmt = $this->pdo->prepare("UPDATE job SET status = 'completed', completed_time = NOW() WHERE job_ID = ?");
-            $stmt->execute([$delivery['job_ID']]);
-            return ["success" => "Product delivered successfully!"];
+            return ["success" => "Arrived at client location! Status set to delivered. Please verify OTP to confirm delivery."];
 
         } else {
             return ["error" => "Invalid action!"];
@@ -388,12 +474,20 @@ class DeliveryModel extends BaseModel {
         $otp_expiry = date('Y-m-d H:i:s', time() + 30 * 60); // 30 minutes
         
         // Fetch student details
-        $student_name = $user->name;
-        $student_email = $user->email;
-        $student_phone = !empty($phone) ? $phone : ($user->phone ?? '');
+        $stmt = $this->pdo->prepare("SELECT name, email, phone FROM users WHERE user_ID = ?");
+        $stmt->execute([$user->user_ID]);
+        $student = $stmt->fetch(PDO::FETCH_ASSOC);
+        $student_name = $student['name'] ?? $user->name;
+        $student_email = $student['email'] ?? '';
+        $student_phone = !empty($phone) ? $phone : ($student['phone'] ?? '');
 
         // Fetch provider details
-        $stmt = $this->pdo->prepare("SELECT name, email, phone FROM users WHERE user_ID = ?");
+        $stmt = $this->pdo->prepare("
+            SELECT u.name, u.email, u.phone 
+            FROM users u
+            JOIN job_provider jp ON u.user_ID = jp.user_ID
+            WHERE jp.provider_ID = ?
+        ");
         $stmt->execute([$app['provider_ID']]);
         $provider = $stmt->fetch(PDO::FETCH_ASSOC);
         $provider_name = $provider['name'] ?? 'Client';
@@ -440,6 +534,7 @@ class DeliveryModel extends BaseModel {
         $delivery_type = ($app['delivery_needed'] == 1) ? 'platform' : 'self';
         
         // Default status
+        $delivery_person_ID = null;
         if ($app['delivery_needed'] == 1) {
             $delivery_status = 'pending_assignment';
         } elseif ($app['delivery_needed'] === '0' || $app['delivery_needed'] === 0) {
@@ -452,6 +547,7 @@ class DeliveryModel extends BaseModel {
         // Calculate distance and delivery fee
         $distance = 0.00;
         $delivery_fee = 0.00;
+        $pickup_coords = null;
 
         if ($app['delivery_needed'] == 1 && !empty($pickup_address) && !empty($dropoff_address)) {
             global $mapbox_token;
@@ -459,24 +555,147 @@ class DeliveryModel extends BaseModel {
                 $pickup_coords = $this->geocodeAddressHelper($pickup_address, $mapbox_token);
                 $dropoff_coords = $this->geocodeAddressHelper($dropoff_address, $mapbox_token);
                 if ($pickup_coords && $dropoff_coords) {
-                    $distance = $this->getDistanceHelper(
+                    // Try to get road distance via Mapbox Directions API
+                    $road_dist = $this->getMapboxRoadDistance(
                         $pickup_coords['latitude'], $pickup_coords['longitude'],
-                        $dropoff_coords['latitude'], $dropoff_coords['longitude']
+                        $dropoff_coords['latitude'], $dropoff_coords['longitude'],
+                        $mapbox_token
                     );
+
+                    if ($road_dist !== null) {
+                        $distance = $road_dist;
+                    } else {
+                        // Fallback to straight line Haversine distance
+                        $distance = $this->getDistanceHelper(
+                            $pickup_coords['latitude'], $pickup_coords['longitude'],
+                            $dropoff_coords['latitude'], $dropoff_coords['longitude']
+                        );
+                    }
                     $delivery_fee = $distance * 30.00; // 30 LKR per km
                 }
             }
         }
 
+        // Find nearest available delivery staff
+        if ($app['delivery_needed'] == 1) {
+            global $mapbox_token;
+            $riders_stmt = $this->pdo->query("
+                SELECT ds.user_ID, ds.latitude, ds.longitude, ds.location, u.phone, u.name
+                FROM delivery_staff ds
+                JOIN users u ON ds.user_ID = u.user_ID
+                WHERE ds.status = 'available'
+            ");
+            $available_riders = $riders_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Filter out riders with missing coordinates and geocode them if possible
+            $valid_riders = [];
+            foreach ($available_riders as $rider) {
+                $r_lat = $rider['latitude'];
+                $r_lng = $rider['longitude'];
+
+                // Geocode rider location if lat/lng is missing
+                if ((empty($r_lat) || empty($r_lng)) && !empty($rider['location']) && !empty($mapbox_token)) {
+                    $rider_coords = $this->geocodeAddressHelper($rider['location'], $mapbox_token);
+                    if ($rider_coords) {
+                        $r_lat = $rider_coords['latitude'];
+                        $r_lng = $rider_coords['longitude'];
+                        
+                        // Save coordinates to avoid geocoding again
+                        $up_stmt = $this->pdo->prepare("UPDATE delivery_staff SET latitude = ?, longitude = ? WHERE user_ID = ?");
+                        $up_stmt->execute([$r_lat, $r_lng, $rider['user_ID']]);
+                    }
+                }
+
+                if (!empty($r_lat) && !empty($r_lng)) {
+                    $rider['latitude'] = $r_lat;
+                    $rider['longitude'] = $r_lng;
+                    $valid_riders[] = $rider;
+                }
+            }
+
+            $nearest_rider = null;
+            $min_distance = INF;
+
+            if ($pickup_coords && !empty($valid_riders)) {
+                // Try Mapbox Matrix API for accurate routing distance to nearest available riders
+                $matrix_distances = $this->getMapboxMatrixDistances(
+                    $pickup_coords['latitude'], $pickup_coords['longitude'],
+                    $valid_riders,
+                    $mapbox_token
+                );
+
+                if ($matrix_distances !== null) {
+                    foreach ($valid_riders as $index => $rider) {
+                        if (isset($matrix_distances[$index]) && $matrix_distances[$index] !== null) {
+                            $dist = $matrix_distances[$index];
+                            if ($dist < $min_distance) {
+                                $min_distance = $dist;
+                                $nearest_rider = $rider;
+                            }
+                        }
+                    }
+                } else {
+                    // Fallback: Haversine distance
+                    foreach ($valid_riders as $rider) {
+                        $dist = $this->getDistanceHelper(
+                            $pickup_coords['latitude'], $pickup_coords['longitude'],
+                            $rider['latitude'], $rider['longitude']
+                        );
+                        if ($dist < $min_distance) {
+                            $min_distance = $dist;
+                            $nearest_rider = $rider;
+                        }
+                    }
+                }
+            }
+
+            if ($nearest_rider) {
+                $delivery_person_ID = $nearest_rider['user_ID'];
+                $delivery_status = 'pending_acceptance';
+            }
+        }
+
+        $is_platform_delivery = ($app['is_product_based'] == 1 && $app['delivery_needed'] == 1);
+
+        if (!$is_platform_delivery) {
+            // Send OTP via SMS immediately if not platform delivery (self delivery)
+            if (!empty($student_phone)) {
+                sendSMS($student_phone, $otp_message);
+            }
+            if (!empty($provider_phone)) {
+                sendSMS($provider_phone, $provider_otp_message);
+            }
+
+            // Send OTP via Email immediately if not platform delivery
+            require_once __DIR__ . '/../config/mail.php';
+            require_once __DIR__ . '/../config/email_templates.php';
+
+            $student_body = productVerificationOtpEmail($student_name, $otp, $app['job_title']);
+            sendEmail($student_email, "GigConnect - Job Completion OTP", $student_body);
+
+            $provider_body = productVerificationOtpEmail($provider_name, $otp, $app['job_title']);
+            if ($app['is_product_based'] == 1 && ($app['delivery_needed'] === '0' || $app['delivery_needed'] === 0 || $app['delivery_needed'] == 0)) {
+                $search_str = "<p><strong>" . htmlspecialchars($app['job_title']) . "</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>";
+                $replace_str = "<p><strong>" . htmlspecialchars($app['job_title']) . "</strong> Please enter this OTP on your dashboard to verify completion. Student <strong>{$student_name}</strong> will deliver the product. Contact student at: <strong>{$student_phone}</strong>.</p>";
+                $provider_body = str_replace($search_str, $replace_str, $provider_body);
+
+                $search_str_raw = "<p><strong>" . $app['job_title'] . "</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>";
+                $replace_str_raw = "<p><strong>" . $app['job_title'] . "</strong> Please enter this OTP on your dashboard to verify completion. Student <strong>{$student_name}</strong> will deliver the product. Contact student at: <strong>{$student_phone}</strong>.</p>";
+                $provider_body = str_replace($search_str_raw, $replace_str_raw, $provider_body);
+            }
+            sendEmail($provider_email, "GigConnect - Job Completion OTP", $provider_body);
+        }
+
         $stmt = $this->pdo->prepare("
             INSERT INTO delivery 
-            (delivery_ID, job_ID, sender_std_ID, delivery_type, pickup_address, delivery_address, client_phone, distance, delivery_fee, otp, otp_expiry, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (delivery_ID, job_ID, sender_std_ID, delivery_person_ID, delivery_type, pickup_address, delivery_address, client_phone, distance, delivery_fee, otp, otp_expiry, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $delivery_ID,
             $job_ID,
             $user->user_ID,
+            $delivery_person_ID,
             $delivery_type,
             $pickup_address,
             $dropoff_address,
@@ -488,24 +707,38 @@ class DeliveryModel extends BaseModel {
             $delivery_status
         ]);
 
-        // Notify admin if delivery needed
+        // Notify admin / rider if delivery needed
         if ($app['delivery_needed'] == 1) {
-            $admin_stmt = $this->pdo->query("SELECT user_ID FROM users WHERE role = 'admin' LIMIT 1");
-            $admin_id = $admin_stmt->fetchColumn() ?: 'ADM001';
-            
-            $notif_ID = $this->generateNextID('notification', 'notification_ID', 'NOT');
-            $admin_msg = "New delivery request from {$student_name} for job {$app['job_title']}. Please assign delivery staff.";
-            
-            $notif_stmt = $this->pdo->prepare("
-                INSERT INTO notification (notification_ID, user_ID, message, type, status) 
-                VALUES (?, ?, ?, 'delivery_request', 'unread')
-            ");
-            $notif_stmt->execute([$notif_ID, $admin_id, $admin_msg]);
+            if ($delivery_person_ID) {
+                // Notify the rider
+                $notif_ID = $this->generateNextID('notification', 'notification_ID', 'NOT');
+                $rider_msg = "New pending delivery request ({$delivery_ID}) has been assigned to you. Please accept it on your dashboard.";
+                $notif_stmt = $this->pdo->prepare("
+                    INSERT INTO notification (notification_ID, user_ID, message, type, status) 
+                    VALUES (?, ?, ?, 'delivery_request', 'unread')
+                ");
+                $notif_stmt->execute([$notif_ID, $delivery_person_ID, $rider_msg]);
+
+                // Send SMS to Rider
+                if (isset($nearest_rider) && !empty($nearest_rider['phone'])) {
+                    sendSMS($nearest_rider['phone'], "GigConnect: New delivery request {$delivery_ID} is assigned to you. Please log in to accept it.");
+                }
+            } else {
+                // Notify student in-app that no delivery staff is available
+                $notif_ID = $this->generateNextID('notification', 'notification_ID', 'NOT');
+                $student_msg = "No available delivery riders were found at the moment for your job completion request of '" . $app['job_title'] . "'. Please wait or try self-delivery.";
+                
+                $notif_stmt = $this->pdo->prepare("
+                    INSERT INTO notification (notification_ID, user_ID, message, type, status) 
+                    VALUES (?, ?, ?, 'delivery_unavailable', 'unread')
+                ");
+                $notif_stmt->execute([$notif_ID, $user->user_ID, $student_msg]);
+            }
         }
 
         return [
             "success" => true,
-            "message" => "Job marked as completed! OTP sent to you and the client for confirmation.",
+            "message" => "Job marked as completed! OTP will be sent once the delivery staff accepts the assignment.",
             "otp" => $otp
         ];
     }
@@ -593,13 +826,13 @@ class DeliveryModel extends BaseModel {
         $otp = $delivery['otp'] ?? '';
 
         // Notify student via SMS & In-app notification
-        $student_sms = "Delivery staff {$staff_name} has been assigned for your job '" . $delivery['job_title'] . "'. Your OTP is: " . $otp;
+        $student_sms = "Delivery staff {$staff_name} ({$staff_phone}) has been assigned for your job '" . $delivery['job_title'] . "'. Your OTP is: " . $otp;
         if (!empty($student_phone)) {
             sendSMS($student_phone, $student_sms);
         }
 
         // Notify provider via SMS with OTP
-        $provider_sms = "Delivery staff {$staff_name} has been assigned for job '" . $delivery['job_title'] . "'. Your OTP is: " . $otp;
+        $provider_sms = "Delivery staff {$staff_name} ({$staff_phone}) has been assigned for job '" . $delivery['job_title'] . "'. Your OTP is: " . $otp;
         if (!empty($provider_phone)) {
             sendSMS($provider_phone, $provider_sms);
         }
@@ -609,12 +842,12 @@ class DeliveryModel extends BaseModel {
         require_once __DIR__ . '/../config/email_templates.php';
 
         if (!empty($student_email)) {
-            $student_body = productVerificationOtpEmail($student_name, $otp, $delivery['job_title']);
+            $student_body = productVerificationOtpEmail($student_name, $otp, $delivery['job_title'], $staff_name, $staff_phone);
             sendEmail($student_email, "GigConnect - Delivery Assigned & OTP", $student_body);
         }
 
         if (!empty($provider_email)) {
-            $provider_body = productVerificationOtpEmail($provider_name, $otp, $delivery['job_title']);
+            $provider_body = productVerificationOtpEmail($provider_name, $otp, $delivery['job_title'], $staff_name, $staff_phone);
             sendEmail($provider_email, "GigConnect - Delivery Assigned & OTP", $provider_body);
         }
 
@@ -690,9 +923,15 @@ class DeliveryModel extends BaseModel {
             return ["error" => "Invalid OTP. Please check with student."];
         }
 
-        // Update delivery status to 'delivered'
-        $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'delivered' WHERE delivery_ID = ?");
+        // Update delivery status to 'confirmed'
+        $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'confirmed' WHERE delivery_ID = ?");
         $stmt->execute([$delivery_ID]);
+
+        // Update delivery staff status back to 'available'
+        if (!empty($delivery['delivery_person_ID'])) {
+            $stmt = $this->pdo->prepare("UPDATE delivery_staff SET status = 'available' WHERE user_ID = ?");
+            $stmt->execute([$delivery['delivery_person_ID']]);
+        }
 
         // Update job status to 'delivered'
         $stmt = $this->pdo->prepare("UPDATE job SET status = 'delivered' WHERE job_ID = ?");
@@ -837,6 +1076,75 @@ class DeliveryModel extends BaseModel {
         $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
         $c = 2 * atan2(sqrt($a), sqrt(1-$a));
         return $earth_radius * $c;
+    }
+
+    private function getMapboxRoadDistance($lat1, $lon1, $lat2, $lon2, $token) {
+        $url = "https://api.mapbox.com/directions/v5/mapbox/driving/" . 
+               $lon1 . "," . $lat1 . ";" . $lon2 . "," . $lat2 . 
+               "?access_token=" . urlencode($token) . "&overview=false";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        if ($response) {
+            $data = json_decode($response, true);
+            if (isset($data['routes'][0]['distance'])) {
+                // convert meters to kilometers
+                return $data['routes'][0]['distance'] / 1000.0;
+            }
+        }
+        return null;
+    }
+
+    private function getMapboxMatrixDistances($source_lat, $source_lon, $destinations, $token) {
+        if (empty($destinations)) {
+            return [];
+        }
+
+        $coords = [$source_lon . "," . $source_lat];
+        foreach ($destinations as $dest) {
+            $coords[] = $dest['longitude'] . "," . $dest['latitude'];
+        }
+
+        $coords_str = implode(";", $coords);
+        
+        $dest_indices = [];
+        for ($i = 1; $i <= count($destinations); $i++) {
+            $dest_indices[] = $i;
+        }
+        $dest_indices_str = implode(",", $dest_indices);
+
+        $url = "https://api.mapbox.com/directions-matrix/v1/mapbox/driving/" . 
+               $coords_str . 
+               "?sources=0&destinations=" . $dest_indices_str . 
+               "&annotations=distance&access_token=" . urlencode($token);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        if ($response) {
+            $data = json_decode($response, true);
+            if (isset($data['code']) && $data['code'] === 'Ok' && isset($data['distances'][0])) {
+                $results = [];
+                foreach ($data['distances'][0] as $index => $dist_meters) {
+                    if ($dist_meters !== null) {
+                        $results[$index] = $dist_meters / 1000.0; // convert to km
+                    } else {
+                        $results[$index] = null;
+                    }
+                }
+                return $results;
+            }
+        }
+        return null;
     }
 }
 ?>

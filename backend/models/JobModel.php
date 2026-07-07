@@ -211,12 +211,12 @@ class JobModel extends BaseModel {
         foreach ($history as $h) {
             $status = strtolower($h['status']);
             $job_status = strtolower($h['job_status'] ?? '');
-            if ($status === 'completed' || $job_status === 'completed') {
+            if ($status === 'completed' || $job_status === 'completed' || $status === 'delivered' || $job_status === 'delivered') {
                 $completed_count++;
                 $past_job_types[]  = strtolower($h['job_type']);
                 $past_job_skills   = array_merge($past_job_skills, $this->parseSkills($h['job_skills']));
             }
-            if ($status === 'accepted' && $h['job_type'] && $job_status !== 'completed') {
+            if ($status === 'accepted' && $h['job_type'] && $job_status !== 'completed' && $job_status !== 'delivered') {
                 $past_job_types[] = strtolower($h['job_type']);
             }
             if ($h['status'] === 'no_show') {
@@ -254,12 +254,31 @@ class JobModel extends BaseModel {
             $type_score = $this->computeJobTypeMatch($job_type, $explicit_pref, $past_job_types);
             $rating_score = $this->computeRatingScore($rating, $completed_count);
 
+            // Calculate Job Age Score
+            $age_score = 0.4; // Default fallback for old jobs
+            if (isset($job['created_at']) && !empty($job['created_at'])) {
+                $created_time = strtotime($job['created_at']);
+                $diff_seconds = max(0, time() - $created_time);
+                $diff_days = $diff_seconds / 86400;
+
+                if ($diff_days <= 1) {
+                    $age_score = 1.0;
+                } elseif ($diff_days <= 3) {
+                    $age_score = 0.8;
+                } elseif ($diff_days <= 7) {
+                    $age_score = 0.6;
+                } else {
+                    $age_score = 0.4;
+                }
+            }
+
             if ($completed_count === 0) {
-                $raw_score = ($skill_score * 0.65) + ($type_score * 0.35);
+                $raw_score = ($skill_score * 0.55) + ($type_score * 0.30) + ($age_score * 0.15);
             } else {
-                $raw_score = ($skill_score * 0.50)
-                           + ($type_score  * 0.25)
-                           + ($rating_score * 0.25);
+                $raw_score = ($skill_score * 0.45)
+                           + ($type_score  * 0.20)
+                           + ($rating_score * 0.20)
+                           + ($age_score * 0.15);
             }
 
             if ($is_boosted) {
@@ -495,6 +514,25 @@ class JobModel extends BaseModel {
         $stmt->execute([$status, $job_ID]);
 
         if ($status === 'paid') {
+            // Create or update payment record in the database
+            $stmtCheck = $this->pdo->prepare("SELECT * FROM payment WHERE job_ID = ? AND payment_type = 'commission'");
+            $stmtCheck->execute([$job_ID]);
+            $existingPayment = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+            if (!$existingPayment) {
+                $amount = floatval($job['payment']) * 0.05;
+                $payment_ID = $this->generateNextID('payment', 'payment_ID', 'PAY');
+                
+                $stmtInsert = $this->pdo->prepare("
+                    INSERT INTO payment (payment_ID, job_ID, provider_ID, amount, payment_type, status, created_at)
+                    VALUES (?, ?, ?, ?, 'commission', 'paid', NOW())
+                ");
+                $stmtInsert->execute([$payment_ID, $job_ID, $provider_ID, $amount]);
+            } else if ($existingPayment['status'] !== 'paid') {
+                $stmtUpdatePay = $this->pdo->prepare("UPDATE payment SET status = 'paid', amount = ? WHERE payment_ID = ?");
+                $stmtUpdatePay->execute([floatval($job['payment']) * 0.05, $existingPayment['payment_ID']]);
+            }
+
             // Find all applications in 'pending_payment' status for this job
             $stmt = $this->pdo->prepare("
                 SELECT a.application_ID, u.email, u.name, j.title
@@ -667,8 +705,8 @@ class JobModel extends BaseModel {
         $stmt = $this->pdo->prepare("
             SELECT a.application_ID, a.status, a.applied_date, a.job_ID,
                    s.student_ID, s.skills, s.rating, s.year, s.degree, s.bio, s.languages, s.gender,
-                   (SELECT COUNT(*) FROM application a2 JOIN job j2 ON a2.job_ID = j2.job_ID WHERE a2.student_ID = s.student_ID AND (LOWER(a2.status) = 'completed' OR LOWER(j2.status) = 'completed')) AS completed_jobs_count,
-                   (SELECT GROUP_CONCAT(j3.title SEPARATOR ', ') FROM application a3 JOIN job j3 ON a3.job_ID = j3.job_ID WHERE a3.student_ID = s.student_ID AND (LOWER(a3.status) = 'completed' OR LOWER(j3.status) = 'completed')) AS completed_jobs_list,
+                   (SELECT COUNT(*) FROM application a2 JOIN job j2 ON a2.job_ID = j2.job_ID WHERE a2.student_ID = s.student_ID AND (LOWER(a2.status) = 'completed' OR LOWER(j2.status) = 'completed' OR LOWER(a2.status) = 'delivered' OR LOWER(j2.status) = 'delivered')) AS completed_jobs_count,
+                   (SELECT GROUP_CONCAT(j3.title SEPARATOR ', ') FROM application a3 JOIN job j3 ON a3.job_ID = j3.job_ID WHERE a3.student_ID = s.student_ID AND (LOWER(a3.status) = 'completed' OR LOWER(j3.status) = 'completed' OR LOWER(a3.status) = 'delivered' OR LOWER(j3.status) = 'delivered')) AS completed_jobs_list,
                    u.name, u.email, u.user_ID AS student_user_ID,
                    j.is_product_based,
                    (SELECT COUNT(*) FROM rate_review WHERE job_ID = a.job_ID AND given_by = ? AND given_to = u.user_ID) AS provider_reviewed

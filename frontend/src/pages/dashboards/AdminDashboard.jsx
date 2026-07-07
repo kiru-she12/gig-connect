@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import jsPDF from 'jspdf';
@@ -44,88 +44,24 @@ const AdminDashboard = () => {
   const fetchAnalytics = async () => {
     try {
       const token = localStorage.getItem('token');
+      console.log('Fetching admin analytics, token:', token ? 'exists' : 'missing');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/analytics.php`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+      console.log('Admin analytics response status:', response.status);
       const data = await response.json();
+      console.log('Admin analytics response data:', data);
       if (data.success) {
-        // Overlay target values requested by user for mock accuracy
-        const baseAnalytics = data.analytics;
-        setAnalytics({
-          users: {
-            total_students: Math.max(parseInt(baseAnalytics?.users?.total_students || 0), 450),
-            total_clients: Math.max(parseInt(baseAnalytics?.users?.total_clients || 0), 94),
-            banned_users: Math.max(parseInt(baseAnalytics?.users?.banned_users || 0), 1)
-          },
-          jobs: {
-            total_jobs: Math.max(parseInt(baseAnalytics?.jobs?.total_jobs || 0), 184),
-            active_jobs: Math.max(parseInt(baseAnalytics?.jobs?.active_jobs || 0), 48),
-            pending_jobs: Math.max(parseInt(baseAnalytics?.jobs?.pending_jobs || 0), 5),
-            completed_jobs: Math.max(parseInt(baseAnalytics?.jobs?.completed_jobs || 0), 131)
-          },
-          applications: {
-            total_applications: Math.max(parseInt(baseAnalytics?.applications?.total_applications || 0), 320)
-          },
-          deliveries: {
-            total_deliveries: Math.max(parseInt(baseAnalytics?.deliveries?.total_deliveries || 0), 42),
-            completed_deliveries: Math.max(parseInt(baseAnalytics?.deliveries?.completed_deliveries || 0), 38)
-          },
-          recent_jobs: baseAnalytics?.recent_jobs || [],
-          recent_actions: baseAnalytics?.recent_actions || [],
-          interactions: {
-            total_interactions: 1284, // Over 1200 interactions
-            student_engagement: 840,
-            provider_engagement: 444
-          },
-          revenue: {
-            total_revenue: baseAnalytics?.revenue?.total_revenue > 0 ? baseAnalytics.revenue.total_revenue : 98750, // Close to 100,000 LKR
-            monthly_target: 100000,
-            commission_rate: '10%'
-          }
-        });
+        setAnalytics(data.analytics);
       } else {
-        // Fallback dummy structure conforming to requirements
-        setAnalytics({
-          users: { total_students: 450, total_clients: 94, banned_users: 1 },
-          jobs: { total_jobs: 184, active_jobs: 48, pending_jobs: 5, completed_jobs: 131 },
-          applications: { total_applications: 320 },
-          deliveries: { total_deliveries: 42, completed_deliveries: 38 },
-          recent_jobs: [],
-          recent_actions: [],
-          interactions: {
-            total_interactions: 1284,
-            student_engagement: 840,
-            provider_engagement: 444
-          },
-          revenue: {
-            total_revenue: 98750,
-            monthly_target: 100000,
-            commission_rate: '10%'
-          }
-        });
+        console.error('Analytics fetch failed or unauthorized:', data.error || 'Unknown error');
+        setAnalytics(null);
       }
     } catch (err) {
-      // Fallback dummy structure conforming to requirements
-      setAnalytics({
-        users: { total_students: 450, total_clients: 94, banned_users: 1 },
-        jobs: { total_jobs: 184, active_jobs: 48, pending_jobs: 5, completed_jobs: 131 },
-        applications: { total_applications: 320 },
-        deliveries: { total_deliveries: 42, completed_deliveries: 38 },
-        recent_jobs: [],
-        recent_actions: [],
-        interactions: {
-          total_interactions: 1284,
-          student_engagement: 840,
-          provider_engagement: 444
-        },
-        revenue: {
-          total_revenue: 98750,
-          monthly_target: 100000,
-          commission_rate: '10%'
-        }
-      });
+      console.error('Error fetching admin analytics:', err);
+      setAnalytics(null);
     } finally {
       setAnalyticsLoading(false);
     }
@@ -148,8 +84,7 @@ const AdminDashboard = () => {
         <Route path="revenue" element={<RevenueTab jobs={jobs} analytics={analytics} />} />
         <Route path="communications" element={<CommunicationsTab />} />
         <Route path="delivery" element={<DeliveryManagementTab />} />
-        <Route path="complaints" element={<ComplaintsAdminTab />} />
-        <Route path="analytics" element={<AnalyticsTab analytics={analytics} loading={analyticsLoading} />} />
+        <Route path="analytics" element={<AdminAnalyticsTab analytics={analytics} loading={analyticsLoading} onRetry={fetchAnalytics} />} />
         {role === 'admin' && (
           <Route path="reports" element={<ReportsTab analytics={analytics} />} />
         )}
@@ -195,14 +130,14 @@ const formatRelativeTime = (timeStr) => {
 const OverviewTab = ({ jobs, applications, analytics, loading }) => {
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const role = storedUser?.role || 'admin';
-  const totalUsers = analytics ? (parseInt(analytics.users.total_students) + parseInt(analytics.users.total_clients)) : 544;
-  const activeJobsVal = analytics ? parseInt(analytics.jobs.active_jobs) : jobs.filter(j => j.status === 'Active').length;
-  const verifiedClientsVal = analytics ? parseInt(analytics.users.total_clients) : 94;
-  const revenueVal = analytics ? parseInt(analytics.revenue.total_revenue) : 98750;
-  const pendingApprovalsVal = analytics ? parseInt(analytics.jobs.pending_jobs) : jobs.filter(j => j.status === 'Pending Approval').length;
-  const fraudAlertsVal = analytics ? parseInt(analytics.users.banned_users) : 1;
-  const activeDeliveriesVal = analytics ? (parseInt(analytics.deliveries.total_deliveries) - parseInt(analytics.deliveries.completed_deliveries)) : 4;
-  const totalInteractionsVal = analytics ? analytics.interactions.total_interactions : 1284;
+  const totalUsers = analytics ? (parseInt(analytics.users?.total_students || 0) + parseInt(analytics.users?.total_clients || 0)) : 544;
+  const activeJobsVal = analytics ? parseInt(analytics.jobs?.active_jobs || 0) : jobs.filter(j => j.status === 'Active').length;
+  const verifiedClientsVal = analytics ? parseInt(analytics.users?.total_clients || 0) : 94;
+  const revenueVal = analytics ? parseInt(analytics.revenue?.total_revenue || 0) : 98750;
+  const pendingApprovalsVal = analytics ? parseInt(analytics.jobs?.pending_jobs || 0) : jobs.filter(j => j.status === 'Pending Approval').length;
+  const fraudAlertsVal = analytics ? parseInt(analytics.users?.banned_users || 0) : 1;
+  const activeDeliveriesVal = analytics ? (parseInt(analytics.deliveries?.total_deliveries || 0) - parseInt(analytics.deliveries?.completed_deliveries || 0)) : 4;
+  const totalInteractionsVal = analytics?.interactions ? analytics.interactions.total_interactions : 1284;
 
   const stats = [
     { label: 'Total Interactions', value: totalInteractionsVal.toLocaleString(), change: '+14%', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary-light' },
@@ -312,10 +247,6 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
               <Link to="/dashboard/admin/users" className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-primary hover:text-white rounded-xl transition-all group">
                 <span className="text-sm font-bold">Verify New Clients</span>
                 <CheckCircle size={14} className="text-text-muted group-hover:text-white" />
-              </Link>
-              <Link to="/dashboard/admin/complaints" className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-primary hover:text-white rounded-xl transition-all group">
-                <span className="text-sm font-bold">Manage Complaints</span>
-                <AlertCircle size={14} className="text-text-muted group-hover:text-white" />
               </Link>
               {role === 'admin' && (
                 <Link to="/dashboard/admin/reports" className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-primary hover:text-white rounded-xl transition-all group">
@@ -500,37 +431,118 @@ const ApprovalsTab = ({ jobs, approve, reject }) => {
   );
 };
 
-const AnalyticsTab = ({ analytics, loading }) => {
+const AdminAnalyticsTab = ({ analytics, loading, onRetry }) => {
   const navigate = useNavigate();
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const role = storedUser?.role || 'admin';
-  // Rich analytics styling using CRM style mockup palette
-  const data = [
-    { name: 'Jan', jobs: 120, revenue: 84000, interactions: 950 },
-    { name: 'Feb', jobs: 142, revenue: 92000, interactions: 1040 },
-    { name: 'Mar', jobs: 175, revenue: 98750, interactions: 1284 }, // matching target LKR 98,750, 1284 interactions
-    { name: 'Apr', jobs: 155, revenue: 89000, interactions: 1120 },
-    { name: 'May', jobs: 180, revenue: 102000, interactions: 1310 },
-    { name: 'Jun', jobs: 195, revenue: 105500, interactions: 1420 },
-  ];
 
-  const pieData = [
-    { name: 'Active Students', value: 850 },
-    { name: 'Recruiting Businesses', value: 94 },
-    { name: 'Assigned Deliveries', value: 42 },
-    { name: 'Banned Violators', value: 1 },
-  ];
+  // 1. Month-by-month data (jobs, revenue, interactions)
+  const chartData = useMemo(() => {
+    if (!analytics?.months_data || analytics.months_data.length === 0) return [];
+    return (analytics.months_data || []).map(m => ({
+      name: m.name,
+      jobs: parseInt(m.jobs || 0),
+      revenue: parseFloat(m.revenue || 0),
+      interactions: parseInt(m.interactions || 0)
+    }));
+  }, [analytics]);
 
-  const ticketData = [
-    { day: 'Mon', solved: 48, created: 35 },
-    { day: 'Tue', solved: 24, created: 52 },
-    { day: 'Wed', solved: 68, created: 48 }, // Solved Peaks at 68 (matching first image mockup max = 68 T)
-    { day: 'Thu', solved: 40, created: 38 },
-    { day: 'Fri', solved: 82, created: 70 },
-    { day: 'Sat', solved: 58, created: 45 },
-  ];
+  // 2. Entity distribution pie data
+  const pieData = useMemo(() => {
+    if (!analytics) return [];
+    return [
+      { name: 'Active Students', value: parseInt(analytics.users?.total_students || 0) },
+      { name: 'Recruiting Businesses', value: parseInt(analytics.users?.total_clients || 0) },
+      { name: 'Assigned Deliveries', value: parseInt(analytics.deliveries?.total_deliveries || 0) },
+      { name: 'Banned Violators', value: parseInt(analytics.users?.banned_users || 0) },
+    ];
+  }, [analytics]);
+
+
 
   const COLORS = ['#1A312C', '#4E8C7E', '#89D7B7', '#F59E0B'];
+
+  // Job placement target/peak calculation
+  const maxJobsData = useMemo(() => {
+    if (!chartData || chartData.length === 0) return { month: 'N/A', count: 0 };
+    let max = -1;
+    let maxMonth = '';
+    chartData.forEach(c => {
+      if (c.jobs > max) {
+        max = c.jobs;
+        maxMonth = c.name;
+      }
+    });
+    return { month: maxMonth, count: max };
+  }, [chartData]);
+
+  // Revenue target calculation
+  const maxRevenueData = useMemo(() => {
+    if (!chartData || chartData.length === 0) return { month: 'N/A', amount: 0 };
+    let max = -1;
+    let maxMonth = '';
+    chartData.forEach(c => {
+      if (c.revenue > max) {
+        max = c.revenue;
+        maxMonth = c.name;
+      }
+    });
+    return { month: maxMonth, amount: max };
+  }, [chartData]);
+
+  // Interactions percentage change from previous month
+  const interactionChange = useMemo(() => {
+    if (!chartData || chartData.length < 2) return { percent: '0.0', isPositive: true };
+    const current = chartData[chartData.length - 1].interactions;
+    const previous = chartData[chartData.length - 2].interactions;
+    if (previous === 0) return { percent: current > 0 ? '100.0' : '0.0', isPositive: true };
+    const diff = current - previous;
+    const pct = (diff / previous) * 100;
+    return {
+      percent: Math.abs(pct).toFixed(1),
+      isPositive: pct >= 0
+    };
+  }, [chartData]);
+
+  // Campus engagement percentages
+  const studentEngagementPct = useMemo(() => {
+    const total = analytics?.interactions?.total_interactions || 0;
+    if (total === 0) return 0;
+    return Math.round(((analytics?.interactions?.student_engagement || 0) / total) * 100);
+  }, [analytics]);
+
+  const providerEngagementPct = useMemo(() => {
+    const total = analytics?.interactions?.total_interactions || 0;
+    if (total === 0) return 0;
+    return Math.round(((analytics?.interactions?.provider_engagement || 0) / total) * 100);
+  }, [analytics]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+        <p className="text-sm text-text-secondary font-medium">Loading Platform Analytics...</p>
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white border border-slate-100 rounded-2xl shadow-sm space-y-4">
+        <AlertCircle className="w-12 h-12 text-red-500 stroke-[1.5]" />
+        <h3 className="text-lg font-bold text-text-primary">Failed to load analytics</h3>
+        <p className="text-sm text-text-secondary max-w-sm">
+          There was an error retrieving the platform metrics. Please check your network connection or try again.
+        </p>
+        <button
+          onClick={onRetry}
+          className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fadeIn bg-slate-900/5 p-1 rounded-2xl">
@@ -573,19 +585,25 @@ const AnalyticsTab = ({ analytics, loading }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-r from-primary-dark to-primary text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
           <div className="relative z-10">
-            <p className="text-xs font-extrabold uppercase tracking-widest text-white/70">Avg Resolve Time</p>
-            <p className="text-3xl font-heading font-black mt-2">22<span className="text-base font-normal opacity-80">h</span> 40<span className="text-base font-normal opacity-80">min</span></p>
-            <p className="text-[10px] mt-4 font-bold bg-white/20 px-2 py-0.5 rounded-full inline-block">Support Target Met</p>
+            <p className="text-xs font-extrabold uppercase tracking-widest text-white/70">Total Revenue</p>
+            <p className="text-3xl font-heading font-black mt-2">
+              LKR {(analytics?.revenue?.total_revenue || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </p>
+            <p className="text-[10px] mt-4 font-bold bg-white/20 px-2 py-0.5 rounded-full inline-block">
+              Commission & Boost
+            </p>
           </div>
           <div className="absolute right-0 bottom-0 opacity-10 translate-x-4 translate-y-4">
-            <Clock size={160} />
+            <DollarSign size={160} />
           </div>
         </div>
 
         <div className="bg-gradient-to-r from-primary to-primary-dark text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
           <div className="relative z-10">
             <p className="text-xs font-extrabold uppercase tracking-widest text-white/70">Avg Student Interaction Rate</p>
-            <p className="text-3xl font-heading font-black mt-2">1,284 <span className="text-sm font-normal opacity-80">gigs</span></p>
+            <p className="text-3xl font-heading font-black mt-2">
+              {(analytics?.interactions?.total_interactions || 0).toLocaleString()} <span className="text-sm font-normal opacity-80">gigs</span>
+            </p>
             <p className="text-[10px] mt-4 font-bold bg-white/20 px-2 py-0.5 rounded-full inline-block">100% Campus Reach</p>
           </div>
           <div className="absolute right-0 bottom-0 opacity-10 translate-x-4 translate-y-4">
@@ -596,10 +614,20 @@ const AnalyticsTab = ({ analytics, loading }) => {
         <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-text-muted uppercase tracking-wider">Total Monthly Interactions</p>
-            <p className="text-2xl font-heading font-black text-text-primary mt-1">1,284</p>
-            <p className="text-[10px] text-emerald-600 font-bold mt-2 flex items-center gap-0.5">
-              <ArrowUpRight size={10} /> +14.2% from last month
+            <p className="text-2xl font-heading font-black text-text-primary mt-1">
+              {(analytics?.interactions?.total_interactions || 0).toLocaleString()}
             </p>
+            <div className="text-[10px] font-bold mt-2">
+              {interactionChange.isPositive ? (
+                <span className="text-emerald-600 flex items-center gap-0.5">
+                  <ArrowUpRight size={10} /> +{interactionChange.percent}% from last month
+                </span>
+              ) : (
+                <span className="text-red-600 flex items-center gap-0.5">
+                  <ArrowDownRight size={10} /> -{interactionChange.percent}% from last month
+                </span>
+              )}
+            </div>
           </div>
           <div className="bg-slate-100 p-3 rounded-2xl text-slate-800">
             <MessageSquare size={24} />
@@ -608,46 +636,47 @@ const AnalyticsTab = ({ analytics, loading }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* CRM Style Chart 1: Tickets Created vs Solved */}
+        {/* CRM Style Chart 1: Revenue Growth Line Chart */}
         <div className="card p-6">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="font-bold text-sm text-text-primary uppercase tracking-wider">Support Solved vs Created</h3>
-              <p className="text-xs text-text-muted mt-0.5">Peak solve rate at 68 tickets</p>
+              <h3 className="font-bold text-sm text-text-primary uppercase tracking-wider">Revenue Growth (LKR)</h3>
+              <p className="text-xs text-text-muted mt-0.5">Peak revenue of LKR {(maxRevenueData.amount || 0).toLocaleString()} in {maxRevenueData.month}</p>
             </div>
-            <span className="text-[10px] bg-primary-light text-primary px-2.5 py-0.5 rounded-full font-bold">Max = 68 T</span>
+            <span className="text-[10px] bg-primary-light text-primary px-2.5 py-0.5 rounded-full font-bold">LKR {(analytics?.revenue?.total_revenue || 0).toLocaleString()} Total</span>
           </div>
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={ticketData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Line type="monotone" dataKey="solved" stroke="#1A312C" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Solved Tickets" />
-                <Line type="monotone" dataKey="created" stroke="#4E8C7E" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 2 }} name="Created Tickets" />
+                <Tooltip formatter={(value) => [`LKR ${value.toLocaleString()}`, 'Revenue']} />
+                <Line type="monotone" dataKey="revenue" stroke="#1A312C" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Total Revenue" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Chart 2: Revenue vs Target */}
+        {/* Chart 2: Monthly Job Placements Bar Chart */}
         <div className="card p-6">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="font-bold text-sm text-text-primary uppercase tracking-wider">Revenue Audit (LKR)</h3>
-              <p className="text-xs text-text-muted mt-0.5">Commission target benchmarked at LKR 100,000</p>
+              <h3 className="font-bold text-sm text-text-primary uppercase tracking-wider">Monthly Job Placements</h3>
+              <p className="text-xs text-text-muted mt-0.5">Peak placements at {maxJobsData.count} jobs in {maxJobsData.month}</p>
             </div>
-            <span className="text-[10px] bg-primary-light text-primary px-2.5 py-0.5 rounded-full font-bold">LKR 98,750 (Mar)</span>
+            <span className="text-[10px] bg-primary-light text-primary px-2.5 py-0.5 rounded-full font-bold">
+              {maxJobsData.count} Jobs Peak
+            </span>
           </div>
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Bar dataKey="revenue" fill="#4E8C7E" radius={[4, 4, 0, 0]} name="Commission Revenue" />
+                <Tooltip formatter={(value) => [value, 'Jobs Posted']} />
+                <Bar dataKey="jobs" fill="#4E8C7E" radius={[4, 4, 0, 0]} name="Jobs Posted" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -673,7 +702,7 @@ const AnalyticsTab = ({ analytics, loading }) => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={(value) => [value, 'Count']} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -698,26 +727,32 @@ const AnalyticsTab = ({ analytics, loading }) => {
             <div>
               <div className="flex justify-between font-bold text-slate-700 mb-1">
                 <span>Student Submissions / Applications</span>
-                <span>840 interactions</span>
+                <span>{analytics?.interactions?.student_engagement || 0} interactions</span>
               </div>
               <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-primary h-full rounded-full" style={{ width: '65%' }} />
+                <div 
+                  className="bg-primary h-full rounded-full transition-all duration-500" 
+                  style={{ width: `${studentEngagementPct}%` }} 
+                />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between font-bold text-slate-700 mb-1">
                 <span>Business / Client Postings</span>
-                <span>444 interactions</span>
+                <span>{analytics?.interactions?.provider_engagement || 0} interactions</span>
               </div>
               <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-[#4E8C7E] h-full rounded-full" style={{ width: '35%' }} />
+                <div 
+                  className="bg-[#4E8C7E] h-full rounded-full transition-all duration-500" 
+                  style={{ width: `${providerEngagementPct}%` }} 
+                />
               </div>
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-between text-xs font-bold text-text-secondary">
               <span>Total University Engagement</span>
-              <span className="text-primary font-black">1,284 total</span>
+              <span className="text-primary font-black">{(analytics?.interactions?.total_interactions || 0).toLocaleString()} total</span>
             </div>
           </div>
         </div>
@@ -735,6 +770,7 @@ const UserManagementTab = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedClient, setSelectedClient] = useState(null);
 
   // Add Staff Modal states
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
@@ -984,6 +1020,14 @@ const UserManagementTab = () => {
                           View Details
                         </button>
                       )}
+                      {activeTab === 'client' && (
+                        <button
+                          onClick={() => setSelectedClient(u)}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg transition-all"
+                        >
+                          View Details
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -1066,6 +1110,90 @@ const UserManagementTab = () => {
               {(selectedStudent.status === 'pending' || !selectedStudent.status) && (
                 <button 
                   onClick={() => { handleAction(selectedStudent.user_ID, 'approve'); setSelectedStudent(null); }}
+                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all"
+                >
+                  Approve Account
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedClient && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl relative border border-border animate-slideUp max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setSelectedClient(null)}
+              className="absolute right-6 top-6 text-text-muted hover:text-text-primary transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-2xl font-black text-text-primary mb-6 border-b pb-4">Job Provider Profile Details</h2>
+            
+            <div className="space-y-5">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Company / Contact Name</label>
+                <p className="text-sm font-bold text-text-primary">{selectedClient.name}</p>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Email Address</label>
+                <p className="text-sm font-semibold text-text-secondary">{selectedClient.email}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Phone Number</label>
+                  <p className="text-sm font-bold text-text-primary">{selectedClient.phone || 'No phone number'}</p>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">NIC Number</label>
+                  <p className="text-sm font-bold text-text-primary">{selectedClient.nic || 'N/A'}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Business Registration No</label>
+                  <p className="text-sm font-bold text-text-primary">{selectedClient.business_reg_no || 'Individual Provider'}</p>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Business Type</label>
+                  <p className="text-sm font-bold text-text-primary capitalize">{selectedClient.type || 'Individual'}</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Verification Status</label>
+                <p className="block">
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-bold mt-1 px-2.5 py-1 rounded-full ${parseInt(selectedClient.is_verified) === 1 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                    {parseInt(selectedClient.is_verified) === 1 ? (
+                      <>
+                        <CheckCircle size={14} className="text-emerald-500" /> Verified Partner
+                      </>
+                    ) : (
+                      <>
+                        <Clock size={14} className="text-amber-500 animate-pulse" /> Pending Verification
+                      </>
+                    )}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Business Address</label>
+                <p className="text-xs text-text-secondary leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100 max-h-[150px] overflow-y-auto">
+                  {selectedClient.address || 'No registered address.'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-8 flex justify-end gap-3 border-t pt-4">
+              <button 
+                onClick={() => setSelectedClient(null)}
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all"
+              >
+                Close
+              </button>
+              {(selectedClient.status === 'pending' || !selectedClient.status) && (
+                <button 
+                  onClick={() => { handleAction(selectedClient.user_ID, 'approve'); setSelectedClient(null); }}
                   className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all"
                 >
                   Approve Account
@@ -1693,7 +1821,7 @@ const RevenueTab = ({ jobs = [], analytics }) => {
   }, 0);
 
   // If there is dynamic commission, let's add it to base revenue, otherwise fallback to 98750
-  const baseRevenue = analytics ? parseFloat(analytics.revenue.total_revenue) : 98750;
+  const baseRevenue = analytics ? parseFloat(analytics.revenue?.total_revenue || 0) : 98750;
   const revenueVal = calculatedCommissions > 0 ? calculatedCommissions : baseRevenue;
 
   return (
@@ -2748,17 +2876,15 @@ const DeliveryManagementTab = () => {
                 <tr>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Job Details</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Student</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Delivery Staff</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Client Phone</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Addresses</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Date Requested</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Actions</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {deliveries.map((del) => {
-                  const isPlatform = del.delivery_type === 'platform';
-                  const showAssign = isPlatform && (del.status === 'pending_assignment' || del.status === 'assigned');
                   return (
                     <tr key={del.delivery_ID} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
@@ -2779,6 +2905,16 @@ const DeliveryManagementTab = () => {
                         <span className="font-bold text-slate-800 text-sm block">{del.student_name}</span>
                         <span className="text-xs text-slate-500">{del.student_phone}</span>
                       </td>
+                      <td className="px-6 py-4">
+                        {del.delivery_staff_name ? (
+                          <div>
+                            <span className="font-bold text-slate-800 text-sm block">{del.delivery_staff_name}</span>
+                            <span className="text-xs text-emerald-600 font-black">Platform Rider</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 font-medium">Unassigned / Self Delivery</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-sm font-semibold text-slate-700">
                         {del.client_phone || 'N/A'}
                       </td>
@@ -2793,61 +2929,18 @@ const DeliveryManagementTab = () => {
                       <td className="px-6 py-4 text-xs text-slate-500">
                         {del.date_requested ? new Date(del.date_requested).toLocaleDateString() : 'N/A'}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 text-right">
                         <span className={`badge ${
                           del.status === 'delivered'  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
                           del.status === 'picked_up'  ? 'bg-primary-light text-primary' :
                           del.status === 'assigned'   ? 'bg-primary-light text-primary' :
+                          del.status === 'pending_acceptance' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
                           'bg-amber-50 text-amber-700 border border-amber-100'
                         } text-xs font-bold uppercase px-3 py-1 rounded-full`}>
-                          {del.status === 'pending_assignment' ? 'Pending Assignment' : del.status}
+                          {del.status === 'pending_assignment' ? 'Pending Assignment' : 
+                           del.status === 'pending_acceptance' ? 'Pending Acceptance' : 
+                           del.status}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        {showAssign && (
-                          assigningId === del.delivery_ID ? (
-                            <div className="flex items-center justify-end gap-2">
-                              <select
-                                value={selectedRiderId}
-                                onChange={(e) => setSelectedRiderId(e.target.value)}
-                                className="text-xs px-2 py-1.5 border border-slate-200 rounded-lg outline-none focus:border-primary"
-                              >
-                                <option value="">Select Rider...</option>
-                                {riders.map((rider) => (
-                                  <option key={rider.user_ID} value={rider.user_ID}>
-                                    {rider.name} ({rider.vehicle_type || 'Walk'})
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                onClick={() => handleAssignRider(del.delivery_ID)}
-                                disabled={actionLoading}
-                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all"
-                              >
-                                Confirm
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setAssigningId(null);
-                                  setSelectedRiderId('');
-                                }}
-                                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-all"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setAssigningId(del.delivery_ID);
-                                setSelectedRiderId(del.delivery_person_ID || '');
-                              }}
-                              className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-lg transition-all"
-                            >
-                              Assign Delivery Staff
-                            </button>
-                          )
-                        )}
                       </td>
                     </tr>
                   );

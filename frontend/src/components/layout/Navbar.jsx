@@ -22,7 +22,10 @@ const Navbar = ({ dashboard = false }) => {
   const scrollToSection = (e, id) => {
     e.preventDefault();
     if (location.pathname !== '/') {
-      navigate('/' + id);
+      const token = localStorage.getItem('token');
+      const prefix = token ? '?no_redirect=true' : '';
+      const targetHash = id ? (id.startsWith('#') ? id : '#' + id) : '';
+      navigate('/' + prefix + targetHash);
       return;
     }
     const element = id ? document.getElementById(id.replace('#', '')) : null;
@@ -372,7 +375,7 @@ const Navbar = ({ dashboard = false }) => {
                   onClick={() => setIsRegisterModalOpen(true)}
                   className={`group pl-6 pr-2 rounded-full font-semibold flex items-center gap-3 transition-all duration-300 active:scale-95 ${
                     showScrolledStyle
-                      ? 'py-1.5 text-sm bg-primary text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5'
+                      ? 'py-1.5 text-sm bg-[#32cd32] hover:bg-[#2ebc2e] text-white shadow-lg shadow-[#32cd32]/30 hover:shadow-xl hover:shadow-[#32cd32]/40 hover:-translate-y-0.5'
                       : 'py-2.5 text-base bg-white text-slate-900 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:-translate-y-0.5'
                   }`}
                 >
@@ -468,7 +471,7 @@ const Navbar = ({ dashboard = false }) => {
                 </button>
                 <button 
                   onClick={() => { setIsRegisterModalOpen(true); setShowMobileMenu(false); }}
-                  className="group w-full py-3 pl-6 pr-3 font-semibold text-white bg-primary rounded-2xl shadow-lg shadow-primary/30 flex items-center justify-between transition-all hover:shadow-xl hover:shadow-primary/40 active:scale-[0.98]"
+                  className="group w-full py-3 pl-6 pr-3 font-semibold text-white bg-[#32cd32] hover:bg-[#2ebc2e] rounded-2xl shadow-lg shadow-[#32cd32]/30 flex items-center justify-between transition-all hover:shadow-xl hover:shadow-[#32cd32]/40 active:scale-[0.98]"
                 >
                   <span>Sign Up</span>
                   <div className="bg-white/20 w-10 h-10 rounded-full flex items-center justify-center transition-all group-hover:bg-white/30 group-hover:translate-x-[-2px]">

@@ -10,12 +10,12 @@ class ReviewModel extends BaseModel {
         $score = $data['score'];
         $review = $data['review'] ?? null;
 
-        $stmt = $this->pdo->prepare("SELECT * FROM job WHERE job_ID = ? AND status = 'completed'");
+        $stmt = $this->pdo->prepare("SELECT * FROM job WHERE job_ID = ? AND (status = 'completed' OR status = 'delivered')");
         $stmt->execute([$job_ID]);
         $job = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if(!$job) {
-            return ["error" => "Job not found or not completed!"];
+            return ["error" => "Job not found or not completed/delivered!"];
         }
 
         $stmt = $this->pdo->prepare("SELECT * FROM rate_review WHERE job_ID = ? AND given_by = ?");

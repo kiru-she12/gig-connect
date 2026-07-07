@@ -29,8 +29,8 @@ const getDynamicCategory = (title, skills) => {
 };
 
 export const JobsProvider = ({ children }) => {
-  const [jobs, setJobs] = useState(INITIAL_JOBS);
-  const [applications, setApplications] = useState(INITIAL_APPLICATIONS);
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [deliveries, setDeliveries] = useState([]);
 
   const refreshJobs = async () => {
@@ -89,18 +89,7 @@ export const JobsProvider = ({ children }) => {
             };
           });
 
-          setJobs(prevJobs => {
-            const combined = [...formattedJobs, ...INITIAL_JOBS];
-            const unique = [];
-            const seen = new Set();
-            for (const item of combined) {
-              if (!seen.has(item.id)) {
-                seen.add(item.id);
-                unique.push(item);
-              }
-            }
-            return unique;
-          });
+          setJobs(formattedJobs);
         }
       }
     } catch (err) {
@@ -114,10 +103,12 @@ export const JobsProvider = ({ children }) => {
 
   const addJob = async (job) => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/post_job.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -166,10 +157,12 @@ export const JobsProvider = ({ children }) => {
 
   const applyForJob = async (jobId, studentId) => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/apply_jobs.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -227,10 +220,12 @@ export const JobsProvider = ({ children }) => {
         throw new Error(`Invalid status: ${status}`);
       }
 
+      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/update_applicant.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -265,10 +260,12 @@ export const JobsProvider = ({ children }) => {
 
   const approveJob = async (jobId) => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve_job.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -297,10 +294,12 @@ export const JobsProvider = ({ children }) => {
 
   const rejectJob = async (jobId) => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve_job.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -329,10 +328,12 @@ export const JobsProvider = ({ children }) => {
 
   const markJobCompleted = async (jobId) => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve_job.php`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include',
         body: JSON.stringify({

@@ -13,8 +13,12 @@ backend/config/db.php
 .DS_Store
 .vscode/
 .idea/
+.gemini/
 *.log
 node_modules
 scratch/
 backend/sent_emails/
+backend/.env*
+backend/scratch_*
+
 

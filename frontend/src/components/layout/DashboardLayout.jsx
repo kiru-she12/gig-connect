@@ -115,7 +115,7 @@ const DashboardLayout = ({ children }) => {
 
             {/* Home shortcut */}
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/?no_redirect=true')}
               title="Landing Page"
               className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-primary transition-all"
             >
@@ -204,7 +204,7 @@ const DashboardLayout = ({ children }) => {
 
             {/* ── Avatar → Landing Page ── */}
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/?no_redirect=true')}
               title="Go to landing page"
               className="flex items-center gap-2 pl-2 ml-1 border-l border-slate-200 hover:opacity-80 transition-opacity"
             >

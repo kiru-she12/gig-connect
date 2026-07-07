@@ -168,16 +168,21 @@ const LandingPage = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (user) {
-      if (user.role === 'client') {
+    const params = new URLSearchParams(location.search);
+    const noRedirect = params.get('no_redirect') === 'true';
+
+    if (user && !noRedirect) {
+      if (user.role === 'student') {
+        navigate('/dashboard/student');
+      } else if (user.role === 'client') {
         navigate('/dashboard/client/home');
       } else if (user.role === 'admin' || user.role === 'manager') {
-        navigate('/dashboard/admin/overview');
+        navigate('/dashboard/admin');
       } else if (user.role === 'delivery_staff') {
         navigate('/dashboard/delivery/overview');
       }
     }
-  }, [user, navigate]);
+  }, [user, navigate, location.search]);
 
   // Generate deterministic-looking random particles for the background
   const particles = React.useMemo(() => {
@@ -195,78 +200,8 @@ const LandingPage = () => {
   const dynamicGuestJobs = React.useMemo(() => {
     const dbActiveJobs = (jobs || []).filter(j => j.status?.toLowerCase() === 'active');
 
-    // Default fallback jobs matching the design
-    const defaultGuestJobs = [
-      {
-        id: 'default_1',
-        title: 'Website UI Design Audit',
-        price: '$25/hr',
-        tags: ['Design', 'Remote', '2-3 Hours'],
-        desc: 'Review and provide feedback for a local coffee shop\'s new ordering system.',
-        isFeatured: false,
-        date: 'Flexible',
-        location: 'Remote',
-        duration: '2-3 Hours'
-      },
-      {
-        id: 'default_2',
-        title: 'Custom Python Script',
-        price: '$50 Fixed',
-        tags: ['Coding', 'Remote', 'Fast Track'],
-        desc: 'Small automation script needed for data cleanup. Budget is fixed.',
-        isFeatured: false,
-        date: 'Flexible',
-        location: 'Remote',
-        duration: 'Fast Track'
-      },
-      {
-        id: 'default_featured',
-        title: 'Professional Event Photography',
-        price: '$200',
-        tags: ['Photography', 'On-Campus', '5 Hours'],
-        desc: 'Looking for a student photographer for the Senior Gala. Equipment provided.',
-        isFeatured: true,
-        date: 'This Saturday, 6PM',
-        location: 'Campus Union Hall',
-        duration: '5 Hours Flat'
-      },
-      {
-        id: 'default_3',
-        title: 'Math Tutor (Calculus II)',
-        price: '$18/hr',
-        tags: ['Tutoring', 'On-Campus', 'Ongoing'],
-        desc: 'Need help preparing for the midterms. Twice a week sessions at the campus library.',
-        isFeatured: false,
-        date: 'Twice a week',
-        location: 'Campus Library',
-        duration: 'Ongoing'
-      },
-      {
-        id: 'default_4',
-        title: 'Campus Tour Guide',
-        price: '$15/hr',
-        tags: ['Events', 'In-Person', '4 Hours'],
-        desc: 'Help prospective students and their families navigate the campus.',
-        isFeatured: false,
-        date: 'Flexible',
-        location: 'Campus Union',
-        duration: '4 Hours'
-      }
-    ];
-
-    if (dbActiveJobs.length === 0) {
-      return {
-        left: [defaultGuestJobs[0], defaultGuestJobs[1]],
-        featured: defaultGuestJobs[2],
-        right: [defaultGuestJobs[3], defaultGuestJobs[4]]
-      };
-    }
-
-    // Helper to format a database job
-    const formatDbJob = (dbJob, isFeatured) => {
+    return dbActiveJobs.map(dbJob => {
       const formattedPrice = `LKR ${parseFloat(dbJob.pay || 0).toLocaleString()}`;
-
-      // Build dynamic tags from job fields
       const tags = [];
       if (dbJob.type) tags.push(dbJob.type.charAt(0).toUpperCase() + dbJob.type.slice(1));
       if (dbJob.category) tags.push(dbJob.category);
@@ -275,10 +210,7 @@ const LandingPage = () => {
       } else {
         tags.push('General');
       }
-
-      // Deduplicate tags to avoid visual replication
       const uniqueTags = Array.from(new Set(tags));
-
       return {
         id: dbJob.id,
         title: dbJob.title,
@@ -286,41 +218,11 @@ const LandingPage = () => {
         tags: uniqueTags.slice(0, 3),
         category: dbJob.category || 'General',
         desc: dbJob.description || '',
-        isFeatured: isFeatured,
         date: dbJob.job_date || 'Flexible Schedule',
         location: dbJob.type === 'remote' ? 'Remote Task' : (dbJob.clientName || 'On-Campus'),
         duration: dbJob.job_date ? `${dbJob.start_time} - ${dbJob.end_time}` : (dbJob.duration || 'Short Term')
       };
-    };
-
-    // 1. Select Featured Job
-    let featuredJobRaw = dbActiveJobs.find(j => j.isBoosted);
-    if (!featuredJobRaw) {
-      featuredJobRaw = dbActiveJobs[0];
-    }
-    const featuredJob = formatDbJob(featuredJobRaw, true);
-
-    // 2. Select 4 other jobs (excluding the featured one)
-    const remainingDbJobs = dbActiveJobs.filter(j => j.id !== featuredJobRaw.id);
-
-    const otherJobs = [];
-    // Take from remaining DB jobs
-    for (let i = 0; i < Math.min(4, remainingDbJobs.length); i++) {
-      otherJobs.push(formatDbJob(remainingDbJobs[i], false));
-    }
-
-    // Fill up to 4 if we don't have enough DB jobs
-    const defaultOthers = [defaultGuestJobs[0], defaultGuestJobs[1], defaultGuestJobs[3], defaultGuestJobs[4]];
-    while (otherJobs.length < 4) {
-      const fallbackJob = defaultOthers[otherJobs.length];
-      otherJobs.push(fallbackJob);
-    }
-
-    return {
-      left: [otherJobs[0], otherJobs[1]],
-      featured: featuredJob,
-      right: [otherJobs[2], otherJobs[3]]
-    };
+    });
   }, [jobs]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSection, setActiveSection] = useState('home');
@@ -575,7 +477,7 @@ const LandingPage = () => {
     };
 
     return (
-      <div ref={heroRef} className="flex-1 flex flex-col overflow-x-hidden bg-slate-50 min-h-screen pt-20">
+      <div ref={heroRef} className="flex-1 flex flex-col overflow-x-hidden bg-[#f5efe6] min-h-screen pt-20">
         <Navbar />
 
         {/* Hero Section Container */}
@@ -612,7 +514,7 @@ const LandingPage = () => {
                 />
                 <button
                   onClick={handleSearchSubmit}
-                  className="w-10 h-10 bg-[#1A312C] text-white rounded-full flex items-center justify-center hover:bg-[#4E8C7E] transition-all active:scale-95 flex-shrink-0"
+                  className="w-10 h-10 bg-[#32cd32] text-white rounded-full flex items-center justify-center hover:bg-[#2ebc2e] transition-all active:scale-95 flex-shrink-0"
                 >
                   <ArrowRight size={18} />
                 </button>
@@ -627,7 +529,7 @@ const LandingPage = () => {
                      onClick={() => {
                        navigate('/jobs', { state: { category: cat } });
                      }}
-                     className="px-3.5 py-1.5 rounded-full border text-[11px] font-bold transition-all whitespace-nowrap bg-white/20 text-white border-white/10 hover:bg-white hover:text-[#2E7D5C]"
+                     className="px-3.5 py-1.5 rounded-full border text-[11px] font-bold transition-all whitespace-nowrap bg-white/20 text-white border-white/10 hover:bg-white hover:text-[#32cd32]"
                    >
                      {cat}
                    </button>
@@ -1357,7 +1259,7 @@ const LandingPage = () => {
                 <div className="flex items-center gap-5 mt-2">
                   <button
                     onClick={() => document.getElementById('jobs').scrollIntoView({ behavior: 'smooth' })}
-                    className="group relative px-8 py-3.5 bg-primary overflow-hidden rounded-2xl font-bold text-white text-sm flex items-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(94,130,112,0.6)] active:scale-95"
+                    className="group relative px-8 py-3.5 bg-[#32cd32] hover:bg-[#2ebc2e] overflow-hidden rounded-2xl font-bold text-white text-sm flex items-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(50,205,50,0.6)] active:scale-95"
                   >
                     <div className="absolute inset-0 -translate-x-full group-hover:translate-x-[200%] bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-1000 ease-out z-0"></div>
                     <span className="relative z-10 tracking-wide">Find Job</span>
@@ -1591,11 +1493,14 @@ const LandingPage = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-            {/* Left Column (2 cards) */}
-            <div className="flex flex-col gap-6 h-full">
-              {dynamicGuestJobs.left.map((job, idx) => {
-                const iconStyle = getCategoryIcon(job.category || job.tags[0], job.title);
+          {dynamicGuestJobs.length === 0 ? (
+            <div className="text-center py-16 text-slate-400 font-bold bg-white/5 rounded-3xl border border-white/10 backdrop-blur-md w-full">
+              No opportunities currently available. Check back later!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+              {dynamicGuestJobs.map((job, idx) => {
+                const iconStyle = getCategoryIcon(job.category, job.title);
                 return (
                   <motion.div
                     key={job.id || idx}
@@ -1604,7 +1509,7 @@ const LandingPage = () => {
                     viewport={{ once: true, amount: 0.05 }}
                     transition={{ duration: 0.4 }}
                     whileHover={{ y: -5, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
-                    className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-xl transition-all group flex-1 flex flex-col justify-between hover:border-primary/30"
+                    className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-xl transition-all group flex flex-col justify-between hover:border-primary/30"
                   >
                     <div className="space-y-3.5">
                       <div className="flex justify-between items-center">
@@ -1635,7 +1540,7 @@ const LandingPage = () => {
                     </div>
                     <button
                       onClick={() => navigate('/jobs')}
-                      className="w-full py-2.5 mt-3 bg-white text-[#1A312C] rounded-xl font-black text-xs hover:bg-primary hover:text-white transition-all border border-[#4E8C7E]/20"
+                      className="w-full py-2.5 mt-4 bg-white text-[#1A312C] rounded-xl font-black text-xs hover:bg-primary hover:text-white transition-all border border-[#4E8C7E]/20"
                     >
                       View Details
                     </button>
@@ -1643,107 +1548,7 @@ const LandingPage = () => {
                 );
               })}
             </div>
-
-            {/* Featured Center Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, amount: 0.05 }}
-              transition={{ duration: 0.4 }}
-              whileHover={{ scale: 1.02 }}
-              className="bg-primary rounded-[2.5rem] p-8 md:p-10 shadow-2xl shadow-primary/30 flex flex-col justify-between relative overflow-hidden group"
-            >
-              <div className="absolute -top-24 -right-24 w-80 h-80 bg-white/20 rounded-full blur-[80px] transition-transform group-hover:scale-110"></div>
-
-              <div className="relative z-10">
-                <div className="flex justify-end items-start mb-8">
-                  <span className="text-4xl font-black text-white tracking-tighter">{dynamicGuestJobs.featured.price}</span>
-                </div>
-
-                <h3 className="text-3xl md:text-4xl font-black text-white mb-6 leading-tight tracking-tight">{dynamicGuestJobs.featured.title}</h3>
-                <p className="text-[#F2F2EE]/90 text-base leading-relaxed mb-8 font-medium opacity-90">
-                  {dynamicGuestJobs.featured.desc}
-                </p>
-
-                <div className="space-y-4 mb-10">
-                  {[
-                    { icon: 'Calendar', text: dynamicGuestJobs.featured.date },
-                    { icon: 'MapPin', text: dynamicGuestJobs.featured.location },
-                    { icon: 'Clock', text: dynamicGuestJobs.featured.duration }
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-4 text-white/90">
-                      <div className="w-5 h-5 flex items-center justify-center opacity-70">
-                        {item.icon === 'Calendar' && <Calendar size={18} />}
-                        {item.icon === 'MapPin' && <MapPin size={18} />}
-                        {item.icon === 'Clock' && <Clock size={18} />}
-                      </div>
-                      <span className="text-sm font-bold tracking-tight">{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                onClick={() => navigate('/jobs')}
-                className="w-full py-4 bg-white text-primary rounded-2xl font-black text-lg hover:shadow-2xl hover:-translate-y-1 transition-all relative z-10 active:scale-[0.98]"
-              >
-                Apply Now
-              </button>
-            </motion.div>
-
-            {/* Right Column (2 cards) */}
-            <div className="flex flex-col gap-6 h-full">
-              {dynamicGuestJobs.right.map((job, idx) => {
-                const iconStyle = getCategoryIcon(job.category || job.tags[0], job.title);
-                return (
-                  <motion.div
-                    key={job.id || idx}
-                    initial={{ opacity: 0, y: 50, rotateX: 15 }}
-                    whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-                    viewport={{ once: true, amount: 0.05 }}
-                    transition={{ duration: 0.4 }}
-                    whileHover={{ y: -10, rotateY: 5, translateZ: 30 }}
-                    className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-xl transition-all group flex-1 flex flex-col justify-between hover:border-primary/30 perspective-1000"
-                    style={{ transformStyle: "preserve-3d" }}
-                  >
-                    <div className="space-y-3.5">
-                      <div className="flex justify-between items-center">
-                        <div className={`w-9 h-9 rounded-xl ${iconStyle.bg} flex items-center justify-center shrink-0 shadow-sm`}>
-                          {iconStyle.icon}
-                        </div>
-                        <span className="text-xl font-black text-primary">{job.price}</span>
-                      </div>
-                      <div>
-                        <h3 className="text-base font-black text-slate-900 mb-1 group-hover:text-primary transition-colors leading-tight line-clamp-1">{job.title}</h3>
-                        <p className="text-slate-500 text-[11px] leading-relaxed line-clamp-2">{job.desc}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {job.tags.map((t, i) => (
-                          <span key={`${t}-${i}`} className="px-2.5 py-1 bg-slate-50 text-slate-500 rounded-lg text-[9px] font-bold border border-slate-200/60">{t}</span>
-                        ))}
-                      </div>
-                      <div className="pt-3 border-t border-slate-100 flex flex-col gap-1.5 text-slate-500">
-                        <div className="flex items-center gap-2 text-[10px] font-bold">
-                          <MapPin size={12} className="text-primary/70 shrink-0" />
-                          <span className="truncate">{job.location}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] font-bold">
-                          <Clock size={12} className="text-primary/70 shrink-0" />
-                          <span className="truncate">{job.duration}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => navigate('/jobs')}
-                      className="w-full py-2.5 mt-3 bg-white text-[#1A312C] rounded-xl font-black text-xs hover:bg-primary hover:text-white transition-all border border-[#4E8C7E]/20"
-                    >
-                      View Details
-                    </button>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
+          )}
 
           <div className="mt-12 text-center">
             <button

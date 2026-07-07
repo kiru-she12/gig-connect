@@ -19,6 +19,11 @@ class AdminModel extends BaseModel {
             if ($status) {
                 $query .= " AND u.status = '$status'";
             }
+        } elseif ($role === 'job_provider') {
+            $query = "SELECT u.user_ID, u.name, u.email, u.role, u.status, u.created_at, u.phone, jp.nic, jp.business_reg_no, jp.type, jp.is_verified, jp.address FROM users u LEFT JOIN job_provider jp ON u.user_ID = jp.user_ID WHERE u.role = 'job_provider'";
+            if ($status) {
+                $query .= " AND u.status = '$status'";
+            }
         } elseif ($role === 'delivery_staff') {
             $query = "SELECT u.user_ID, u.name, u.email, u.role, u.status as account_status, u.created_at, ds.status, ds.vehicle_type FROM users u JOIN delivery_staff ds ON u.user_ID = ds.user_ID WHERE u.role = 'delivery_staff'";
             if ($status) {
@@ -139,6 +144,142 @@ class AdminModel extends BaseModel {
     }
 
     private function exportGenericReport($type) {
+        if ($type === 'financial') {
+            try {
+                $stmt = $this->pdo->query("
+                    SELECT 
+                        p.payment_ID as transaction_id,
+                        COALESCE(u_std.email, 'system@gigconnect.com') as student_email,
+                        COALESCE(u_prov.email, 'guest@gmail.com') as client_email,
+                        p.amount as commission_amount,
+                        p.status as status,
+                        p.created_at as payment_date
+                    FROM payment p
+                    LEFT JOIN job j ON p.job_ID = j.job_ID
+                    LEFT JOIN application a ON j.job_ID = a.job_ID AND a.status IN ('accepted', 'completed', 'delivered', 'pending_payment')
+                    LEFT JOIN student s ON a.student_ID = s.student_ID
+                    LEFT JOIN users u_std ON s.user_ID = u_std.user_ID
+                    LEFT JOIN job_provider jp ON p.provider_ID = jp.provider_ID
+                    LEFT JOIN users u_prov ON jp.user_ID = u_prov.user_ID
+                    WHERE p.payment_type = 'commission'
+                    ORDER BY p.created_at DESC
+                ");
+                $dbPayments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                $dbPayments = [];
+            }
+
+            $headers = ["Transaction ID", "Student Email", "Client Email", "Commission (LKR)", "Status", "Date"];
+            $rows = [];
+            $data = [];
+            $total_commission = 0;
+
+            foreach ($dbPayments as $p) {
+                $amt = number_format((float)($p['commission_amount'] ?? 0), 2, '.', '');
+                $total_commission += (float)($p['commission_amount'] ?? 0);
+                $dateStr = substr($p['payment_date'], 0, 10);
+                $rows[] = [
+                    $p['transaction_id'],
+                    $p['student_email'],
+                    $p['client_email'],
+                    $amt,
+                    ucfirst($p['status']),
+                    $dateStr
+                ];
+                $data[] = [
+                    "Transaction ID" => $p['transaction_id'],
+                    "Student Email" => $p['student_email'],
+                    "Client Email" => $p['client_email'],
+                    "Commission (LKR)" => $amt,
+                    "Status" => ucfirst($p['status']),
+                    "Date" => $dateStr
+                ];
+            }
+
+            return [
+                "success" => true,
+                "report_type" => "financial",
+                "generated_at" => date("Y-m-d"),
+                "summary" => [
+                    "total" => count($dbPayments),
+                    "total_commission" => number_format($total_commission, 2, '.', '')
+                ],
+                "headers" => $headers,
+                "rows" => $rows,
+                "data" => $data
+            ];
+
+        } else if ($type === 'interactions') {
+            try {
+                $stmt = $this->pdo->query("
+                    SELECT 
+                        CASE 
+                            WHEN u.email LIKE 'cst%' THEN 'CST Students'
+                            WHEN u.email LIKE 'iit%' THEN 'IIT Students'
+                            WHEN u.email LIKE 'aqt%' THEN 'AQT Students'
+                            ELSE 'Other Students'
+                        END as dept,
+                        COUNT(*) as interaction_count,
+                        MAX(a.applied_date) as last_activity
+                    FROM application a
+                    JOIN student s ON a.student_ID = s.student_ID
+                    JOIN users u ON s.user_ID = u.user_ID
+                    GROUP BY dept
+                    
+                    UNION ALL
+                    
+                    SELECT 
+                        'Job Providers (@gmail.com)' as dept,
+                        COUNT(*) as interaction_count,
+                        MAX(j.created_at) as last_activity
+                    FROM job j
+                ");
+                $dbInteractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                $dbInteractions = [];
+            }
+
+            $total_interactions = 0;
+            foreach ($dbInteractions as $row) {
+                $total_interactions += intval($row['interaction_count']);
+            }
+
+            $headers = ["Department / Role", "Interaction Count", "Percentage Contribution", "Last Activity Date"];
+            $rows = [];
+            $data = [];
+
+            foreach ($dbInteractions as $row) {
+                $pct = $total_interactions > 0 ? round((intval($row['interaction_count']) / $total_interactions) * 100) : 0;
+                $last_date = $row['last_activity'] ? substr($row['last_activity'], 0, 10) : date("Y-m-d");
+                
+                $rows[] = [
+                    $row['dept'],
+                    (string)$row['interaction_count'],
+                    $pct . "%",
+                    $last_date
+                ];
+                
+                $data[] = [
+                    "Department / Role" => $row['dept'],
+                    "Interaction Count" => (string)$row['interaction_count'],
+                    "Percentage Contribution" => $pct . "%",
+                    "Last Activity Date" => $last_date
+                ];
+            }
+
+            return [
+                "success" => true,
+                "report_type" => "interactions",
+                "generated_at" => date("Y-m-d"),
+                "summary" => [
+                    "total" => $total_interactions
+                ],
+                "headers" => $headers,
+                "rows" => $rows,
+                "data" => $data
+            ];
+        }
+
         return [
             "success" => true,
             "report_type" => $type,
@@ -294,7 +435,11 @@ class AdminModel extends BaseModel {
         }
 
         try {
-            $stmt = $this->pdo->prepare("UPDATE complaints SET status = ? WHERE id = ?");
+            if ($status === 'Resolved') {
+                $stmt = $this->pdo->prepare("UPDATE complaints SET status = ?, resolved_at = NOW() WHERE id = ?");
+            } else {
+                $stmt = $this->pdo->prepare("UPDATE complaints SET status = ?, resolved_at = NULL WHERE id = ?");
+            }
             $stmt->execute([$status, $complaint_id]);
             return ["success" => true, "message" => "Complaint status updated to $status successfully."];
         } catch (Exception $e) {
@@ -365,7 +510,7 @@ class AdminModel extends BaseModel {
     }
 
     public function getAnalytics($user) {
-        if($user->role !== 'admin') {
+        if($user->role !== 'admin' && $user->role !== 'manager') {
             return ["error" => "Unauthorized!"];
         }
 
@@ -390,13 +535,21 @@ class AdminModel extends BaseModel {
         $stmt = $this->pdo->query("SELECT COUNT(*) FROM application");
         $total_applications = $stmt->fetchColumn();
 
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM job_provider WHERE is_verified = 1");
+        $verified_clients = $stmt->fetchColumn();
+
         $stmt = $this->pdo->query("SELECT SUM(amount) FROM payment WHERE payment_type = 'commission' AND status = 'paid'");
-        $total_revenue = $stmt->fetchColumn() ?? 0;
+        $commission_revenue = $stmt->fetchColumn() ?? 0;
+
+        $stmt = $this->pdo->query("SELECT SUM(amount) FROM payment WHERE payment_type = 'boost' AND status = 'paid'");
+        $boost_revenue = $stmt->fetchColumn() ?? 0;
+
+        $total_revenue = $commission_revenue + $boost_revenue;
 
         $stmt = $this->pdo->query("SELECT COUNT(*) FROM delivery");
         $total_deliveries = $stmt->fetchColumn();
 
-        $stmt = $this->pdo->query("SELECT COUNT(*) FROM delivery WHERE status = 'delivered'");
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM delivery WHERE status IN ('delivered', 'confirmed')");
         $completed_deliveries = $stmt->fetchColumn();
 
         $stmt = $this->pdo->query("SELECT COUNT(*) FROM users WHERE status = 'banned'");
@@ -483,12 +636,61 @@ class AdminModel extends BaseModel {
         });
         $recent_actions = array_slice($all_actions, 0, 5);
 
+        // Calculate dynamic support metrics (Complaints & Alerts removed)
+        $total_tickets = 0;
+        $resolved_tickets = 0;
+        $avg_resolve_hours = 0;
+        $avg_resolve_mins = 0;
+
+        // Support solved vs created per day of week
+        $ticket_days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        $ticket_data_map = [];
+        foreach ($ticket_days as $day) {
+            $ticket_data_map[$day] = ['day' => $day, 'solved' => 0, 'created' => 0];
+        }
+        $ticket_data = array_values($ticket_data_map);
+
+        // Fetch last 6 months data dynamically
+        $months_data = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month_time = strtotime("-$i months");
+            $month_name = date('M', $month_time);
+            $year_month = date('Y-m', $month_time);
+
+            // 1. Total jobs posted in this month
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM job WHERE DATE_FORMAT(created_at, '%Y-%m') = ?");
+            $stmt->execute([$year_month]);
+            $jobs_count = intval($stmt->fetchColumn() ?? 0);
+
+            // 2. Total revenue from payments in this month
+            $stmt = $this->pdo->prepare("SELECT SUM(amount) FROM payment WHERE DATE_FORMAT(created_at, '%Y-%m') = ? AND status = 'paid'");
+            $stmt->execute([$year_month]);
+            $revenue_sum = floatval($stmt->fetchColumn() ?? 0);
+
+            // 3. Total interactions (jobs posted + applications applied) in this month
+            $stmt = $this->pdo->prepare("
+                SELECT 
+                    (SELECT COUNT(*) FROM job WHERE DATE_FORMAT(created_at, '%Y-%m') = ?) +
+                    (SELECT COUNT(*) FROM application WHERE DATE_FORMAT(applied_date, '%Y-%m') = ?)
+            ");
+            $stmt->execute([$year_month, $year_month]);
+            $interactions_count = intval($stmt->fetchColumn() ?? 0);
+
+            $months_data[] = [
+                'name' => $month_name,
+                'jobs' => $jobs_count,
+                'revenue' => $revenue_sum,
+                'interactions' => $interactions_count
+            ];
+        }
+
         return [
             "success" => true,
             "analytics" => [
                 "users" => [
                     "total_students" => $total_students,
                     "total_clients" => $total_clients,
+                    "verified_clients" => $verified_clients,
                     "banned_users" => $banned_users
                 ],
                 "jobs" => [
@@ -500,15 +702,28 @@ class AdminModel extends BaseModel {
                 "applications" => [
                     "total_applications" => $total_applications
                 ],
+                "interactions" => [
+                    "total_interactions" => intval($total_jobs) + intval($total_applications),
+                    "student_engagement" => intval($total_applications),
+                    "provider_engagement" => intval($total_jobs)
+                ],
                 "revenue" => [
-                    "total_revenue" => $total_revenue
+                    "total_revenue" => $total_revenue,
+                    "commission_revenue" => $commission_revenue,
+                    "boost_revenue" => $boost_revenue
                 ],
                 "deliveries" => [
                     "total_deliveries" => $total_deliveries,
                     "completed_deliveries" => $completed_deliveries
                 ],
                 "recent_jobs" => $recent_jobs,
-                "recent_actions" => $recent_actions
+                "recent_actions" => $recent_actions,
+                "support" => [
+                    "avg_resolve_hours" => $avg_resolve_hours,
+                    "avg_resolve_mins" => $avg_resolve_mins,
+                    "ticket_data" => $ticket_data
+                ],
+                "months_data" => $months_data
             ]
         ];
     }

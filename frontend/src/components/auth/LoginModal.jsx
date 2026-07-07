@@ -27,9 +27,9 @@ const LoginModal = ({ isOpen, onClose }) => {
       const userData = await login(email, password);
       onClose();
       if (userData.role === 'student') {
-        navigate('/');
+        navigate('/dashboard/student');
       } else if (userData.role === 'admin' || userData.role === 'manager') {
-        navigate('/dashboard/admin/overview');
+        navigate('/dashboard/admin');
       } else if (userData.role === 'client') {
         navigate('/dashboard/client/home');
       } else if (userData.role === 'delivery_staff') {

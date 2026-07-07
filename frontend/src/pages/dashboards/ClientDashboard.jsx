@@ -17,6 +17,8 @@ const ClientDashboard = () => {
   const { jobs, applications, addJob, updateApplicationStatus, refreshJobs } = useJobs();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
+  const [receivedReviews, setReceivedReviews] = useState([]);
+  const [givenReviews, setGivenReviews] = useState([]);
 
   // Payment Modal States
   const [paymentJob, setPaymentJob] = useState(null);
@@ -151,6 +153,24 @@ const ClientDashboard = () => {
     }
   };
 
+  const fetchReviews = async (userID) => {
+    try {
+      const recRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/reviews/get_reviews.php?user_ID=${userID}&type=received`);
+      const recData = await recRes.json();
+      if (recData.success) {
+        setReceivedReviews(recData.reviews || []);
+      }
+
+      const givRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/reviews/get_reviews.php?user_ID=${userID}&type=given`);
+      const givData = await givRes.json();
+      if (givData.success) {
+        setGivenReviews(givData.reviews || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch reviews:", err);
+    }
+  };
+
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -162,6 +182,9 @@ const ClientDashboard = () => {
       const data = await response.json();
       if (data.success && data.profile) {
         setProfile(data.profile);
+        if (data.profile.user_ID) {
+          fetchReviews(data.profile.user_ID);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch profile in dashboard:", err);
@@ -197,7 +220,7 @@ const ClientDashboard = () => {
             refreshDeliveries={fetchDeliveries}
           />
         } />
-        <Route path="ratings" element={<PlaceholderTab title="Your Ratings" icon={Star} message="View feedback from students you've hired." />} />
+        <Route path="ratings" element={<ReviewsTab receivedReviews={receivedReviews} givenReviews={givenReviews} />} />
         <Route path="settings" element={<SettingsTab user={user} onProfileUpdate={fetchProfile} />} />
         <Route path="*" element={<HomeTab user={user} clientJobs={clientJobs} clientApps={clientApps} />} />
       </Routes>
@@ -1367,70 +1390,144 @@ const PostJobTab = ({ addJob, profile }) => {
 
 const ListingsTab = ({ clientJobs, clientApps, onPayJob }) => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('Approved');
+
+  const filteredJobs = clientJobs.filter(job => {
+    const status = (job.status || '').toLowerCase();
+    if (activeTab === 'Pending') {
+      return status === 'pending approval' || status === 'pending_approval';
+    }
+    if (activeTab === 'Approved') {
+      return status === 'active';
+    }
+    if (activeTab === 'In Progress') {
+      return status === 'in_progress';
+    }
+    if (activeTab === 'Completed') {
+      return status === 'completed';
+    }
+    if (activeTab === 'Delivered') {
+      return status === 'delivered';
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-8 animate-fadeIn">
       <h1 className="text-3xl font-heading font-bold text-text-primary">My Job Listings</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {clientJobs.map(job => {
-          const selectedCount = clientApps.filter(app => app.jobId === job.id && (app.status === 'accepted' || app.status === 'Accepted' || app.status === 'pending_payment')).length;
-          const hiredCount = clientApps.filter(app => app.jobId === job.id && (app.status === 'accepted' || app.status === 'Accepted')).length;
-          const seekersNeeded = job.seekers_needed || 1;
-          const isFullySelected = selectedCount >= seekersNeeded;
-          const hasPendingPayment = clientApps.some(app => app.jobId === job.id && app.status === 'pending_payment');
-          const isPaid = job.payment_status === 'paid';
+
+      {/* Filter Tabs */}
+      <div className="flex gap-2 border-b border-slate-200 pb-px overflow-x-auto scrollbar-none">
+        {['Pending', 'Approved', 'In Progress', 'Completed', 'Delivered'].map((tab) => {
+          const count = clientJobs.filter(job => {
+            const status = (job.status || '').toLowerCase();
+            if (tab === 'Pending') {
+              return status === 'pending approval' || status === 'pending_approval';
+            }
+            if (tab === 'Approved') {
+              return status === 'active';
+            }
+            if (tab === 'In Progress') {
+              return status === 'in_progress';
+            }
+            if (tab === 'Completed') {
+              return status === 'completed';
+            }
+            if (tab === 'Delivered') {
+              return status === 'delivered';
+            }
+            return false;
+          }).length;
 
           return (
-            <div key={job.id} className="card p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="font-bold text-lg">{job.title}</h3>
-                  <div className="flex flex-col items-end gap-1.5">
-                    <span className={`badge ${
-                      job.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 
-                      job.status === 'Pending Approval' ? 'bg-amber-100 text-amber-700' : 'bg-primary-light text-primary-dark font-bold'
-                    }`}>
-                      {job.status === 'Active' ? 'Approved' : job.status}
-                    </span>
-                    {isFullySelected && (
-                      <span className={`badge ${isPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'} text-[10px] font-bold`}>
-                        {isPaid ? '✓ Paid' : '⚠️ Unpaid'}
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-all ${
+                activeTab === tab 
+                  ? 'border-primary text-primary' 
+                  : 'border-transparent text-text-secondary hover:text-primary/70'
+              }`}
+            >
+              {tab} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {filteredJobs.length === 0 ? (
+        <div className="card p-20 text-center bg-white border border-slate-100 rounded-3xl">
+          <List size={48} className="text-text-muted mx-auto mb-4" />
+          <h3 className="text-xl font-bold">No {activeTab.toLowerCase()} job listings</h3>
+          <p className="text-text-secondary text-sm">Your job posts classified under "{activeTab}" will appear here.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredJobs.map(job => {
+            const selectedCount = clientApps.filter(app => app.jobId === job.id && (app.status === 'accepted' || app.status === 'Accepted' || app.status === 'pending_payment')).length;
+            const hiredCount = clientApps.filter(app => app.jobId === job.id && (app.status === 'accepted' || app.status === 'Accepted')).length;
+            const seekersNeeded = job.seekers_needed || 1;
+            const isFullySelected = selectedCount >= seekersNeeded;
+            const hasPendingPayment = clientApps.some(app => app.jobId === job.id && app.status === 'pending_payment');
+            const isPaid = job.payment_status === 'paid';
+
+            return (
+              <div key={job.id} className="card p-5 flex flex-col justify-between bg-white border border-slate-100 rounded-3xl shadow-sm">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="font-bold text-lg text-slate-800">{job.title}</h3>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className={`badge ${
+                        job.status === 'Active' || job.status === 'active' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 
+                        job.status === 'Pending Approval' || job.status === 'pending approval' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 
+                        job.status === 'in_progress' ? 'bg-blue-100 text-blue-700 border border-blue-200' : 
+                        job.status === 'completed' ? 'bg-purple-100 text-purple-700 border border-purple-200' :
+                        'bg-orange-100 text-orange-700 border border-orange-200'
+                      } text-xs font-bold px-2.5 py-0.5 rounded-full capitalize`}>
+                        {job.status === 'active' || job.status === 'Active' ? 'Approved' : 
+                         job.status === 'in_progress' ? 'In Progress' : job.status}
+                      </span>
+                      {isFullySelected && (
+                        <span className={`badge ${isPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'} text-[10px] font-bold px-2 py-0.5 rounded-md`}>
+                          {isPaid ? '✓ Paid' : '⚠️ Unpaid'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-4 text-sm text-text-secondary mb-6 flex-wrap font-semibold">
+                    <span className="flex items-center gap-1 text-slate-600"><Clock size={14}/> {job.duration}</span>
+                    <span className="flex items-center gap-1 font-bold text-text-primary">LKR {parseFloat(job.pay).toLocaleString()}</span>
+                    {job.seekers_needed && (
+                      <span className="flex items-center gap-1 text-emerald-600 font-bold flex-wrap">
+                        👥 Hired: {hiredCount} / {seekersNeeded}
+                        {selectedCount > hiredCount && (
+                          <span className="text-amber-600 text-xs ml-1 font-bold">({selectedCount - hiredCount} Selected, Pending Payment)</span>
+                        )}
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="flex gap-4 text-sm text-text-secondary mb-6 flex-wrap">
-                  <span className="flex items-center gap-1"><Clock size={14}/> {job.duration}</span>
-                  <span className="flex items-center gap-1 font-bold text-text-primary">LKR {job.pay}</span>
-                  {job.seekers_needed && (
-                    <span className="flex items-center gap-1 text-emerald-600 font-bold flex-wrap">
-                      👥 Hired: {hiredCount} / {seekersNeeded}
-                      {selectedCount > hiredCount && (
-                        <span className="text-amber-600 text-xs ml-1 font-bold">({selectedCount - hiredCount} Selected, Pending Payment)</span>
-                      )}
-                    </span>
+                <div className="flex flex-col gap-2 mt-auto">
+                  <button 
+                    onClick={() => navigate('/dashboard/client/applicants', { state: { jobId: job.id } })}
+                    className="w-full btn-primary text-sm py-2 font-bold"
+                  >
+                    View Applicants
+                  </button>
+                  {!isPaid && (hasPendingPayment || isFullySelected) && (
+                    <button 
+                      onClick={() => onPayJob(job)}
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm animate-pulse"
+                    >
+                      💳 Pay Platform Commission (LKR {(job.pay * 0.05).toFixed(2)})
+                    </button>
                   )}
                 </div>
               </div>
-              <div className="flex flex-col gap-2 mt-auto">
-                <button 
-                  onClick={() => navigate('/dashboard/client/applicants', { state: { jobId: job.id } })}
-                  className="w-full btn-primary text-sm py-2"
-                >
-                  View Applicants
-                </button>
-                {!isPaid && (hasPendingPayment || isFullySelected) && (
-                  <button 
-                    onClick={() => onPayJob(job)}
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm animate-pulse"
-                  >
-                    💳 Pay Platform Commission (LKR {(job.pay * 0.05).toFixed(2)})
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
@@ -1535,6 +1632,23 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
     }
     return [];
   };
+
+  const [promptedApps, setPromptedApps] = useState([]);
+
+  useEffect(() => {
+    if (applicants && applicants.length > 0) {
+      const unreviewed = applicants.find(app => {
+        const status = (app.status || '').toLowerCase();
+        const isCompletedNonProduct = status === 'completed' && parseInt(app.is_product_based) === 0;
+        const isDelivered = status === 'delivered';
+        return (isCompletedNonProduct || isDelivered) && parseInt(app.provider_reviewed) === 0 && !promptedApps.includes(app.application_ID);
+      });
+      if (unreviewed) {
+        setPromptedApps(prev => [...prev, unreviewed.application_ID]);
+        handleOpenReview(unreviewed);
+      }
+    }
+  }, [applicants, promptedApps]);
 
   const selectedJob = clientJobs.find(j => j.id === selectedJobId);
   const paymentStatus = selectedJob?.payment_status;
@@ -1654,7 +1768,20 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
               </div>
 
               <div className="flex items-center gap-3">
-                {app.status.toLowerCase() === 'completed' ? (
+                {app.status.toLowerCase() === 'delivered' ? (
+                  parseInt(app.provider_reviewed) > 0 ? (
+                    <span className="badge bg-emerald-100 text-emerald-700 font-bold py-2 px-4 flex items-center gap-1.5">
+                      <CheckCircle size={14} /> Completed & Reviewed
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleOpenReview(app)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-2.5 px-5 rounded-xl transition-all shadow-sm flex items-center gap-1.5 animate-pulse"
+                    >
+                      <Star size={14} className="fill-white" /> Rate & Review Student
+                    </button>
+                  )
+                ) : app.status.toLowerCase() === 'completed' ? (
                   parseInt(app.is_product_based) === 1 ? (
                     <span className="badge bg-purple-100 text-purple-700 font-bold py-2 px-4 flex items-center gap-1.5">
                       ⏳ Completed (OTP Verification Pending)
@@ -2093,6 +2220,110 @@ const DeliveryTab = ({ deliveries, loading, refreshDeliveries }) => {
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ReviewsTab = ({ receivedReviews, givenReviews }) => {
+  const [activeTab, setActiveTab] = useState('received');
+  
+  const averageRating = receivedReviews.length > 0
+    ? receivedReviews.reduce((sum, r) => sum + parseFloat(r.score), 0) / receivedReviews.length
+    : 0;
+
+  const displayList = activeTab === 'received' ? receivedReviews : givenReviews;
+
+  return (
+    <div className="space-y-8 animate-fadeIn">
+      <div>
+        <h1 className="text-3xl font-heading font-black text-slate-800">Ratings & Reviews</h1>
+        <p className="text-text-secondary mt-1">Review feedback received from students or view reviews you submitted.</p>
+      </div>
+
+      {/* Review Tab Selectors */}
+      <div className="flex gap-2 border-b border-slate-200 pb-px">
+        <button
+          onClick={() => setActiveTab('received')}
+          className={`px-5 py-3 border-b-2 font-bold text-sm transition-all ${
+            activeTab === 'received'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-text-secondary hover:text-primary/70'
+          }`}
+        >
+          Received Reviews ({receivedReviews.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('given')}
+          className={`px-5 py-3 border-b-2 font-bold text-sm transition-all ${
+            activeTab === 'given'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-text-secondary hover:text-primary/70'
+          }`}
+        >
+          Given Reviews ({givenReviews.length})
+        </button>
+      </div>
+
+      {activeTab === 'received' && receivedReviews.length > 0 && (
+        <div className="bg-gradient-to-br from-primary to-primary-dark text-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md border border-white/5 animate-fadeIn">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-amber-400 text-slate-950 rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg shadow-amber-400/20">
+              {averageRating.toFixed(1)}
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">Average Employer Rating</h3>
+              <p className="text-xs text-slate-300 mt-0.5">Calculated over {receivedReviews.length} reviews</p>
+            </div>
+          </div>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star 
+                key={star} 
+                size={24} 
+                className={star <= Math.round(averageRating) ? 'fill-amber-400 text-amber-400' : 'text-slate-600'} 
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {displayList.length === 0 ? (
+        <div className="bg-white border border-slate-100 rounded-3xl p-16 text-center shadow-sm max-w-xl mx-auto space-y-4">
+          <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500">
+            <Star size={40} className="stroke-[1.5]" />
+          </div>
+          <div>
+            <h3 className="font-bold text-lg text-slate-800">No reviews found</h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
+              {activeTab === 'received' 
+                ? "You haven't received any review ratings from students yet."
+                : "You haven't submitted any reviews for students yet."
+              }
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {displayList.map((rev) => (
+            <div key={rev.rating_ID} className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-3 animate-fadeIn">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-bold text-sm text-slate-800">
+                    {activeTab === 'received' ? rev.given_by_name : `To: ${rev.given_to_name}`}
+                  </h4>
+                  <p className="text-xs text-slate-400 font-semibold">{rev.job_title}</p>
+                </div>
+                <div className="flex items-center gap-1 bg-amber-50 text-amber-600 border border-amber-100 px-2 py-1 rounded-lg text-xs font-bold">
+                  <Star size={12} className="fill-amber-500 text-amber-500" /> {parseFloat(rev.score).toFixed(1)}
+                </div>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed italic">
+                "{rev.review}"
+              </p>
+            </div>
+          ))}
         </div>
       )}
     </div>

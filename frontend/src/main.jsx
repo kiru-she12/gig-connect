@@ -23,6 +23,20 @@ axios.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
+// Intercept Axios responses to auto-logout on auth failures
+axios.interceptors.response.use((response) => {
+  if (response.data && (response.data.error === 'Invalid token!' || response.data.error === 'Token not provided!')) {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    if (!window.location.pathname.includes('/login')) {
+      window.location.href = '/login';
+    }
+  }
+  return response;
+}, (error) => {
+  return Promise.reject(error);
+});
+
 // Configure global Fetch to always send credentials (cookies) and inject/sanitize Authorization header
 const originalFetch = window.fetch;
 window.fetch = async (url, options = {}) => {
@@ -49,7 +63,28 @@ window.fetch = async (url, options = {}) => {
       delete options.headers['authorization'];
     }
   }
-  return originalFetch(url, options);
+  
+  const response = await originalFetch(url, options);
+  
+  // Intercept authentication errors (invalid/expired tokens) to force a clean logout
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      const clone = response.clone();
+      const data = await clone.json();
+      if (data && (data.error === 'Invalid token!' || data.error === 'Token not provided!')) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
+    } catch (e) {
+      // Ignore cloning/parsing failures
+    }
+  }
+  
+  return response;
 };
 
 ReactDOM.createRoot(document.getElementById('root')).render(

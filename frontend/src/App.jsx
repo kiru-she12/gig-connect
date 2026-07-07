@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginModal from './components/auth/LoginModal';
 import RegisterModal from './components/auth/RegisterModal';
@@ -12,6 +13,7 @@ import LandingPage from './pages/LandingPage';
 import RegisterStudent from './pages/RegisterStudent';
 import RegisterClient from './pages/RegisterClient';
 import FindJobs from './pages/FindJobs';
+import Login from './pages/Login';
 
 // Dashboards
 import AdminDashboard from './pages/dashboards/AdminDashboard';
@@ -24,12 +26,22 @@ import Navbar from './components/layout/Navbar';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
+  const token = localStorage.getItem('token');
   
-  if (!user) {
+  if (!user || !token) {
     return <Navigate to="/" replace />;
   }
   
   if (allowedRoles && !allowedRoles.includes(user.role)) {
+    if (user.role === 'student') {
+      return <Navigate to="/dashboard/student" replace />;
+    } else if (user.role === 'admin' || user.role === 'manager') {
+      return <Navigate to="/dashboard/admin" replace />;
+    } else if (user.role === 'client') {
+      return <Navigate to="/dashboard/client/home" replace />;
+    } else if (user.role === 'delivery_staff') {
+      return <Navigate to="/dashboard/delivery/overview" replace />;
+    }
     return <Navigate to="/" replace />;
   }
   
@@ -40,6 +52,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/jobs" element={<FindJobs />} />
       <Route path="/register/student" element={<RegisterStudent />} />
       <Route path="/register/client" element={<RegisterClient />} />
@@ -90,9 +103,20 @@ const AppContent = () => {
   );
 };
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <AlertProvider>
         <AuthProvider>
           <JobsProvider>
