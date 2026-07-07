@@ -130,14 +130,14 @@ const formatRelativeTime = (timeStr) => {
 const OverviewTab = ({ jobs, applications, analytics, loading }) => {
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const role = storedUser?.role || 'admin';
-  const totalUsers = analytics ? (parseInt(analytics.users?.total_students || 0) + parseInt(analytics.users?.total_clients || 0)) : 544;
-  const activeJobsVal = analytics ? parseInt(analytics.jobs?.active_jobs || 0) : jobs.filter(j => j.status === 'Active').length;
-  const verifiedClientsVal = analytics ? parseInt(analytics.users?.total_clients || 0) : 94;
-  const revenueVal = analytics ? parseInt(analytics.revenue?.total_revenue || 0) : 98750;
-  const pendingApprovalsVal = analytics ? parseInt(analytics.jobs?.pending_jobs || 0) : jobs.filter(j => j.status === 'Pending Approval').length;
-  const fraudAlertsVal = analytics ? parseInt(analytics.users?.banned_users || 0) : 1;
-  const activeDeliveriesVal = analytics ? (parseInt(analytics.deliveries?.total_deliveries || 0) - parseInt(analytics.deliveries?.completed_deliveries || 0)) : 4;
-  const totalInteractionsVal = analytics?.interactions ? analytics.interactions.total_interactions : 1284;
+  const totalUsers = analytics ? (parseInt(analytics.users?.total_students || 0) + parseInt(analytics.users?.total_clients || 0)) : 0;
+  const activeJobsVal = analytics ? parseInt(analytics.jobs?.active_jobs || 0) : jobs.filter(j => j.status === 'Active' || j.status === 'active').length;
+  const verifiedClientsVal = analytics ? parseInt(analytics.users?.total_clients || 0) : 0;
+  const revenueVal = analytics ? parseInt(analytics.revenue?.total_revenue || 0) : 0;
+  const pendingApprovalsVal = analytics ? parseInt(analytics.jobs?.pending_jobs || 0) : jobs.filter(j => j.status === 'Pending Approval' || j.status === 'pending').length;
+  const fraudAlertsVal = analytics ? parseInt(analytics.users?.banned_users || 0) : 0;
+  const activeDeliveriesVal = analytics ? (parseInt(analytics.deliveries?.total_deliveries || 0) - parseInt(analytics.deliveries?.completed_deliveries || 0)) : 0;
+  const totalInteractionsVal = analytics?.interactions ? analytics.interactions.total_interactions : 0;
 
   const stats = [
     { label: 'Total Interactions', value: totalInteractionsVal.toLocaleString(), change: '+14%', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary-light' },
@@ -1820,8 +1820,8 @@ const RevenueTab = ({ jobs = [], analytics }) => {
     return sum + (j.payment_status === 'paid' ? pay * 0.05 : 0);
   }, 0);
 
-  // If there is dynamic commission, let's add it to base revenue, otherwise fallback to 98750
-  const baseRevenue = analytics ? parseFloat(analytics.revenue?.total_revenue || 0) : 98750;
+  // If there is dynamic commission, let's add it to base revenue, otherwise fallback to 0
+  const baseRevenue = analytics ? parseFloat(analytics.revenue?.total_revenue || 0) : 0;
   const revenueVal = calculatedCommissions > 0 ? calculatedCommissions : baseRevenue;
 
   return (
@@ -1876,7 +1876,9 @@ const RevenueTab = ({ jobs = [], analytics }) => {
 
         <div className="card p-5 border border-slate-100 bg-white">
           <p className="text-xs font-bold text-text-muted uppercase tracking-wider">Boost / Priority Advertising</p>
-          <p className="text-3xl font-heading font-black text-slate-800 mt-2">LKR 28,000</p>
+          <p className="text-3xl font-heading font-black text-slate-800 mt-2">
+            LKR {analytics?.revenue?.boost_revenue ? parseFloat(analytics.revenue.boost_revenue).toLocaleString() : '0'}
+          </p>
           <div className="mt-3 flex items-center justify-between text-xs font-bold">
             <span className="text-text-muted">Boost package price:</span>
             <span className="text-amber-600 font-extrabold">LKR 1,500 / job</span>
@@ -2413,52 +2415,59 @@ const ReportsTab = ({ analytics }) => {
     }
   };
 
-  const handleGenerate = (id) => {
+  const handleGenerate = async (id) => {
     const reportObj = reportTypes.find(r => r.id === id);
     if (!reportObj) return;
 
     setGenerating(id);
-
     const filename = reportObj.name.toLowerCase().replace(/ /g, '-');
 
-    // Perform download synchronously
-    if (reportObj.format === 'CSV') {
-      if (id === 'jobs' && reportData) {
-        exportCSV();
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const response = await axios.get(
+        `${apiUrl}/api/admin/export_report.php?type=${id}`,
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+      
+      const realData = response.data;
+      if (realData && realData.success) {
+        if (reportObj.format === 'CSV') {
+          exportCSV(realData.data, filename);
+        } else {
+          exportPDF(realData, reportObj.name);
+        }
       } else {
-        const localData = getReportData(id);
-        exportCSV(localData.data, filename);
+        alert(realData.error || "Failed to generate report.");
       }
-    } else {
-      if (id === 'jobs' && reportData) {
-        exportPDF();
+    } catch (err) {
+      console.error("Error generating report from API:", err);
+      // Fallback to local offline template data if API fails
+      const localData = getReportData(id);
+      if (reportObj.format === 'CSV') {
+        exportCSV(localData.data, filename);
       } else {
-        const localData = getReportData(id);
         exportPDF(localData, reportObj.name);
       }
-    }
-
-    // Prepend to history
-    setDownloadHistory(prev => {
-      const filtered = prev.filter(item => item.id !== id);
-      const updated = [
-        { 
-          id: id, 
-          name: reportObj.name, 
-          format: reportObj.format, 
-          timestamp: new Date().toLocaleTimeString(), 
-          date: new Date().toLocaleDateString() 
-        },
-        ...filtered
-      ];
-      localStorage.setItem('report_download_history', JSON.stringify(updated));
-      return updated;
-    });
-
-    setTimeout(() => {
+    } finally {
+      // Prepend to history
+      setDownloadHistory(prev => {
+        const filtered = prev.filter(item => item.id !== id);
+        const updated = [
+          { 
+            id: id, 
+            name: reportObj.name, 
+            format: reportObj.format, 
+            timestamp: new Date().toLocaleTimeString(), 
+            date: new Date().toLocaleDateString() 
+          },
+          ...filtered
+        ];
+        localStorage.setItem('report_download_history', JSON.stringify(updated));
+        return updated;
+      });
       setGenerating(null);
-      alert(`Report "${reportObj.name}" compiled and downloaded successfully.`);
-    }, 800);
+    }
   };
 
   useEffect(() => {

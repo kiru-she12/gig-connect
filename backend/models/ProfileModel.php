@@ -57,14 +57,16 @@ class ProfileModel extends BaseModel {
             $location = $data['location'] ?? null;
             $latitude = $data['latitude'] ?? null;
             $longitude = $data['longitude'] ?? null;
+            $status = $data['status'] ?? null;
 
             $stmt = $this->pdo->prepare("UPDATE delivery_staff SET 
                 vehicle_type = COALESCE(?, vehicle_type),
                 location = COALESCE(?, location),
                 latitude = COALESCE(?, latitude),
-                longitude = COALESCE(?, longitude)
+                longitude = COALESCE(?, longitude),
+                status = COALESCE(?, status)
                 WHERE user_ID = ?");
-            $stmt->execute([$vehicle_type, $location, $latitude, $longitude, $user->user_ID]);
+            $stmt->execute([$vehicle_type, $location, $latitude, $longitude, $status, $user->user_ID]);
         }
 
         return ["success" => "Profile updated successfully!"];

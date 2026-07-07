@@ -777,23 +777,7 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
     setSelectedAppForReview(null);
   };
 
-  const [promptedApps, setPromptedApps] = useState([]);
 
-  useEffect(() => {
-    if (applications && applications.length > 0) {
-      const unreviewedApp = applications.find(app => {
-        const status = (app.status || '').toLowerCase();
-        const isCompleted = status === 'completed' && (app.is_product_based == 0 || app.delivery_needed == 0);
-        const isDelivered = status === 'delivered';
-        return (isCompleted || isDelivered) && parseInt(app.student_reviewed) === 0 && !promptedApps.includes(app.application_ID);
-      });
-
-      if (unreviewedApp) {
-        setPromptedApps(prev => [...prev, unreviewedApp.application_ID]);
-        handleOpenReview(unreviewedApp, unreviewedApp.client_user_ID);
-      }
-    }
-  }, [applications, promptedApps]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();

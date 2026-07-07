@@ -12,7 +12,7 @@ class MailService {
             $stmt->execute([$key]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             return $row ? $row['value'] : null;
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

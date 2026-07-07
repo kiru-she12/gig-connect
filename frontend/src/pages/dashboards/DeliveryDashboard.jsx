@@ -16,6 +16,53 @@ const OverviewScreen = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
 
+  // Current Address / Location states
+  const [location, setLocation] = useState('');
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [locating, setLocating] = useState(false);
+  const [locationSaving, setLocationSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  // Refs for current location Leaflet map instance
+  const localMapContainerRef = useRef(null);
+  const localMapRef = useRef(null);
+  const localMarkerRef = useRef(null);
+  const latitudeRef = useRef(null);
+  const longitudeRef = useRef(null);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/profile/get_profile.php`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success && data.profile) {
+        const details = data.profile.delivery_details || {};
+        setLocation(details.location || '');
+        const lat = details.latitude ? parseFloat(details.latitude) : null;
+        const lng = details.longitude ? parseFloat(details.longitude) : null;
+        setLatitude(lat);
+        setLongitude(lng);
+        latitudeRef.current = lat;
+        longitudeRef.current = lng;
+
+        // If location info is completely missing, force open the editor/blocker
+        if (!details.location || !lat || !lng) {
+          setIsEditingLocation(true);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load delivery staff location details:", err);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   const fetchMyDeliveries = async () => {
     setLoading(true);
     try {
@@ -27,10 +74,8 @@ const OverviewScreen = () => {
       if (data.success && Array.isArray(data.deliveries)) {
         setDeliveries(data.deliveries);
         
-        // Auto-select first active delivery if available and none selected
         const activeOnly = data.deliveries.filter(d => d.status !== 'delivered');
         if (activeOnly.length > 0) {
-          // If selectedDel is not in the active list anymore, update it
           if (!selectedDel || !activeOnly.find(d => d.delivery_ID === selectedDel.delivery_ID)) {
             setSelectedDel(activeOnly[0]);
           }
@@ -128,8 +173,6 @@ const OverviewScreen = () => {
         alert(data.message || data.success || "Delivery confirmed successfully!");
         setVerifyingId(null);
         setOtpInputs({ ...otpInputs, [delivery_ID]: '' });
-        
-        // Refresh deliveries and update selected
         fetchMyDeliveries();
       } else {
         alert(data.error || "Failed to confirm delivery.");
@@ -141,11 +184,182 @@ const OverviewScreen = () => {
     }
   };
 
+  const fetchAddressSuggestions = async (query) => {
+    if (!query || query.trim().length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/maps/geocode.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ query })
+      });
+      const data = await response.json();
+      if (data && data.success && data.suggestions) {
+        setSuggestions(data.suggestions);
+      } else {
+        setSuggestions([]);
+      }
+    } catch (err) {
+      console.error("Error fetching Mapbox suggestions:", err);
+      setSuggestions([]);
+    }
+  };
+
+  const handleAddressChange = (val) => {
+    setLocation(val);
+    fetchAddressSuggestions(val);
+  };
+
+  const saveLocationToDb = async (newLoc, newLat, newLng) => {
+    if (!newLoc || !newLat || !newLng) return;
+    setLocationSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/profile/update_profile.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          location: newLoc,
+          latitude: newLat,
+          longitude: newLng
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2500);
+      } else {
+        console.error("Failed to auto-save location:", data.error);
+      }
+    } catch (err) {
+      console.error("Error auto-saving location:", err);
+    } finally {
+      setLocationSaving(false);
+    }
+  };
+
+  const selectSuggestion = async (val) => {
+    setLocation(val);
+    setSuggestions([]);
+    setLocating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/maps/geocode.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ address: val })
+      });
+      const data = await response.json();
+      if (data && data.success && data.coordinates) {
+        const lat = parseFloat(data.coordinates.latitude);
+        const lon = parseFloat(data.coordinates.longitude);
+        setLatitude(lat);
+        setLongitude(lon);
+        latitudeRef.current = lat;
+        longitudeRef.current = lon;
+
+        if (localMapRef.current && localMarkerRef.current) {
+          localMapRef.current.setView([lat, lon], 15);
+          localMarkerRef.current.setLatLng([lat, lon]);
+        }
+
+        await saveLocationToDb(val, lat, lon);
+      }
+    } catch (err) {
+      console.error("Geocoding selected address failed:", err);
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const handleReverseGeocode = async (lat, lng) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/maps/geocode.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ latitude: lat, longitude: lng })
+      });
+      const data = await response.json();
+      if (data && data.success && data.formatted_address) {
+        setLocation(data.formatted_address);
+        await saveLocationToDb(data.formatted_address, lat, lng);
+      }
+    } catch (err) {
+      console.error("Reverse geocoding failed:", err);
+    }
+  };
+
   useEffect(() => {
+    fetchProfile();
     fetchMyDeliveries();
   }, []);
 
-  // Map box / Leaflet handler
+  useEffect(() => {
+    let active = true;
+    if (isEditingLocation && window.L && localMapContainerRef.current && !localMapRef.current && !profileLoading) {
+      const initialLat = latitudeRef.current || 6.9812;
+      const initialLng = longitudeRef.current || 81.0763;
+
+      localMapRef.current = window.L.map(localMapContainerRef.current).setView([initialLat, initialLng], 14);
+
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(localMapRef.current);
+
+      localMarkerRef.current = window.L.marker([initialLat, initialLng], {
+        draggable: true
+      }).addTo(localMapRef.current);
+
+      localMarkerRef.current.on('dragend', async () => {
+        if (!active) return;
+        const position = localMarkerRef.current.getLatLng();
+        setLatitude(position.lat);
+        setLongitude(position.lng);
+        latitudeRef.current = position.lat;
+        longitudeRef.current = position.lng;
+        await handleReverseGeocode(position.lat, position.lng);
+      });
+
+      localMapRef.current.on('click', async (e) => {
+        if (!active) return;
+        const { lat, lng } = e.latlng;
+        setLatitude(lat);
+        setLongitude(lng);
+        latitudeRef.current = lat;
+        longitudeRef.current = lng;
+        if (localMarkerRef.current) {
+          localMarkerRef.current.setLatLng([lat, lng]);
+        }
+        await handleReverseGeocode(lat, lng);
+      });
+    }
+
+    return () => {
+      active = false;
+      if (localMapRef.current) {
+        localMapRef.current.remove();
+        localMapRef.current = null;
+        localMarkerRef.current = null;
+      }
+    };
+  }, [isEditingLocation, profileLoading]);
+
   useEffect(() => {
     let active = true;
     if (selectedDel && window.L && mapContainerRef.current) {
@@ -258,7 +472,6 @@ const OverviewScreen = () => {
     };
   }, [selectedDel]);
 
-  // Compute metrics
   const completedDeliveries = deliveries.filter(d => d.status === 'delivered');
   const activeDeliveries = deliveries.filter(d => d.status !== 'delivered');
 
@@ -270,17 +483,26 @@ const OverviewScreen = () => {
   const completedCount = completedDeliveries.length;
 
   const todayStr = new Date().toDateString();
-  const todaysPayout = completedDeliveries
-    .filter(d => {
-      if (!d.completed_time) return false;
-      const dateStr = d.completed_time.replace(/-/g, '/');
-      return new Date(dateStr).toDateString() === todayStr;
-    })
-    .reduce((sum, d) => sum + getDeliveryFee(d), 0);
+  const todaysCompletedDeliveries = completedDeliveries.filter(d => {
+    if (!d.completed_time) return false;
+    const dateStr = d.completed_time.replace(/-/g, '/');
+    return new Date(dateStr).toDateString() === todayStr;
+  });
+  const todaysCompletedCount = todaysCompletedDeliveries.length;
+
+  const todaysPayout = todaysCompletedDeliveries.reduce((sum, d) => sum + getDeliveryFee(d), 0);
+
+  if (profileLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="text-text-secondary mt-2 text-sm font-medium">Loading dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-heading font-black text-slate-800">Delivery Overview</h1>
@@ -295,19 +517,18 @@ const OverviewScreen = () => {
         </button>
       </div>
 
-      {/* Overview Metrics Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Card 1: Today's Payout */}
         <div className="relative overflow-hidden rounded-3xl p-6 text-white shadow-lg bg-gradient-to-br from-emerald-500 to-teal-700">
           <div className="absolute right-[-10px] bottom-[-20px] text-white/10 pointer-events-none">
             <TrendingUp size={120} className="opacity-15 rotate-12" />
           </div>
-          <p className="text-xs font-bold uppercase tracking-wider text-emerald-100">Today's Payout</p>
-          <h3 className="text-3xl font-black mt-3">LKR {todaysPayout.toLocaleString()}</h3>
-          <span className="inline-block mt-4 text-[10px] bg-emerald-400/20 px-2 py-1 rounded-full font-bold">Earned Today</span>
+          <p className="text-xs font-bold uppercase tracking-wider text-emerald-100">Today's Deliveries</p>
+          <h3 className="text-3xl font-black mt-3">{todaysCompletedCount}</h3>
+          <span className="inline-block mt-4 text-[10px] bg-emerald-400/20 px-2 py-1 rounded-full font-bold">
+            LKR {todaysPayout.toLocaleString()} earned
+          </span>
         </div>
 
-        {/* Card 2: Total Earnings */}
         <div className="relative overflow-hidden rounded-3xl p-6 text-white shadow-lg bg-gradient-to-br from-[#1A312C] to-[#2E5C51]">
           <div className="absolute right-[-10px] bottom-[-20px] text-white/10 pointer-events-none">
             <BarChart2 size={120} className="opacity-15 -rotate-12" />
@@ -317,7 +538,6 @@ const OverviewScreen = () => {
           <span className="inline-block mt-4 text-[10px] bg-white/10 px-2 py-1 rounded-full font-bold">All-time Income</span>
         </div>
 
-        {/* Card 3: Completed Deliveries */}
         <div className="relative overflow-hidden rounded-3xl p-6 bg-white border border-slate-100 shadow-sm flex justify-between items-center">
           <div className="space-y-1">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Completed Deliveries</p>
@@ -330,7 +550,6 @@ const OverviewScreen = () => {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
       <div className="flex border-b border-slate-100 gap-6 mt-4">
         <button
           onClick={() => setActiveTab('active')}
@@ -377,7 +596,6 @@ const OverviewScreen = () => {
         </button>
       </div>
 
-      {/* Tab Contents */}
       {activeTab === 'active' ? (
         <div className="space-y-4 animate-fadeIn">
           {loading ? (
@@ -393,7 +611,6 @@ const OverviewScreen = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Left panel: list of deliveries */}
               <div className="lg:col-span-1 space-y-4">
                 <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
                   {activeDeliveries.map((del) => (
@@ -422,7 +639,6 @@ const OverviewScreen = () => {
                 </div>
               </div>
 
-              {/* Right panel: Details of selected delivery */}
               {selectedDel && (
                 <div className="lg:col-span-2 space-y-6">
                   <div className="card p-6 border-l-4 border-l-primary bg-white shadow-sm space-y-6">
@@ -449,30 +665,24 @@ const OverviewScreen = () => {
                             <Package size={14} />
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Pickup From</p>
-                            <p className="font-bold text-slate-800 text-xs mt-0.5">{selectedDel.student_name}</p>
-                            <p className="text-xs text-slate-500 mt-0.5">{selectedDel.pickup_address}</p>
-                            {selectedDel.student_phone && (
-                              <p className="text-[10px] text-primary font-bold mt-1">📞 {selectedDel.student_phone}</p>
-                            )}
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pickup From (Student)</p>
+                            <p className="text-xs font-bold text-slate-800 mt-0.5">{selectedDel.student_name || 'N/A'}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">{selectedDel.pickup_address}</p>
                           </div>
                         </div>
-                        
+
                         <div className="flex gap-3">
                           <div className="w-8 h-8 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center text-rose-500 flex-shrink-0">
                             <MapPin size={14} />
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Deliver To</p>
-                            <p className="text-xs text-slate-600 mt-0.5">{selectedDel.delivery_address}</p>
-                            {selectedDel.client_phone && (
-                              <p className="text-[10px] text-primary font-bold mt-1">📞 Client Phone: {selectedDel.client_phone}</p>
-                            )}
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Deliver To (Client)</p>
+                            <p className="text-xs font-bold text-slate-800 mt-0.5">{selectedDel.client_phone || 'N/A'}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">{selectedDel.delivery_address}</p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Map Container */}
                       <div 
                         ref={mapContainerRef} 
                         className="w-full h-56 rounded-2xl border border-slate-200 overflow-hidden z-10"
@@ -480,7 +690,6 @@ const OverviewScreen = () => {
                       />
                     </div>
 
-                    {/* OTP Verification form for Rider */}
                     <div className="pt-4 border-t border-slate-100">
                       {selectedDel.status === 'delivered' ? (
                         <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-xs text-emerald-700 font-bold flex items-center gap-1.5">
@@ -613,6 +822,7 @@ const ProfileScreen = () => {
   const [location, setLocation] = useState('');
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
+  const [status, setStatus] = useState('available');
 
   // Address Autocomplete states
   const [suggestions, setSuggestions] = useState([]);
@@ -635,6 +845,7 @@ const ProfileScreen = () => {
         setPhone(data.profile.phone || '');
         setVehicleType(data.profile.delivery_details?.vehicle_type || '');
         setLocation(data.profile.delivery_details?.location || '');
+        setStatus(data.profile.delivery_details?.status || 'available');
         
         const lat = data.profile.delivery_details?.latitude ? parseFloat(data.profile.delivery_details.latitude) : null;
         const lng = data.profile.delivery_details?.longitude ? parseFloat(data.profile.delivery_details.longitude) : null;
@@ -797,7 +1008,8 @@ const ProfileScreen = () => {
           vehicle_type: vehicleType,
           location,
           latitude,
-          longitude
+          longitude,
+          status
         })
       });
       const data = await response.json();
@@ -900,11 +1112,24 @@ const ProfileScreen = () => {
                   required
                 >
                   <option value="">Select Vehicle Type</option>
+                  <option value="Motorcycle">Motorcycle</option>
                   <option value="Bicycle">Bicycle</option>
-                  <option value="Motorbike">Motorbike</option>
                   <option value="Three-Wheeler">Three-Wheeler</option>
-                  <option value="Car / Van">Car / Van</option>
-                  <option value="On Foot">On Foot</option>
+                  <option value="Van">Van</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-text-secondary mb-1.5">Availability Status</label>
+                <select 
+                  className="input-field"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  required
+                >
+                  <option value="available">Available</option>
+                  <option value="busy">Busy</option>
+                  <option value="offline">Offline</option>
                 </select>
               </div>
 
@@ -968,6 +1193,10 @@ const ProfileScreen = () => {
                   style={{ minHeight: '200px' }}
                 />
               </div>
+
+              {/* Hidden fields for coordinates */}
+              <input type="hidden" value={latitude || ''} readOnly />
+              <input type="hidden" value={longitude || ''} readOnly />
             </div>
           </div>
 

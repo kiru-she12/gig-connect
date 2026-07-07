@@ -502,33 +502,6 @@ class DeliveryModel extends BaseModel {
             $provider_otp_message = "GigConnect Job Completion OTP: {$otp} for job '" . $app['job_title'] . "'. Student {$student_name} will self-deliver it. Contact student at: {$student_phone}.";
         }
 
-        // Send OTP via SMS
-        if (!empty($student_phone)) {
-            sendSMS($student_phone, $otp_message);
-        }
-        if (!empty($provider_phone)) {
-            sendSMS($provider_phone, $provider_otp_message);
-        }
-
-        // Send OTP via Email
-        require_once __DIR__ . '/../config/mail.php';
-        require_once __DIR__ . '/../config/email_templates.php';
-
-        $student_body = productVerificationOtpEmail($student_name, $otp, $app['job_title']);
-        sendEmail($student_email, "GigConnect - Job Completion OTP", $student_body);
-
-        $provider_body = productVerificationOtpEmail($provider_name, $otp, $app['job_title']);
-        if ($app['is_product_based'] == 1 && ($app['delivery_needed'] === '0' || $app['delivery_needed'] === 0 || $app['delivery_needed'] == 0)) {
-            $search_str = "<p><strong>" . htmlspecialchars($app['job_title']) . "</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>";
-            $replace_str = "<p><strong>" . htmlspecialchars($app['job_title']) . "</strong> Please enter this OTP on your dashboard to verify completion. Student <strong>{$student_name}</strong> will deliver the product. Contact student at: <strong>{$student_phone}</strong>.</p>";
-            $provider_body = str_replace($search_str, $replace_str, $provider_body);
-
-            $search_str_raw = "<p><strong>" . $app['job_title'] . "</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>";
-            $replace_str_raw = "<p><strong>" . $app['job_title'] . "</strong> Please enter this OTP on your dashboard to verify completion. Student <strong>{$student_name}</strong> will deliver the product. Contact student at: <strong>{$student_phone}</strong>.</p>";
-            $provider_body = str_replace($search_str_raw, $replace_str_raw, $provider_body);
-        }
-        sendEmail($provider_email, "GigConnect - Job Completion OTP", $provider_body);
-
         // Store OTP in delivery table
         $delivery_ID = $this->generateNextID('delivery', 'delivery_ID', 'DEL');
         $delivery_type = ($app['delivery_needed'] == 1) ? 'platform' : 'self';
@@ -577,6 +550,7 @@ class DeliveryModel extends BaseModel {
         }
 
         // Find nearest available delivery staff
+        $nearest_rider = null;
         if ($app['delivery_needed'] == 1) {
             global $mapbox_token;
             $riders_stmt = $this->pdo->query("
@@ -613,8 +587,7 @@ class DeliveryModel extends BaseModel {
                 }
             }
 
-            $nearest_rider = null;
-            $min_distance = INF;
+            $riders_with_distance = [];
 
             if ($pickup_coords && !empty($valid_riders)) {
                 // Try Mapbox Matrix API for accurate routing distance to nearest available riders
@@ -624,68 +597,65 @@ class DeliveryModel extends BaseModel {
                     $mapbox_token
                 );
 
-                if ($matrix_distances !== null) {
-                    foreach ($valid_riders as $index => $rider) {
-                        if (isset($matrix_distances[$index]) && $matrix_distances[$index] !== null) {
-                            $dist = $matrix_distances[$index];
-                            if ($dist < $min_distance) {
-                                $min_distance = $dist;
-                                $nearest_rider = $rider;
-                            }
-                        }
-                    }
-                } else {
-                    // Fallback: Haversine distance
-                    foreach ($valid_riders as $rider) {
+                foreach ($valid_riders as $index => $rider) {
+                    $dist = null;
+                    if ($matrix_distances !== null && isset($matrix_distances[$index]) && $matrix_distances[$index] !== null) {
+                        $dist = $matrix_distances[$index];
+                    } else {
+                        // Fallback: Haversine distance
                         $dist = $this->getDistanceHelper(
                             $pickup_coords['latitude'], $pickup_coords['longitude'],
                             $rider['latitude'], $rider['longitude']
                         );
-                        if ($dist < $min_distance) {
-                            $min_distance = $dist;
-                            $nearest_rider = $rider;
-                        }
+                    }
+                    if ($dist !== null) {
+                        $rider['distance_to_pickup'] = $dist;
+                        $riders_with_distance[] = $rider;
+                    }
+                }
+            }
+
+            $riders_within_10km = [];
+            foreach ($riders_with_distance as $rider) {
+                if ($rider['distance_to_pickup'] <= 10.0) {
+                    $riders_within_10km[] = $rider;
+                }
+            }
+
+            $nearest_rider = null;
+            $min_distance = INF;
+
+            if (!empty($riders_within_10km)) {
+                // Assign nearest within 10km
+                foreach ($riders_within_10km as $rider) {
+                    if ($rider['distance_to_pickup'] < $min_distance) {
+                        $min_distance = $rider['distance_to_pickup'];
+                        $nearest_rider = $rider;
+                    }
+                }
+            } else if (!empty($riders_with_distance)) {
+                // Fallback to nearest overall
+                foreach ($riders_with_distance as $rider) {
+                    if ($rider['distance_to_pickup'] < $min_distance) {
+                        $min_distance = $rider['distance_to_pickup'];
+                        $nearest_rider = $rider;
                     }
                 }
             }
 
             if ($nearest_rider) {
                 $delivery_person_ID = $nearest_rider['user_ID'];
-                $delivery_status = 'pending_acceptance';
+                $delivery_status = 'assigned'; // Auto-assigned directly
+
+                // Update delivery staff status to busy
+                $up_status_stmt = $this->pdo->prepare("UPDATE delivery_staff SET status = 'busy' WHERE user_ID = ?");
+                $up_status_stmt->execute([$delivery_person_ID]);
+            } else {
+                $delivery_status = 'pending_assignment';
             }
         }
 
-        $is_platform_delivery = ($app['is_product_based'] == 1 && $app['delivery_needed'] == 1);
-
-        if (!$is_platform_delivery) {
-            // Send OTP via SMS immediately if not platform delivery (self delivery)
-            if (!empty($student_phone)) {
-                sendSMS($student_phone, $otp_message);
-            }
-            if (!empty($provider_phone)) {
-                sendSMS($provider_phone, $provider_otp_message);
-            }
-
-            // Send OTP via Email immediately if not platform delivery
-            require_once __DIR__ . '/../config/mail.php';
-            require_once __DIR__ . '/../config/email_templates.php';
-
-            $student_body = productVerificationOtpEmail($student_name, $otp, $app['job_title']);
-            sendEmail($student_email, "GigConnect - Job Completion OTP", $student_body);
-
-            $provider_body = productVerificationOtpEmail($provider_name, $otp, $app['job_title']);
-            if ($app['is_product_based'] == 1 && ($app['delivery_needed'] === '0' || $app['delivery_needed'] === 0 || $app['delivery_needed'] == 0)) {
-                $search_str = "<p><strong>" . htmlspecialchars($app['job_title']) . "</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>";
-                $replace_str = "<p><strong>" . htmlspecialchars($app['job_title']) . "</strong> Please enter this OTP on your dashboard to verify completion. Student <strong>{$student_name}</strong> will deliver the product. Contact student at: <strong>{$student_phone}</strong>.</p>";
-                $provider_body = str_replace($search_str, $replace_str, $provider_body);
-
-                $search_str_raw = "<p><strong>" . $app['job_title'] . "</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>";
-                $replace_str_raw = "<p><strong>" . $app['job_title'] . "</strong> Please enter this OTP on your dashboard to verify completion. Student <strong>{$student_name}</strong> will deliver the product. Contact student at: <strong>{$student_phone}</strong>.</p>";
-                $provider_body = str_replace($search_str_raw, $replace_str_raw, $provider_body);
-            }
-            sendEmail($provider_email, "GigConnect - Job Completion OTP", $provider_body);
-        }
-
+        // Insert delivery record
         $stmt = $this->pdo->prepare("
             INSERT INTO delivery 
             (delivery_ID, job_ID, sender_std_ID, delivery_person_ID, delivery_type, pickup_address, delivery_address, client_phone, distance, delivery_fee, otp, otp_expiry, status) 
@@ -707,38 +677,120 @@ class DeliveryModel extends BaseModel {
             $delivery_status
         ]);
 
-        // Notify admin / rider if delivery needed
-        if ($app['delivery_needed'] == 1) {
-            if ($delivery_person_ID) {
-                // Notify the rider
+        $is_platform_delivery = ($app['is_product_based'] == 1 && $app['delivery_needed'] == 1);
+
+        // Prepare notifications and send SMS / Emails
+        if ($is_platform_delivery) {
+            if ($nearest_rider) {
+                // SMS notifications
+                $student_sms = "GigConnect: Your delivery has been assigned to rider {$nearest_rider['name']} ({$nearest_rider['phone']}). Share this OTP when they arrive: {$otp}";
+                $provider_sms = "GigConnect: Delivery rider {$nearest_rider['name']} ({$nearest_rider['phone']}) is bringing your package. Share this OTP: {$otp}";
+                $rider_sms = "GigConnect: You are assigned to delivery {$delivery_ID}. Pickup address: {$pickup_address}, Dropoff: {$dropoff_address}. Contact student: {$student_name} ({$student_phone}). Confirm delivery with OTP: {$otp}";
+
+                if (!empty($student_phone)) {
+                    sendSMS($student_phone, $student_sms);
+                }
+                if (!empty($provider_phone)) {
+                    sendSMS($provider_phone, $provider_sms);
+                }
+                if (!empty($nearest_rider['phone'])) {
+                    sendSMS($nearest_rider['phone'], $rider_sms);
+                }
+
+                // Email notifications
+                require_once __DIR__ . '/../config/mail.php';
+                require_once __DIR__ . '/../config/email_templates.php';
+
+                if (!empty($student_email)) {
+                    $student_body = productVerificationOtpEmail($student_name, $otp, $app['job_title'], $nearest_rider['name'], $nearest_rider['phone']);
+                    sendEmail($student_email, "GigConnect - Delivery Assigned & OTP", $student_body);
+                }
+                if (!empty($provider_email)) {
+                    $provider_body = productVerificationOtpEmail($provider_name, $otp, $app['job_title'], $nearest_rider['name'], $nearest_rider['phone']);
+                    sendEmail($provider_email, "GigConnect - Delivery Assigned & OTP", $provider_body);
+                }
+
+                // In-app notifications
                 $notif_ID = $this->generateNextID('notification', 'notification_ID', 'NOT');
-                $rider_msg = "New pending delivery request ({$delivery_ID}) has been assigned to you. Please accept it on your dashboard.";
                 $notif_stmt = $this->pdo->prepare("
                     INSERT INTO notification (notification_ID, user_ID, message, type, status) 
-                    VALUES (?, ?, ?, 'delivery_request', 'unread')
+                    VALUES (?, ?, ?, 'delivery_assigned', 'unread')
                 ");
-                $notif_stmt->execute([$notif_ID, $delivery_person_ID, $rider_msg]);
+                $notif_stmt->execute([$notif_ID, $user->user_ID, "Delivery staff {$nearest_rider['name']} has been assigned for your job " . $app['job_title']]);
 
-                // Send SMS to Rider
-                if (isset($nearest_rider) && !empty($nearest_rider['phone'])) {
-                    sendSMS($nearest_rider['phone'], "GigConnect: New delivery request {$delivery_ID} is assigned to you. Please log in to accept it.");
-                }
+                $notif_ID_staff = $this->generateNextID('notification', 'notification_ID', 'NOT');
+                $notif_stmt_staff = $this->pdo->prepare("
+                    INSERT INTO notification (notification_ID, user_ID, message, type, status) 
+                    VALUES (?, ?, ?, 'delivery_assigned', 'unread')
+                ");
+                $notif_stmt_staff->execute([$notif_ID_staff, $delivery_person_ID, "New delivery request assigned. Check your dashboard for details."]);
             } else {
-                // Notify student in-app that no delivery staff is available
+                // Platform delivery requested but no rider available
+                $student_sms = "GigConnect: No available delivery staff found at the moment for job '" . $app['job_title'] . "'. We are searching for a rider. Your OTP is: {$otp}";
+                $provider_sms = "GigConnect: A delivery (ID: {$delivery_ID}) has been created for your job '" . $app['job_title'] . "', awaiting rider assignment. Share this OTP: {$otp}";
+
+                if (!empty($student_phone)) {
+                    sendSMS($student_phone, $student_sms);
+                }
+                if (!empty($provider_phone)) {
+                    sendSMS($provider_phone, $provider_sms);
+                }
+
+                // Email notifications
+                require_once __DIR__ . '/../config/mail.php';
+                require_once __DIR__ . '/../config/email_templates.php';
+
+                if (!empty($student_email)) {
+                    $student_body = productVerificationOtpEmail($student_name, $otp, $app['job_title']);
+                    sendEmail($student_email, "GigConnect - Job Completion OTP", $student_body);
+                }
+                if (!empty($provider_email)) {
+                    $provider_body = productVerificationOtpEmail($provider_name, $otp, $app['job_title']);
+                    sendEmail($provider_email, "GigConnect - Job Completion OTP", $provider_body);
+                }
+
+                // In-app notifications
                 $notif_ID = $this->generateNextID('notification', 'notification_ID', 'NOT');
                 $student_msg = "No available delivery riders were found at the moment for your job completion request of '" . $app['job_title'] . "'. Please wait or try self-delivery.";
-                
                 $notif_stmt = $this->pdo->prepare("
                     INSERT INTO notification (notification_ID, user_ID, message, type, status) 
                     VALUES (?, ?, ?, 'delivery_unavailable', 'unread')
                 ");
                 $notif_stmt->execute([$notif_ID, $user->user_ID, $student_msg]);
             }
+        } else {
+            // Self delivery
+            if (!empty($student_phone)) {
+                sendSMS($student_phone, $otp_message);
+            }
+            if (!empty($provider_phone)) {
+                sendSMS($provider_phone, $provider_otp_message);
+            }
+
+            // Email notifications
+            require_once __DIR__ . '/../config/mail.php';
+            require_once __DIR__ . '/../config/email_templates.php';
+
+            if (!empty($student_email)) {
+                $student_body = productVerificationOtpEmail($student_name, $otp, $app['job_title']);
+                sendEmail($student_email, "GigConnect - Job Completion OTP", $student_body);
+            }
+            if (!empty($provider_email)) {
+                $provider_body = productVerificationOtpEmail($provider_name, $otp, $app['job_title']);
+                if ($app['is_product_based'] == 1) {
+                    $search_str = "<p><strong>" . htmlspecialchars($app['job_title']) . "</strong> Please enter this OTP on your dashboard to verify completion. If you did not request this, please ignore.</p>";
+                    $replace_str = "<p><strong>" . htmlspecialchars($app['job_title']) . "</strong> Please enter this OTP on your dashboard to verify completion. Student <strong>{$student_name}</strong> will deliver the product. Contact student at: <strong>{$student_phone}</strong>.</p>";
+                    $provider_body = str_replace($search_str, $replace_str, $provider_body);
+                }
+                sendEmail($provider_email, "GigConnect - Job Completion OTP", $provider_body);
+            }
         }
 
         return [
             "success" => true,
-            "message" => "Job marked as completed! OTP will be sent once the delivery staff accepts the assignment.",
+            "message" => $is_platform_delivery && $nearest_rider 
+                ? "Job marked as completed! Delivery staff {$nearest_rider['name']} has been automatically assigned. OTPs have been sent via SMS."
+                : "Job marked as completed! OTPs have been sent successfully.",
             "otp" => $otp
         ];
     }
