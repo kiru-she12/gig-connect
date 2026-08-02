@@ -4,6 +4,7 @@
 if (!class_exists('DeadlineChecker')) {
     class DeadlineChecker {
         public static function check($pdo) {
+            date_default_timezone_set('Asia/Colombo');
             try {
                 // Find all accepted applications for in_progress jobs
                 $stmt = $pdo->prepare("
@@ -14,7 +15,7 @@ if (!class_exists('DeadlineChecker')) {
                     JOIN job j ON a.job_ID = j.job_ID
                     JOIN student st ON a.student_ID = st.student_ID
                     JOIN users u ON st.user_ID = u.user_ID
-                    WHERE a.status = 'accepted' AND j.status = 'in_progress'
+                    WHERE a.status = 'accepted' AND j.status NOT IN ('completed', 'cancelled')
                 ");
                 $stmt->execute();
                 $apps = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -54,15 +55,15 @@ if (!class_exists('DeadlineChecker')) {
                                 $pdo,
                                 $app['student_user_id'],
                                 "Deadline Passed ⏰",
-                                "The deadline for '" . $app['job_title'] . "' (ID: " . $app['job_ID'] . ") passed 1 hour ago. Please click 'Complete Job' in your dashboard to submit your finished work.",
+                                "The deadline for job '" . $app['job_title'] . "' (ID: " . $app['job_ID'] . ") passed 1 hour ago. Please click 'Complete' for this particular job in your dashboard.",
                                 "deadline_reminder_student",
                                 "/dashboard/student/applications"
                             );
                         }
                     }
 
-                    // Case 2: Deadline passed by 2 hours (>= 7200s) -> Notify Admin and Manager
-                    if ($diff_seconds >= 7200) {
+                    // Case 2: 30 minutes after student notification (deadline passed by 1h 30m / >= 5400s) -> Notify Admin and Manager
+                    if ($diff_seconds >= 5400) {
                         $chk_adm = $pdo->prepare("
                             SELECT COUNT(*) FROM notification 
                             WHERE type = 'deadline_overdue_admin' AND message LIKE ?
@@ -78,7 +79,7 @@ if (!class_exists('DeadlineChecker')) {
                                     $pdo,
                                     $admin_id,
                                     "Overdue Job Alert ⚠️",
-                                    "Student " . $app['student_name'] . " has not marked job '" . $app['job_title'] . "' (ID: " . $app['job_ID'] . ") as completed 2 hours past deadline.",
+                                    "Student " . $app['student_name'] . " has not marked job '" . $app['job_title'] . "' (ID: " . $app['job_ID'] . ") as completed within 30 minutes of receiving the deadline notification.",
                                     "deadline_overdue_admin",
                                     "/dashboard/admin/jobs"
                                 );

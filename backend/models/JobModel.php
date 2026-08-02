@@ -630,6 +630,9 @@ class JobModel extends BaseModel {
 
         $student_ID = $this->ensureStudentProfile($user->user_ID);
 
+        require_once __DIR__ . '/../utils/DeadlineChecker.php';
+        DeadlineChecker::check($this->pdo);
+
         $stmt = $this->pdo->prepare("
             SELECT a.application_ID, a.job_ID, a.status, a.applied_date, a.delivery_needed,
                    j.title as job_title, j.payment as job_payment, j.job_type, j.description as job_description, j.deadline as job_deadline, j.status as job_status, j.skills as job_skills, j.is_product_based,
