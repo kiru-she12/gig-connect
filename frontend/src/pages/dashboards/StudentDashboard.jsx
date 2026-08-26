@@ -530,7 +530,7 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gig-connect-main/backend'}/api/maps/geocode.php`,
+        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`,
         {
           method: 'POST',
           headers: {
@@ -589,7 +589,7 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
     }
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gig-connect-main/backend'}/api/maps/geocode.php`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -624,7 +624,7 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gig-connect-main/backend'}/api/maps/geocode.php`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/maps/geocode.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -788,7 +788,7 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
         return;
       }
 
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost/gig-connect-main/backend').replace(/\/+$/, '');
+      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend').replace(/\/+$/, '');
       const response = await fetch(`${baseUrl}/api/admin/complaints.php`, {
         method: 'POST',
         headers: {

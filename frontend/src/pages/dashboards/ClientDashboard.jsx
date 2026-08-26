@@ -1821,7 +1821,7 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
         return;
       }
 
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost/gig-connect-main/backend').replace(/\/+$/, '');
+      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend').replace(/\/+$/, '');
       const response = await fetch(`${baseUrl}/api/admin/complaints.php`, {
         method: 'POST',
         headers: {
