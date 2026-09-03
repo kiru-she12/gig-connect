@@ -371,9 +371,9 @@ const Navbar = ({ dashboard = false }) => {
                                 setShowUserMenu(false);
                                 handleLogout();
                               }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 rounded-xl transition-colors font-medium"
+                              className="w-full mt-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50/70 hover:bg-rose-100/80 active:bg-rose-200/80 border border-rose-200/80 rounded-xl transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.98]"
                             >
-                              <LogOut size={16} />
+                              <LogOut size={14} />
                               <span>Log Out</span>
                             </button>
                           </div>

@@ -1401,9 +1401,9 @@ const UserManagementTab = () => {
             <div className="flex items-center gap-4 mb-6 border-b pb-4">
               <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center font-bold text-xl uppercase overflow-hidden border border-border shrink-0 shadow-sm">
                 {selectedStudent.profile_pic ? (
-                  <img 
-                    src={getProfilePicUrl(selectedStudent.profile_pic)} 
-                    alt={selectedStudent.name || 'Student'} 
+                  <img
+                    src={getProfilePicUrl(selectedStudent.profile_pic)}
+                    alt={selectedStudent.name || 'Student'}
                     className="w-full h-full object-cover"
                     onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling?.classList.remove('hidden'); }}
                   />
@@ -2251,7 +2251,7 @@ const RevenueTab = ({ jobs = [], analytics }) => {
           </p>
           <div className="mt-3 flex items-center justify-between text-xs font-bold">
             <span className="text-text-muted">Boost package price:</span>
-            <span className="text-amber-600 font-extrabold">LKR 1,500 / job</span>
+            <span className="text-amber-600 font-extrabold">LKR 300 / job</span>
           </div>
         </div>
       </div>
@@ -3392,12 +3392,7 @@ const DeliveryManagementTab = () => {
             Monitor orders and auto-assigned platform riders.
           </p>
         </div>
-        <button
-          onClick={fetchDeliveries}
-          className="px-4 py-2 bg-[#1A312C] hover:bg-[#244b41] text-white font-bold rounded-xl text-xs flex items-center gap-2 transition-all shadow-sm"
-        >
-          <RefreshCw size={14} /> Refresh Live Orders
-        </button>
+
       </div>
 
       {/* KPI Stats Row */}

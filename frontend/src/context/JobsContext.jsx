@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { INITIAL_JOBS, INITIAL_APPLICATIONS } from '../data/mockData';
+
 
 const JobsContext = createContext();
 

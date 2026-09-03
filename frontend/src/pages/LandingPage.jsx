@@ -4,7 +4,7 @@ import { Search, Filter, ArrowRight, CheckCircle, Zap, Shield, Users, DollarSign
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import JobCard from '../components/shared/JobCard';
-import { INITIAL_JOBS } from '../data/mockData';
+
 import { useJobs } from '../context/JobsContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';

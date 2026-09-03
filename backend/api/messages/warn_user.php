@@ -21,12 +21,17 @@ try {
         exit;
     }
 
+    require_once __DIR__ . '/../../models/NotificationModel.php';
+
     // Insert warning notification
-    $stmt = $pdo->prepare("
-        INSERT INTO notifications (user_ID, title, message, is_read, created_at) 
-        VALUES (?, 'System Warning from Admin', ?, 0, NOW())
-    ");
-    $stmt->execute([$target_user_id, $warning_text]);
+    NotificationModel::create(
+        $pdo,
+        $target_user_id,
+        'System Warning from Admin ⚠️',
+        $warning_text,
+        'warning',
+        '/dashboard'
+    );
 
     echo json_encode(["success" => true, "message" => "Warning issued to user successfully."]);
 

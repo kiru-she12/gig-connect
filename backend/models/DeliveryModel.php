@@ -177,7 +177,7 @@ class DeliveryModel extends BaseModel {
             // Retrieve or generate OTP
             $otp = $delivery['otp'];
             if (empty($otp)) {
-                $otp = rand(100000, 999999);
+                $otp = random_int(100000, 999999);
                 $stmt = $this->pdo->prepare("UPDATE delivery SET otp = ? WHERE delivery_ID = ?");
                 $stmt->execute([$otp, $delivery_ID]);
             }
@@ -425,7 +425,7 @@ class DeliveryModel extends BaseModel {
 
         $delivery_ID = $this->generateNextID('delivery', 'delivery_ID', 'DEL');
 
-        $otp = rand(100000, 999999);
+        $otp = random_int(100000, 999999);
 
         $stmt = $this->pdo->prepare("INSERT INTO delivery (delivery_ID, job_ID, sender_std_ID, delivery_type, pickup_address, delivery_address, distance, otp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
@@ -557,7 +557,7 @@ class DeliveryModel extends BaseModel {
         }
 
         // Generate 6-digit OTP (Valid for 24 hours to accommodate long distance deliveries)
-        $otp = rand(100000, 999999);
+        $otp = random_int(100000, 999999);
         $otp_expiry = date('Y-m-d H:i:s', time() + 24 * 3600); // 24 hours
         
         // Fetch student details

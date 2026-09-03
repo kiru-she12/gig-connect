@@ -13,3 +13,6 @@ backend/sent_emails/
 *.log
 .DS_Store
 .env.local
+.env
+*.env
+.git_backup/

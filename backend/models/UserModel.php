@@ -158,7 +158,7 @@ class UserModel extends BaseModel {
         }
 
         // generate OTP
-        $otp = rand(100000, 999999);
+        $otp = random_int(100000, 999999);
         $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
 
         // save OTP to users table
@@ -192,7 +192,7 @@ class UserModel extends BaseModel {
         }
 
         // generate OTP
-        $otp = rand(100000, 999999);
+        $otp = random_int(100000, 999999);
         $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
 
         // save OTP

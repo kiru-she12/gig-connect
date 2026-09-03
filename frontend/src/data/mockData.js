@@ -1,8 +1,3 @@
-export const INITIAL_STUDENTS = [];
-export const INITIAL_CLIENTS = [];
-export const INITIAL_JOBS = [];
-export const INITIAL_APPLICATIONS = [];
-export const INITIAL_DELIVERY_STAFF = [];
 
 export const CATEGORIES = [
   'Creative & Content', 'Academic & Tutoring', 'On-site/Physical', 'languages', 'Local Services', 'tourism', 'Other'

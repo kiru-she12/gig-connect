@@ -56,7 +56,7 @@ class NotificationModel extends BaseModel {
         DeadlineChecker::check($this->pdo);
 
         $stmt = $this->pdo->prepare("
-            SELECT notification_ID, title, message, type, status, target_url, created_at
+            SELECT notification_ID, title, message, type, status, is_read, target_url, created_at
             FROM notification
             WHERE user_ID = ?
             ORDER BY created_at DESC
@@ -72,13 +72,13 @@ class NotificationModel extends BaseModel {
     }
 
     public function markAllAsRead($user) {
-        $stmt = $this->pdo->prepare("UPDATE notification SET status = 'read' WHERE user_ID = ?");
+        $stmt = $this->pdo->prepare("UPDATE notification SET status = 'read', is_read = 1 WHERE user_ID = ?");
         $stmt->execute([$user->user_ID]);
         return ["success" => true, "message" => "All notifications marked as read."];
     }
 
     public function markAsRead($notification_ID, $user) {
-        $stmt = $this->pdo->prepare("UPDATE notification SET status = 'read' WHERE notification_ID = ? AND user_ID = ?");
+        $stmt = $this->pdo->prepare("UPDATE notification SET status = 'read', is_read = 1 WHERE notification_ID = ? AND user_ID = ?");
         $stmt->execute([$notification_ID, $user->user_ID]);
         return ["success" => true, "message" => "Notification marked as read."];
     }

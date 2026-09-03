@@ -4,6 +4,7 @@ import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-r
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import { useJobs } from '../../context/JobsContext';
+import { useNotifications } from '../../context/NotificationsContext';
 import JobCard from '../../components/shared/JobCard';
 import ChatTab from '../../components/shared/ChatTab';
 import AnalyticsTab from './AnalyticsTab';
@@ -338,11 +339,7 @@ const StudentDashboard = () => {
           />
         } />
         <Route path="messages" element={<ChatTab />} />
-        <Route path="notifications" element={
-          <NotificationsTab 
-            notifications={notifications}
-          />
-        } />
+        <Route path="notifications" element={<NotificationsTab />} />
         <Route path="reviews" element={
           <ReviewsTab 
             profile={profile}
@@ -2350,12 +2347,24 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
 };
 
 /* 6. NOTIFICATIONS TAB */
-const NotificationsTab = ({ notifications }) => {
+const NotificationsTab = () => {
+  const { notifications, markAllRead, markAsRead } = useNotifications();
+
   return (
     <div className="space-y-8 animate-fadeIn">
-      <div>
-        <h1 className="text-3xl font-heading font-black text-slate-800">Notifications</h1>
-        <p className="text-text-secondary mt-1">Stay updated with messages, offers, and task assignments.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-heading font-black text-slate-800">Notifications</h1>
+          <p className="text-text-secondary mt-1">Stay updated with messages, offers, and task assignments.</p>
+        </div>
+        {notifications.length > 0 && (
+          <button
+            onClick={() => markAllRead()}
+            className="px-4 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all"
+          >
+            Mark all as read
+          </button>
+        )}
       </div>
 
       {notifications.length === 0 ? (
@@ -2367,12 +2376,25 @@ const NotificationsTab = ({ notifications }) => {
       ) : (
         <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm divide-y divide-slate-100">
           {notifications.map((notif) => (
-            <div key={notif.notification_ID || notif.id} className="p-5 flex items-start gap-4 hover:bg-slate-50/50 transition-colors">
+            <div 
+              key={notif.notification_ID || notif.id} 
+              onClick={() => {
+                if (!notif.read) markAsRead(notif.notification_ID || notif.id);
+              }}
+              className={`p-5 flex items-start gap-4 hover:bg-slate-50/50 transition-colors cursor-pointer ${!notif.read ? 'bg-emerald-50/30' : ''}`}
+            >
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0 text-lg">
                 {notif.icon || (notif.type === 'job_accepted' ? '🎉' : notif.type?.includes('delivery') ? '🚚' : '🔵')}
               </div>
               <div className="space-y-1 flex-1">
-                <h4 className="text-sm font-bold text-slate-800">{notif.title || (notif.type ? notif.type.replace('_', ' ').toUpperCase() : 'Notification')}</h4>
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className={`text-sm font-bold ${!notif.read ? 'text-slate-900 font-extrabold' : 'text-slate-700'}`}>
+                    {notif.title || (notif.type ? notif.type.replace('_', ' ').toUpperCase() : 'Notification')}
+                  </h4>
+                  {!notif.read && (
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                  )}
+                </div>
                 <p className="text-xs text-slate-600 font-medium">{notif.message}</p>
                 <div className="flex items-center gap-2 pt-1">
                   <span className="badge bg-slate-100 text-slate-600 text-[10px] uppercase font-bold">

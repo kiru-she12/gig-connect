@@ -5,42 +5,6 @@ import { useAuth } from '../../context/AuthContext';
 import { X, LogOut, ChevronRight } from 'lucide-react';
 import logoImage from '../../assets/logo/logo.png';
 
-/* ── Role label & colour helpers ── */
-const ROLE_META = {
-  student:       { label: 'Student',        color: 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white' },
-  client:        { label: 'Job Provider',    color: 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white' },
-  job_provider:  { label: 'Job Provider',    color: 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white' },
-  admin:         { label: 'Admin',           color: 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white' },
-  manager:       { label: 'Manager',         color: 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white' },
-  delivery_staff:{ label: 'Delivery Staff',  color: 'bg-gradient-to-r from-emerald-400 to-teal-400 text-slate-950 font-bold' },
-};
-
-const Avatar = ({ name = '', profilePic }) => {
-  const [imgError, setImgError] = useState(false);
-  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-
-  if (profilePic && !imgError) {
-    const backendBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend';
-    const finalUrl = profilePic.startsWith('http') || profilePic.startsWith('/') 
-      ? profilePic 
-      : `${backendBase}/uploads/profile_pics/${profilePic}`;
-    return (
-      <img 
-        src={finalUrl} 
-        alt={name} 
-        onError={() => setImgError(true)}
-        className="w-10 h-10 rounded-xl object-cover shadow-lg flex-shrink-0 border-2 border-teal-500/30 transition-transform duration-300 hover:scale-105"
-      />
-    );
-  }
-
-  return (
-    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white text-[13px] font-black shadow-lg flex-shrink-0 border border-teal-400/20 transition-transform duration-300 hover:scale-105">
-      {initials || '?'}
-    </div>
-  );
-};
-
 /* ── Shared link list ── */
 const LinkList = ({ links, onClose, handleLinkClick }) => (
   <div className="flex flex-col gap-1">
@@ -88,7 +52,6 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   const links = getLinksByRole(role);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const roleMeta = ROLE_META[role] || { label: role, color: 'bg-slate-700 text-white' };
 
   const handleLinkClick = (e, link) => {
     if (link.to === '#logout') {
@@ -123,37 +86,27 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       </div>
 
       {/* Nav links */}
-      <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-5 space-y-6">
-        <div>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-3.5 mb-2.5 flex items-center justify-between">
-            <span>{roleMeta.label} Navigation</span>
-          </p>
-          <LinkList links={links} onClose={onClose} handleLinkClick={handleLinkClick} />
-        </div>
+      <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-5">
+        <LinkList links={links} onClose={onClose} handleLinkClick={handleLinkClick} />
       </div>
 
-      {/* User card at bottom */}
-      <div className="p-3.5 border-t border-slate-800/80 bg-slate-950/60">
-        <div className="relative group flex items-center gap-3 p-3 rounded-2xl bg-slate-800/50 border border-slate-700/50 shadow-md transition-all duration-300 hover:border-slate-600 hover:bg-slate-800">
-          <Avatar name={user?.name || ''} profilePic={user?.profile_pic} />
+      {/* Glassmorphic Logout Button at bottom */}
+      <div className="p-3.5 border-t border-slate-800/80 bg-slate-950/70">
+        <button
+          onClick={handleLogout}
+          title="Log Out"
+          className="group relative w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl bg-white/[0.04] hover:bg-rose-500/15 active:bg-rose-500/25 border border-white/10 hover:border-rose-500/40 backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.2)] hover:shadow-[0_0_20px_rgba(244,63,94,0.2)] transition-all duration-300 active:scale-[0.98] cursor-pointer overflow-hidden"
+        >
+          {/* Subtle gradient shimmer overlay on hover */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
           
-          <div className="flex-1 min-w-0 z-10">
-            <p className="text-[13px] font-bold text-slate-100 group-hover:text-white transition-colors truncate">
-              {user?.name || 'User'}
-            </p>
-            <span className={`inline-flex items-center text-[9.5px] font-black px-2 py-0.5 rounded-full mt-1 tracking-wider uppercase ${roleMeta.color} shadow-sm`}>
-              {roleMeta.label}
-            </span>
+          <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 group-hover:border-rose-400/30 group-hover:bg-rose-500/20 text-slate-400 group-hover:text-rose-400 transition-all duration-300 flex items-center justify-center">
+            <LogOut size={14} className="transition-transform duration-300 group-hover:-translate-x-0.5" />
           </div>
-          
-          <button
-            onClick={handleLogout}
-            title="Logout"
-            className="relative z-10 p-2 rounded-xl bg-slate-700/40 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700/40 hover:border-rose-500/30 transition-all duration-200 active:scale-95 flex-shrink-0"
-          >
-            <LogOut size={16} />
-          </button>
-        </div>
+          <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors tracking-wide">
+            Log Out
+          </span>
+        </button>
       </div>
     </div>
   );
