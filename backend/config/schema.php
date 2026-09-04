@@ -156,7 +156,7 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-    $notifCols = ['status' => "VARCHAR(50) DEFAULT 'unread'", 'title' => "VARCHAR(255) NULL", 'target_url' => "VARCHAR(255) NULL"];
+    $notifCols = ['is_read' => "TINYINT(1) DEFAULT 0", 'status' => "VARCHAR(50) DEFAULT 'unread'", 'title' => "VARCHAR(255) NULL", 'target_url' => "VARCHAR(255) NULL"];
     foreach ($notifCols as $col => $def) {
         $check = $pdo->query("SHOW COLUMNS FROM notification LIKE '$col'");
         if ($check->rowCount() == 0) {

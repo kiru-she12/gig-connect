@@ -8,6 +8,7 @@ import { useNotifications } from '../../context/NotificationsContext';
 import { CATEGORIES, SKILLS_LIST } from '../../data/mockData';
 import ChatTab from '../../components/shared/ChatTab';
 import ProfilePicManager from '../../components/shared/ProfilePicManager';
+import PaymentModal from '../../components/shared/PaymentModal';
 import {
   PlusCircle, List, Users, MessageSquare, MapPin, Star, Settings,
   ChevronRight, ChevronLeft, CreditCard, CheckCircle, Clock, DollarSign,
@@ -82,12 +83,8 @@ const ClientDashboard = () => {
   const [receivedReviews, setReceivedReviews] = useState([]);
   const [givenReviews, setGivenReviews] = useState([]);
 
-  // Payment Modal States
+  // Payment Modal State
   const [paymentJob, setPaymentJob] = useState(null);
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
 
   // Delivery States
   const [deliveries, setDeliveries] = useState([]);
@@ -113,107 +110,7 @@ const ClientDashboard = () => {
     }
   };
 
-  const handleProcessPayment = async (e) => {
-    e.preventDefault();
-    if (!paymentJob) return;
 
-    setPaymentLoading(true);
-
-    // 1. Validate Card Number (Luhn's Algorithm)
-    const cleanCard = cardNumber.replace(/\D/g, '');
-    if (cleanCard.length !== 16) {
-      alert("Invalid Card Number: Card number must be exactly 16 digits.");
-      setPaymentLoading(false);
-      return;
-    }
-
-    let sum = 0;
-    let shouldDouble = false;
-    for (let i = cleanCard.length - 1; i >= 0; i--) {
-      let digit = parseInt(cleanCard.charAt(i), 10);
-      if (shouldDouble) {
-        digit *= 2;
-        if (digit > 9) digit -= 9;
-      }
-      sum += digit;
-      shouldDouble = !shouldDouble;
-    }
-
-    if (sum % 10 !== 0) {
-      alert("Invalid Card Number");
-      setPaymentLoading(false);
-      return;
-    }
-
-    // 2. Validate Expiry Date (MM / YY)
-    const expiryMatch = expiryDate.trim().match(/^(0[1-9]|1[0-2])\s*\/\s*([0-9]{2})$/);
-    if (!expiryMatch) {
-      alert("Invalid Expiry Date format: Must be MM / YY.");
-      setPaymentLoading(false);
-      return;
-    }
-
-    const expMonth = parseInt(expiryMatch[1], 10);
-    const expYear = parseInt("20" + expiryMatch[2], 10);
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
-
-    if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
-      alert("Invalid Expiry Date: This credit card has expired.");
-      setPaymentLoading(false);
-      return;
-    }
-
-    // 3. Validate CVV
-    const cleanCvv = cvv.replace(/\D/g, '');
-    if (cleanCvv.length !== 3 && cleanCvv.length !== 4) {
-      alert("Invalid CVV: CVV must be 3 or 4 digits.");
-      setPaymentLoading(false);
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend'}/api/jobs/update_payment_status.php`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          job_ID: paymentJob.id,
-          payment_status: 'paid',
-          card_number: cleanCard,
-          expiry_date: expiryDate.trim(),
-          cvv: cleanCvv
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to process payment');
-      }
-
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      alert("Payment successful! The job is now fully paid.");
-      setPaymentJob(null);
-      setCardNumber('');
-      setExpiryDate('');
-      setCvv('');
-
-      if (refreshJobs) {
-        await refreshJobs();
-      }
-    } catch (err) {
-      alert("Payment failed: " + err.message);
-    } finally {
-      setPaymentLoading(false);
-    }
-  };
 
   const fetchReviews = async (userID) => {
     try {
@@ -291,115 +188,18 @@ const ClientDashboard = () => {
         <Route path="*" element={<HomeTab user={user} clientJobs={clientJobs} clientApps={clientApps} />} />
       </Routes>
 
-      {/* Payment Modal */}
-      {paymentJob && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setPaymentJob(null)} />
-          <div className="relative bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border border-border/80 flex flex-col z-10 my-auto max-h-[90vh]">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-border flex justify-between items-center bg-gradient-to-r from-primary-light/30 to-white">
-              <div>
-                <h3 className="font-bold text-lg text-text-primary">Job Payment</h3>
-                <p className="text-xs text-text-muted mt-0.5">{paymentJob.title}</p>
-              </div>
-              <button
-                onClick={() => setPaymentJob(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-text-secondary hover:bg-slate-200 transition-colors font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleProcessPayment}>
-              {/* Modal Body */}
-              <div className="p-6 space-y-6">
-                <div className="bg-gray-50 p-5 rounded-2xl border border-border space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary font-medium">Job Value (Student Pay)</span>
-                    <span className="font-bold text-text-primary">LKR {parseFloat(paymentJob.pay || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary font-medium">Platform Commission (5%)</span>
-                    <span className="font-bold text-emerald-700">LKR {(paymentJob.pay * 0.05).toFixed(2)}</span>
-                  </div>
-                  {(paymentJob.isBoosted || paymentJob.is_boosted == 1) && (
-                    <div className="flex justify-between text-sm text-amber-700 font-semibold">
-                      <span className="flex items-center gap-1">⚡ Job Boost Fee</span>
-                      <span className="font-bold">LKR 300.00</span>
-                    </div>
-                  )}
-                  <div className="pt-3 border-t border-border flex justify-between font-bold">
-                    <span className="text-text-primary">Total Fee & Commission (Pay Now)</span>
-                    <span className="text-xl text-primary font-black">
-                      LKR {((paymentJob.pay * 0.05) + ((paymentJob.isBoosted || paymentJob.is_boosted == 1) ? 300 : 0)).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Card Number</label>
-                    <div className="relative">
-                      <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
-                      <input
-                        type="text"
-                        required
-                        className="input-field pl-10 text-sm"
-                        placeholder="0000 0000 0000 0000"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Expiry Date</label>
-                      <input
-                        type="text"
-                        required
-                        className="input-field text-sm"
-                        placeholder="MM / YY"
-                        value={expiryDate}
-                        onChange={(e) => setExpiryDate(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">CVV</label>
-                      <input
-                        type="password"
-                        required
-                        className="input-field text-sm"
-                        placeholder="***"
-                        value={cvv}
-                        onChange={(e) => setCvv(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="p-4 border-t border-border bg-slate-50 flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setPaymentJob(null)}
-                  className="btn-secondary py-2 px-4 text-sm font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={paymentLoading}
-                  className="btn-primary py-2 px-6 text-sm font-bold flex items-center gap-2"
-                >
-                  {paymentLoading ? 'Processing...' : 'Pay & Complete'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Modern AceCoinPay-Style Payment Gateway Modal */}
+      <PaymentModal
+        isOpen={Boolean(paymentJob)}
+        onClose={() => setPaymentJob(null)}
+        job={paymentJob}
+        clientName={profile?.name || user?.name || 'Client'}
+        onPaymentSuccess={async () => {
+          if (refreshJobs) {
+            await refreshJobs();
+          }
+        }}
+      />
     </DashboardLayout>
   );
 };
@@ -2539,12 +2339,6 @@ const DeliveryTab = ({ deliveries, loading, refreshDeliveries }) => {
           </h1>
           <p className="text-text-secondary mt-1">Track deliveries for your product-based gigs.</p>
         </div>
-        <button
-          onClick={refreshDeliveries}
-          className="btn-secondary py-2 px-4 text-xs font-bold"
-        >
-          Refresh Deliveries
-        </button>
       </div>
 
       {loading ? (

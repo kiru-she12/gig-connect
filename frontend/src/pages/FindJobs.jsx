@@ -120,18 +120,6 @@ const FindJobs = () => {
     fetchMyApplications();
   }, [user]);
 
-  useEffect(() => {
-    if (user && user.role !== 'student') {
-      if (user.role === 'client') {
-        navigate('/dashboard/client/home');
-      } else if (user.role === 'admin' || user.role === 'manager') {
-        navigate('/dashboard/admin/overview');
-      } else if (user.role === 'delivery_staff') {
-        navigate('/dashboard/delivery/overview');
-      }
-    }
-  }, [user, navigate]);
-
   // Handle Apply button click — auto-detect product-based
   const handleApplyClick = (job) => {
     if (!user) {

@@ -71,75 +71,110 @@ const StudentDashboard = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
       const headers = { 'Authorization': `Bearer ${token}` };
+      let currentUserId = user?.user_ID || user?.id;
 
       // 1. Fetch Profile
-      const profileRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/profile/get_profile.php`, { headers });
-      const profileData = await profileRes.json();
-      
-      // Update local storage and AuthContext user details if profile_pic exists/changed
-      if (profileData.success && profileData.profile) {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const parsed = JSON.parse(storedUser);
-          if (parsed.profile_pic !== profileData.profile.profile_pic) {
-            parsed.profile_pic = profileData.profile.profile_pic;
-            localStorage.setItem('user', JSON.stringify(parsed));
-            setUser(parsed);
+      try {
+        const profileRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/profile/get_profile.php`, { headers });
+        const profileData = await profileRes.json();
+        if (profileData?.success && profileData.profile) {
+          setProfile(profileData.profile);
+          if (profileData.profile.user_ID) {
+            currentUserId = profileData.profile.user_ID;
+          }
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            const parsed = JSON.parse(storedUser);
+            let changed = false;
+            if (parsed.profile_pic !== profileData.profile.profile_pic) {
+              parsed.profile_pic = profileData.profile.profile_pic;
+              changed = true;
+            }
+            if (!parsed.user_ID && profileData.profile.user_ID) {
+              parsed.user_ID = profileData.profile.user_ID;
+              changed = true;
+            }
+            if (changed) {
+              localStorage.setItem('user', JSON.stringify(parsed));
+              setUser(parsed);
+            }
           }
         }
+      } catch (e) {
+        console.error('Error fetching profile:', e);
       }
       
       // 2. Fetch Applications
-      const appsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/my_applications.php`, { headers });
-      const appsData = await appsRes.json();
+      try {
+        const appsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/my_applications.php`, { headers });
+        const appsData = await appsRes.json();
+        if (appsData?.success) setApplications(appsData.applications || []);
+      } catch (e) {
+        console.error('Error fetching applications:', e);
+      }
       
       // 3. Fetch Recommendations
-      const recsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/recommendations.php`, { 
-        method: 'POST', 
-        headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-      const recsData = await recsRes.json();
+      try {
+        const recsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/recommendations.php`, { 
+          method: 'POST', 
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const recsData = await recsRes.json();
+        if (recsData?.success) {
+          setRecommendations(recsData.recommendations || []);
+          setRecsMetadata(recsData.meta || null);
+        }
+      } catch (e) {
+        console.error('Error fetching recommendations:', e);
+      }
       
       // 4. Fetch All Jobs
-      const jobsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/get_jobs.php`);
-      const jobsData = await jobsRes.json();
+      try {
+        const jobsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/get_jobs.php`);
+        const jobsData = await jobsRes.json();
+        if (jobsData?.success) setAllJobs(jobsData.jobs || []);
+        else if (Array.isArray(jobsData)) setAllJobs(jobsData);
+      } catch (e) {
+        console.error('Error fetching jobs:', e);
+      }
       
       // 5. Fetch Notifications
-      const notifsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/notifications/get_notifications.php`, { headers });
-      const notifsData = await notifsRes.json();
+      try {
+        const notifsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/notifications/get_notifications.php`, { headers });
+        const notifsData = await notifsRes.json();
+        if (notifsData?.success) setNotifications(notifsData.notifications || []);
+      } catch (e) {
+        console.error('Error fetching notifications:', e);
+      }
 
       // 6. Fetch Deliveries
-      const deliveryRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delivery/get_deliveries.php`, { headers });
-      const deliveryData = await deliveryRes.json();
+      try {
+        const deliveryRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delivery/get_deliveries.php`, { headers });
+        const deliveryData = await deliveryRes.json();
+        if (deliveryData?.success) setDeliveries(deliveryData.deliveries || []);
+      } catch (e) {
+        console.error('Error fetching deliveries:', e);
+      }
 
       // 7. Fetch Reviews (Received & Given)
-      let recReviews = [];
-      let givReviews = [];
-      if (profileData?.profile?.user_ID) {
-        const recRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/reviews/get_reviews.php?user_ID=${profileData.profile.user_ID}&type=received`);
-        const recData = await recRes.json();
-        if (recData.success) recReviews = recData.reviews;
+      try {
+        const targetId = currentUserId || user?.user_ID || user?.id;
+        if (targetId) {
+          const recRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/reviews/get_reviews.php?user_ID=${targetId}&type=received`);
+          const recData = await recRes.json();
+          if (recData.success) setReceivedReviews(recData.reviews || []);
 
-        const givRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/reviews/get_reviews.php?user_ID=${profileData.profile.user_ID}&type=given`);
-        const givData = await givRes.json();
-        if (givData.success) givReviews = givData.reviews;
+          const givRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/reviews/get_reviews.php?user_ID=${targetId}&type=given`);
+          const givData = await givRes.json();
+          if (givData.success) setGivenReviews(givData.reviews || []);
+        }
+      } catch (e) {
+        console.error('Error fetching reviews:', e);
       }
-
-      if (profileData?.success) setProfile(profileData.profile);
-      if (appsData?.success) setApplications(appsData.applications);
-      if (recsData?.success) {
-        setRecommendations(recsData.recommendations);
-        setRecsMetadata(recsData.meta || null);
-      }
-      if (jobsData?.success) setAllJobs(jobsData.jobs);
-      if (notifsData?.success) setNotifications(notifsData.notifications);
-      if (deliveryData?.success) setDeliveries(deliveryData.deliveries || []);
-      setReceivedReviews(recReviews);
-      setGivenReviews(givReviews);
 
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
+      console.error('Error in fetchDashboardData:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -296,17 +331,7 @@ const StudentDashboard = () => {
     <DashboardLayout role="student">
 
 
-      {/* Manual Refresh Button */}
-      <div className="flex justify-end mb-4">
-        <button 
-          onClick={() => fetchDashboardData(true)}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 active:scale-95 transition-all shadow-sm disabled:opacity-50"
-        >
-          <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-          {refreshing ? 'Refreshing...' : 'Refresh Data'}
-        </button>
-      </div>
+
 
       <Routes>
         <Route path="" element={<Navigate to="applications" replace />} />
@@ -350,6 +375,7 @@ const StudentDashboard = () => {
         <Route path="settings" element={
           <SettingsTab 
             profile={profile}
+            setProfile={setProfile}
             fetchDashboardData={fetchDashboardData}
           />
         } />
@@ -2516,7 +2542,7 @@ const ReviewsTab = ({ profile, receivedReviews, givenReviews }) => {
 };
 
 /* 8. PROFILE SETTINGS TAB */
-const SettingsTab = ({ profile, fetchDashboardData }) => {
+const SettingsTab = ({ profile, setProfile, fetchDashboardData }) => {
   const [name, setName] = useState(profile?.name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
   const [preference, setPreference] = useState(profile?.student_details?.preference || '');

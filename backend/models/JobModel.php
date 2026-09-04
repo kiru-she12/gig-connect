@@ -567,12 +567,12 @@ class JobModel extends BaseModel {
             }
 
             if (($sum % 10) !== 0) {
-                return ["error" => "Invalid Card Number: The card number failed the Luhn algorithm validation check."];
+                return ["error" => "Invalid card details"];
             }
 
             // 2. Validate Expiry Date
             if (!preg_match('/^(0[1-9]|1[0-2])\s*\/\s*([0-9]{2})$/', trim($expiry_date), $matches)) {
-                return ["error" => "Invalid Expiry Date format: Must be MM / YY."];
+                return ["error" => "Invalid card details"];
             }
 
             $exp_month = (int)$matches[1];
@@ -581,13 +581,13 @@ class JobModel extends BaseModel {
             $current_month = (int)date('n');
 
             if ($exp_year < $current_year || ($exp_year === $current_year && $exp_month < $current_month)) {
-                return ["error" => "Invalid Expiry Date: This credit card has expired."];
+                return ["error" => "Invalid card details"];
             }
 
             // 3. Validate CVV
             $clean_cvv = preg_replace('/\D/', '', $cvv);
             if (strlen($clean_cvv) !== 3 && strlen($clean_cvv) !== 4) {
-                return ["error" => "Invalid CVV: CVV must be 3 or 4 digits."];
+                return ["error" => "Invalid card details"];
             }
         }
 

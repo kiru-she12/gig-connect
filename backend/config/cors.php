@@ -1,21 +1,23 @@
 <?php
 // backend/config/cors.php
 
+$allowedOrigins = [
+    'http://localhost:5173',
+    // 'https://your-production-domain.com',
+];
+
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-// Dynamically reflect the incoming origin to allow credential-sharing (cookies)
-if (!empty($origin)) {
+if (in_array($origin, $allowedOrigins, true)) {
     header("Access-Control-Allow-Origin: " . $origin);
-} else {
-    header("Access-Control-Allow-Origin: http://localhost:5173");
+    header("Access-Control-Allow-Credentials: true");
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 }
-
-header("Access-Control-Allow-Credentials: true");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
 $requestMethod = $_SERVER['REQUEST_METHOD'] ?? '';
 if ($requestMethod === 'OPTIONS') {
+    http_response_code(204);
     exit(0);
 }
 

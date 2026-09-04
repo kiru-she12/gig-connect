@@ -563,15 +563,6 @@ const OverviewScreen = () => {
           <h1 className="text-3xl font-heading font-black text-slate-800">Delivery Dashboard</h1>
           <p className="text-text-secondary mt-1 text-sm font-medium">Real-time dispatches, rider wallet metrics, and weekly activity.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={fetchMyDeliveries}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all shadow-2xs flex items-center gap-2"
-          >
-            <RefreshCw size={14} />
-            <span>Refresh Analytics</span>
-          </button>
-        </div>
       </div>
 
       {/* Main 2-Column Grid (8-col Left Main + 4-col Right Widget Panel) */}

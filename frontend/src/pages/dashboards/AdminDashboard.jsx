@@ -2513,12 +2513,6 @@ const CommunicationsTab = () => {
             Audit user messages, inspect flagged off-platform contacts, issue warnings, or terminate conversations.
           </p>
         </div>
-        <button
-          onClick={fetchConversations}
-          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-2"
-        >
-          <RefreshCw size={14} /> Refresh Logs
-        </button>
       </div>
 
       {/* Filter and Search Bar */}

@@ -50,6 +50,7 @@ export const AuthProvider = ({ children }) => {
 
       const userData = {
         id: data.user_ID,
+        user_ID: data.user_ID,
         name: data.name,
         role: mappedRole,
         email: email,
