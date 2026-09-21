@@ -32,11 +32,11 @@ const getProfilePicUrl = (pic) => {
 import { useJobs } from '../../context/JobsContext';
 import { useNotifications } from '../../context/NotificationsContext';
 import {
-  Users, CheckCircle, Search, BarChart2, MessageSquare, Truck, AlertCircle,
-  FileText, LayoutDashboard, TrendingUp, DollarSign, ShieldAlert, Clock,
-  ArrowUpRight, ArrowDownRight, MoreVertical, Settings, Plus, X, Loader2,
-  ChevronLeft, ChevronRight, Calendar, ArrowRight, Download, Send, Filter, Check, Eye, RefreshCw, Bell
-} from 'lucide-react';
+  Users, CheckCircle, MagnifyingGlass, ChatCircle, Truck, WarningCircle,
+  FileText, TrendUp, CurrencyDollar, ShieldWarning, Clock,
+  ArrowUpRight, ArrowDownRight, Gear, Plus, X, Spinner,
+  CaretLeft, CaretRight, Calendar, ArrowRight, DownloadSimple, Check, Eye, Bell
+} from '@phosphor-icons/react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const NotificationsTab = () => {
@@ -47,7 +47,6 @@ const NotificationsTab = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-heading font-black text-slate-800">Admin Notifications</h1>
-
         </div>
         {notifications.length > 0 && (
           <button
@@ -135,7 +134,7 @@ const ComplaintsTab = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ id: complaintId, status: newStatus })
+        body: JSON.stringify({ action: 'update', id: complaintId, complaint_ID: complaintId, status: newStatus })
       });
       const data = await res.json();
       if (data.success) {
@@ -217,7 +216,7 @@ const ComplaintsTab = () => {
       {/* Filter and Search Bar */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
         <div className="relative flex-1 w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <MagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
             type="text"
             placeholder="Search by student name, provider name, reason or description..."
@@ -245,12 +244,12 @@ const ComplaintsTab = () => {
       {/* Complaints List */}
       {loading ? (
         <div className="p-16 text-center text-slate-400">
-          <Loader2 size={32} className="animate-spin mx-auto mb-2 text-rose-500" />
+          <Spinner size={32} className="animate-spin mx-auto mb-2 text-rose-500" />
           <p className="text-xs font-bold">Loading complaint reports...</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white border border-slate-100 rounded-3xl p-16 text-center text-slate-500 shadow-sm">
-          <ShieldAlert size={48} className="mx-auto mb-4 text-slate-300" />
+          <ShieldWarning size={48} className="mx-auto mb-4 text-slate-300" />
           <h3 className="font-bold text-lg">No Complaints Found</h3>
           <p className="text-xs text-slate-400 mt-1">No user reports match your filter criteria.</p>
         </div>
@@ -269,6 +268,7 @@ const ComplaintsTab = () => {
                 <div className="flex items-center gap-2">
                   <span className={`px-3 py-1 rounded-xl text-xs font-bold ${c.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                     c.status === 'Investigating' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                    c.status === 'Dismissed' ? 'bg-slate-100 text-slate-600 border border-slate-200' :
                       'bg-rose-50 text-rose-600 border border-rose-100'
                     }`}>
                     {c.status || 'Pending Review'}
@@ -311,27 +311,27 @@ const ComplaintsTab = () => {
               <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
                 {c.status !== 'Investigating' && (
                   <button
-                    onClick={() => handleUpdateStatus(c.id, 'Investigating')}
-                    disabled={updatingId === c.id}
-                    className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold transition-all"
+                    onClick={() => handleUpdateStatus(c.complaint_ID || c.id, 'Investigating')}
+                    disabled={updatingId === (c.complaint_ID || c.id)}
+                    className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                   >
                     Mark as Investigating
                   </button>
                 )}
                 {c.status !== 'Resolved' && (
                   <button
-                    onClick={() => handleUpdateStatus(c.id, 'Resolved')}
-                    disabled={updatingId === c.id}
-                    className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all"
+                    onClick={() => handleUpdateStatus(c.complaint_ID || c.id, 'Resolved')}
+                    disabled={updatingId === (c.complaint_ID || c.id)}
+                    className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                   >
                     Mark as Resolved
                   </button>
                 )}
                 {c.status !== 'Dismissed' && (
                   <button
-                    onClick={() => handleUpdateStatus(c.id, 'Dismissed')}
-                    disabled={updatingId === c.id}
-                    className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all"
+                    onClick={() => handleUpdateStatus(c.complaint_ID || c.id, 'Dismissed')}
+                    disabled={updatingId === (c.complaint_ID || c.id)}
+                    className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                   >
                     Dismiss Report
                   </button>
@@ -423,7 +423,7 @@ const AdminDashboard = () => {
         {role === 'admin' && (
           <Route path="reports" element={<ReportsTab analytics={analytics} />} />
         )}
-        <Route path="settings" element={<PlaceholderTab title="System Settings" icon={Settings} message="Configure platform commission rates, University filters, and Admin settings." />} />
+        <Route path="settings" element={<PlaceholderTab title="System Settings" icon={Gear} message="Configure platform commission rates, University filters, and Admin settings." />} />
         <Route path="*" element={<OverviewTab jobs={jobs} applications={applications} analytics={analytics} loading={analyticsLoading} />} />
       </Routes>
     </DashboardLayout>
@@ -475,13 +475,13 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
   const totalInteractionsVal = analytics?.interactions ? analytics.interactions.total_interactions : 0;
 
   const stats = [
-    { label: 'Total Interactions', value: totalInteractionsVal.toLocaleString(), change: '+14%', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary-light' },
+    { label: 'Total Interactions', value: totalInteractionsVal.toLocaleString(), change: '+14%', icon: TrendUp, color: 'text-primary', bg: 'bg-primary-light' },
     { label: 'Total Users', value: totalUsers, change: '+12%', icon: Users, color: 'text-[#4E8C7E]', bg: 'bg-primary-light' },
     { label: 'Active Jobs', value: activeJobsVal, change: '+5%', icon: Clock, color: 'text-accent', bg: 'bg-primary-light' },
-    { label: 'Monthly Revenue (LKR)', value: revenueVal.toLocaleString(), change: 'Close to Target', icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Monthly Revenue (LKR)', value: revenueVal.toLocaleString(), change: 'Close to Target', icon: CurrencyDollar, color: 'text-amber-600', bg: 'bg-amber-50' },
     { label: 'Verified Clients', value: verifiedClientsVal, change: '+6', icon: CheckCircle, color: 'text-accent', bg: 'bg-primary-light' },
-    { label: 'Pending Approvals', value: pendingApprovalsVal, change: '-2', icon: ShieldAlert, color: 'text-red-600', bg: 'bg-red-50' },
-    { label: 'Banned Accounts', value: fraudAlertsVal, change: '0', icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'Pending Approvals', value: pendingApprovalsVal, change: '-2', icon: ShieldWarning, color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Banned Accounts', value: fraudAlertsVal, change: '0', icon: WarningCircle, color: 'text-orange-600', bg: 'bg-orange-50' },
     { label: 'Active Deliveries', value: activeDeliveriesVal, change: '+1', icon: Truck, color: 'text-[#4E8C7E]', bg: 'bg-primary-light' },
   ];
 
@@ -492,11 +492,11 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
       case 'application':
         return { icon: Users, color: 'bg-primary-light text-primary' };
       case 'payment':
-        return { icon: DollarSign, color: 'bg-accent/25 text-[#1A312C]' };
+        return { icon: CurrencyDollar, color: 'bg-accent/25 text-[#1A312C]' };
       case 'job_post':
         return { icon: FileText, color: 'bg-amber-100 text-amber-600' };
       case 'complaint':
-        return { icon: AlertCircle, color: 'bg-teal-100 text-teal-600' };
+        return { icon: WarningCircle, color: 'bg-teal-100 text-teal-600' };
       default:
         return { icon: Clock, color: 'bg-slate-100 text-slate-600' };
     }
@@ -563,7 +563,7 @@ const OverviewTab = ({ jobs, applications, analytics, loading }) => {
         <div className="card p-6 flex flex-col justify-between">
           <div>
             <h3 className="font-bold text-base text-text-primary mb-6 flex items-center gap-2">
-              <Settings size={18} className="text-primary" /> Admin Operations
+              <Gear size={18} className="text-primary" /> Admin Operations
             </h3>
             <div className="space-y-3">
               <Link to="/dashboard/admin/approvals" className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-primary hover:text-white rounded-xl transition-all group">
@@ -652,7 +652,7 @@ const ApprovalsTab = ({ jobs, approve, reject }) => {
                         className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"
                         title="Reject Job"
                       >
-                        <AlertCircle size={18} />
+                        <WarningCircle size={18} />
                       </button>
                     </div>
                   </td>
@@ -854,7 +854,7 @@ const AdminAnalyticsTab = ({ analytics, loading, onRetry }) => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+        <Spinner className="w-8 h-8 text-primary animate-spin mb-2" />
         <p className="text-sm text-text-secondary font-medium">Loading Platform Analytics...</p>
       </div>
     );
@@ -863,7 +863,7 @@ const AdminAnalyticsTab = ({ analytics, loading, onRetry }) => {
   if (!analytics) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white border border-slate-100 rounded-2xl shadow-sm space-y-4">
-        <AlertCircle className="w-12 h-12 text-red-500 stroke-[1.5]" />
+        <WarningCircle className="w-12 h-12 text-red-500 stroke-[1.5]" />
         <h3 className="text-lg font-bold text-text-primary">Failed to load analytics</h3>
         <p className="text-sm text-text-secondary max-w-sm">
           There was an error retrieving the platform metrics. Please check your network connection or try again.
@@ -892,19 +892,19 @@ const AdminAnalyticsTab = ({ analytics, loading, onRetry }) => {
                 onClick={() => navigate('/dashboard/admin/reports?auto=interactions')}
                 className="px-3 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
               >
-                <Download size={12} /> Monthly Interaction (PDF)
+                <DownloadSimple size={12} /> Monthly Interaction (PDF)
               </button>
               <button
                 onClick={() => navigate('/dashboard/admin/reports?auto=jobs')}
                 className="px-3 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
               >
-                <Download size={12} /> 6-Month Placement (PDF)
+                <DownloadSimple size={12} /> 6-Month Placement (PDF)
               </button>
               <button
                 onClick={() => navigate('/dashboard/admin/reports?auto=interactions')}
                 className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
               >
-                <Download size={12} /> Yearly Audit (PDF)
+                <DownloadSimple size={12} /> Yearly Audit (PDF)
               </button>
             </div>
           )}
@@ -928,7 +928,7 @@ const AdminAnalyticsTab = ({ analytics, loading, onRetry }) => {
             </p>
           </div>
           <div className="absolute right-0 bottom-0 opacity-10 translate-x-4 translate-y-4">
-            <DollarSign size={160} />
+            <CurrencyDollar size={160} />
           </div>
         </div>
 
@@ -964,7 +964,7 @@ const AdminAnalyticsTab = ({ analytics, loading, onRetry }) => {
             </div>
           </div>
           <div className="bg-slate-100 p-3 rounded-2xl text-slate-800">
-            <MessageSquare size={24} />
+            <ChatCircle size={24} />
           </div>
         </div>
       </div>
@@ -1301,7 +1301,7 @@ const UserManagementTab = () => {
         <div className="card overflow-hidden">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-16">
-              <Loader2 className="animate-spin text-primary mb-3" size={32} />
+              <Spinner className="animate-spin text-primary mb-3" size={32} />
               <p className="text-xs font-bold text-text-secondary">Retrieving user accounts...</p>
             </div>
           ) : users.length > 0 ? (
@@ -1666,7 +1666,7 @@ const UserManagementTab = () => {
                 disabled={staffSubmitting}
                 className="w-full mt-4 bg-primary hover:bg-primary-dark text-white p-2.5 rounded-lg font-bold transition-all shadow-md flex items-center justify-center gap-2"
               >
-                {staffSubmitting ? <Loader2 className="animate-spin" size={18} /> : 'Save Staff Member'}
+                {staffSubmitting ? <Spinner className="animate-spin" size={18} /> : 'Save Staff Member'}
               </button>
             </form>
           </div>
@@ -1890,13 +1890,13 @@ const JobMonitoringTab = ({ jobs, refreshJobs }) => {
                     onClick={prevMonth}
                     className="p-1.5 border border-slate-100 hover:bg-slate-50 rounded-xl text-text-secondary transition-all"
                   >
-                    <ChevronLeft size={16} />
+                    <CaretLeft size={16} />
                   </button>
                   <button
                     onClick={nextMonth}
                     className="p-1.5 border border-slate-100 hover:bg-slate-50 rounded-xl text-text-secondary transition-all"
                   >
-                    <ChevronRight size={16} />
+                    <CaretRight size={16} />
                   </button>
                 </div>
               </div>
@@ -2017,7 +2017,7 @@ const JobMonitoringTab = ({ jobs, refreshJobs }) => {
           <div className="space-y-4">
             <div className="card p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+                <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
                 <input
                   type="text"
                   value={searchTerm}
@@ -2207,19 +2207,19 @@ const RevenueTab = ({ jobs = [], analytics }) => {
               onClick={() => navigate('/dashboard/admin/reports?auto=financial')}
               className="px-3 py-2 bg-[#4E8C7E] hover:bg-[#4E8C7E]/90 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
-              <Download size={12} /> Monthly Revenue (CSV)
+              <DownloadSimple size={12} /> Monthly Revenue (CSV)
             </button>
             <button
               onClick={() => navigate('/dashboard/admin/reports?auto=financial')}
               className="px-3 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
-              <Download size={12} /> 6-Month Statement (CSV)
+              <DownloadSimple size={12} /> 6-Month Statement (CSV)
             </button>
             <button
               onClick={() => navigate('/dashboard/admin/reports?auto=financial')}
               className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
-              <Download size={12} /> Yearly Audit (CSV)
+              <DownloadSimple size={12} /> Yearly Audit (CSV)
             </button>
           </div>
         )}
@@ -2327,6 +2327,8 @@ const RevenueTab = ({ jobs = [], analytics }) => {
 
 // CHAT MONITORING & COMMUNICATIONS LOG
 const CommunicationsTab = () => {
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = storedUser?.role || 'admin';
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -2507,7 +2509,7 @@ const CommunicationsTab = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-heading font-black text-slate-800 flex items-center gap-2">
-            <MessageSquare size={28} className="text-primary" /> Communications & Audit
+            <ChatCircle size={28} className="text-primary" /> Communications & Audit
           </h1>
           <p className="text-xs text-slate-400 font-medium mt-1">
             Audit user messages, inspect flagged off-platform contacts, issue warnings, or terminate conversations.
@@ -2518,7 +2520,7 @@ const CommunicationsTab = () => {
       {/* Filter and Search Bar */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 border border-slate-100 rounded-2xl shadow-2xs">
         <div className="relative w-full md:w-80">
-          <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
+          <MagnifyingGlass size={14} className="absolute left-3.5 top-3 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
@@ -2541,7 +2543,7 @@ const CommunicationsTab = () => {
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${filterType === 'flagged' ? 'bg-rose-600 text-white shadow-xs' : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
               }`}
           >
-            <ShieldAlert size={14} /> Flagged Only ({conversations.filter(c => parseInt(c.flagged_count || 0) > 0).length})
+            <ShieldWarning size={14} /> Flagged Only ({conversations.filter(c => parseInt(c.flagged_count || 0) > 0).length})
           </button>
         </div>
       </div>
@@ -2593,9 +2595,13 @@ const CommunicationsTab = () => {
                         {conv.last_message_time ? new Date(conv.last_message_time).toLocaleString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4">
-                        {hasFlag ? (
+                        {conv.conversation_status === 'terminated' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-black uppercase">
+                            🔒 Terminated
+                          </span>
+                        ) : hasFlag ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[10px] font-black uppercase">
-                            <ShieldAlert size={10} /> Flagged ({conv.flagged_count})
+                            <ShieldWarning size={10} /> Flagged ({conv.flagged_count})
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase">
@@ -2654,17 +2660,22 @@ const CommunicationsTab = () => {
                 </button>
                 <button
                   onClick={() => handleBanUser(selectedConv.sender_ID || selectedConv.partner_user_ID, selectedConv.sender_name || selectedConv.partner_name)}
-                  disabled={actionLoading}
-                  className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold transition-all shadow-2xs"
+                  disabled={actionLoading || userRole !== 'admin'}
+                  className={`px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold transition-all shadow-2xs ${userRole !== 'admin' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={userRole !== 'admin' ? "Only Admin can ban users" : "Ban User"}
                 >
                   Ban User
                 </button>
                 <button
                   onClick={() => handleTerminateConversation(selectedConv.conversation_id || selectedConv.job_ID)}
-                  disabled={actionLoading}
-                  className="px-3 py-1.5 bg-slate-900 hover:bg-black text-white rounded-xl font-bold transition-all shadow-2xs"
+                  disabled={actionLoading || selectedConv.conversation_status === 'terminated'}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all shadow-2xs ${
+                    selectedConv.conversation_status === 'terminated'
+                      ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                      : 'bg-slate-900 hover:bg-black text-white'
+                  }`}
                 >
-                  Terminate Conversation
+                  {selectedConv.conversation_status === 'terminated' ? 'Conversation Terminated' : 'Terminate Conversation'}
                 </button>
               </div>
             </div>
@@ -2700,7 +2711,7 @@ const CommunicationsTab = () => {
                       {/* Admin-only Flag Reason Banner */}
                       {isFlagged && msg.flagged_reason && (
                         <div className="p-2 bg-rose-100/70 rounded-xl text-[10px] font-bold text-rose-800 flex items-center gap-1.5 mt-2">
-                          <ShieldAlert size={12} />
+                          <ShieldWarning size={12} />
                           <span>Admin Flag Reason: {msg.flagged_reason}</span>
                         </div>
                       )}
@@ -3021,11 +3032,11 @@ const ReportsTab = ({ analytics }) => {
             >
               {generating === report.id ? (
                 <>
-                  <Loader2 className="animate-spin" size={14} /> Compiling Data...
+                  <Spinner className="animate-spin" size={14} /> Compiling Data...
                 </>
               ) : (
                 <>
-                  <Download size={14} /> Download Statement
+                  <DownloadSimple size={14} /> Download Statement
                 </>
               )}
             </button>
@@ -3054,7 +3065,7 @@ const ReportsTab = ({ analytics }) => {
                   <p className="text-[10px] text-text-muted">Exported at {historyItem.date} {historyItem.timestamp}</p>
                 </div>
                 <span className="text-xs font-bold text-primary group-hover:underline flex items-center gap-1">
-                  <Download size={12} /> Redownload
+                  <DownloadSimple size={12} /> Redownload
                 </span>
               </div>
             ))}
@@ -3096,7 +3107,7 @@ const ComplaintsAdminTab = () => {
       const token = localStorage.getItem('token');
       const apiUrl = import.meta.env.VITE_API_BASE_URL || '';
       await axios.post(`${apiUrl}/api/admin/complaints.php`,
-        { id, status: newStatus },
+        { action: 'update', id, complaint_ID: id, status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert(`Complaint #${id} updated to ${newStatus} in the database.`);
@@ -3413,7 +3424,7 @@ const DeliveryManagementTab = () => {
 
         <div className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <TrendingUp size={22} />
+            <TrendUp size={22} />
           </div>
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">In Transit</p>
@@ -3457,7 +3468,7 @@ const DeliveryManagementTab = () => {
 
         {/* Search Bar */}
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
             type="text"
             placeholder="Search order, student, rider..."
@@ -3501,6 +3512,7 @@ const DeliveryManagementTab = () => {
               <tbody className="divide-y divide-slate-100">
                 {filteredDeliveries.map((del) => {
                   const isAssigned = !!del.delivery_staff_name;
+                  const isSelf = (del.delivery_type || '').toLowerCase() === 'self';
                   const st = (del.status || '').toLowerCase();
 
                   return (
@@ -3534,7 +3546,21 @@ const DeliveryManagementTab = () => {
 
                       {/* Rider Card Column */}
                       <td className="px-6 py-4">
-                        {isAssigned ? (
+                        {isSelf ? (
+                          <div className="bg-purple-50/70 border border-purple-100 p-2.5 rounded-2xl max-w-xs space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-bold text-slate-900 text-xs truncate">
+                                {del.student_name || 'Student Driver'}
+                              </span>
+                              <span className="text-[9px] font-black bg-purple-200/80 text-purple-950 px-1.5 py-0.5 rounded-md shrink-0">
+                                Self Delivery
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-purple-800 font-semibold truncate">
+                              Student Delivery Driver • {del.student_phone || 'Direct Hand-off'}
+                            </p>
+                          </div>
+                        ) : isAssigned ? (
                           <div className="bg-emerald-50/70 border border-emerald-100 p-2.5 rounded-2xl max-w-xs space-y-1">
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-bold text-slate-900 text-xs truncate">{del.delivery_staff_name}</span>
@@ -3644,20 +3670,33 @@ const DeliveryManagementTab = () => {
                 </div>
               </div>
 
-              <div className="p-5 bg-emerald-50/70 border border-emerald-100 rounded-2xl space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">Auto-Assigned Rider</span>
-                  <span className="text-[10px] font-bold bg-emerald-200/80 text-emerald-950 px-2 py-0.5 rounded-full">Shortest Distance Match</span>
-                </div>
-                {selectedDelModal.delivery_staff_name ? (
-                  <div>
-                    <p className="font-bold text-slate-900 text-sm">{selectedDelModal.delivery_staff_name}</p>
-                    <p className="text-xs text-emerald-800 font-medium mt-0.5">{selectedDelModal.delivery_staff_phone || 'Registered Phone'} • {selectedDelModal.delivery_staff_vehicle || 'Motorbike'}</p>
+              {(selectedDelModal.delivery_type || '').toLowerCase() === 'self' ? (
+                <div className="p-5 bg-purple-50/70 border border-purple-100 rounded-2xl space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-purple-900 uppercase tracking-widest">Delivery Staff Handler</span>
+                    <span className="text-[10px] font-bold bg-purple-200/80 text-purple-950 px-2 py-0.5 rounded-full">Self Delivery by Student</span>
                   </div>
-                ) : (
-                  <p className="text-xs text-amber-700 font-bold">System searching for closest available rider...</p>
-                )}
-              </div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">{selectedDelModal.student_name || 'Student'}</p>
+                    <p className="text-xs text-purple-800 font-medium mt-0.5">Student Delivery Driver • {selectedDelModal.student_phone || 'Direct Hand-off'}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-5 bg-emerald-50/70 border border-emerald-100 rounded-2xl space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">Auto-Assigned Rider</span>
+                    <span className="text-[10px] font-bold bg-emerald-200/80 text-emerald-950 px-2 py-0.5 rounded-full">Shortest Distance Match</span>
+                  </div>
+                  {selectedDelModal.delivery_staff_name ? (
+                    <div>
+                      <p className="font-bold text-slate-900 text-sm">{selectedDelModal.delivery_staff_name}</p>
+                      <p className="text-xs text-emerald-800 font-medium mt-0.5">{selectedDelModal.delivery_staff_phone || 'Registered Phone'} • {selectedDelModal.delivery_staff_vehicle || 'Motorbike'}</p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-amber-700 font-bold">System searching for closest available rider...</p>
+                  )}
+                </div>
+              )}
 
               <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
                 <div className="space-y-1">

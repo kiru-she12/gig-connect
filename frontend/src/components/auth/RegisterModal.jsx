@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { X, ArrowLeft, ArrowRight, Loader2, Check, Building, Monitor, ShieldCheck, Lock } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Spinner, Check, Buildings, Desktop, ShieldCheck, Lock } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SKILLS_LIST } from '../../data/mockData';
 
@@ -16,7 +16,7 @@ const RegisterModal = ({ isOpen, onClose }) => {
   
   const [error, setError] = useState('');
   const [customSkillInput, setCustomSkillInput] = useState('');
-  const { register, verifyOtp, loading, setIsLoginModalOpen } = useAuth();
+  const { register, verifyOtp, loading, setIsLoginModalOpen, setIsTermsModalOpen, setIsPrivacyModalOpen } = useAuth();
   const navigate = useNavigate();
 
   const handleRoleSelection = (r) => {
@@ -273,7 +273,7 @@ const RegisterModal = ({ isOpen, onClose }) => {
                         className="w-full group flex items-center gap-4 border-2 border-slate-100 rounded-xl p-3.5 hover:border-primary hover:shadow-md hover:bg-primary-light/50 transition-all text-left bg-white"
                       >
                         <div className="h-12 w-12 shrink-0 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 transition-transform group-hover:scale-105 group-hover:bg-emerald-200">
-                           <Building size={24} strokeWidth={1.5} />
+                           <Buildings size={24} />
                         </div>
                         <div className="flex-1">
                            <h3 className="font-bold text-base text-slate-900 flex items-center justify-between">
@@ -290,7 +290,7 @@ const RegisterModal = ({ isOpen, onClose }) => {
                         className="w-full group flex items-center gap-4 border-2 border-slate-100 rounded-xl p-3.5 hover:border-primary hover:shadow-md hover:bg-primary-light/50 transition-all text-left bg-white"
                       >
                         <div className="h-12 w-12 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-105 group-hover:bg-primary/20">
-                           <Monitor size={24} strokeWidth={1.5} />
+                           <Desktop size={24} />
                         </div>
                         <div className="flex-1">
                           <h3 className="font-bold text-base text-slate-900 flex items-center justify-between">
@@ -469,7 +469,7 @@ const RegisterModal = ({ isOpen, onClose }) => {
                     </div>
 
                     <button type="submit" disabled={loading || !formData.password || formData.password !== formData.confirmPassword} className="w-full bg-primary hover:bg-primary-dark disabled:bg-slate-200 disabled:text-slate-400 text-white py-3.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all mt-4 shadow-md shadow-primary/20">
-                      {loading ? <Loader2 className="animate-spin" size={16} /> : 'Complete Registration & Send OTP'}
+                      {loading ? <Spinner className="animate-spin" size={16} /> : 'Complete Registration & Send OTP'}
                     </button>
                   </motion.div>
                 )}
@@ -504,7 +504,7 @@ const RegisterModal = ({ isOpen, onClose }) => {
                     </div>
                     
                     <button type="submit" disabled={loading || formData.emailOtp?.length !== 6} className="w-full bg-primary disabled:bg-slate-200 disabled:text-slate-400 hover:bg-primary-dark text-white py-3.5 rounded-lg font-bold text-sm flex items-center justify-center transition-all mt-4 shadow-md shadow-primary/20">
-                      {loading ? <Loader2 className="animate-spin" size={16} /> : 'Verify Code'}
+                      {loading ? <Spinner className="animate-spin" size={16} /> : 'Verify Code'}
                     </button>
                   </motion.div>
                 )}
@@ -538,7 +538,23 @@ const RegisterModal = ({ isOpen, onClose }) => {
              {step < 5 && (
               <div className="mt-4 pt-3 border-t border-slate-100">
                 <p className="text-[10px] text-slate-500 leading-normal">
-                  By joining, you agree to the GigConnect <a href="#" className="text-primary font-semibold hover:underline">Terms of Service</a> and to occasionally receive emails from us. Please read our <a href="#" className="text-primary font-semibold hover:underline">Privacy Policy</a> to learn how we use your personal data.
+                  By joining, you agree to the GigConnect{' '}
+                  <button 
+                    type="button" 
+                    onClick={() => setIsTermsModalOpen(true)} 
+                    className="text-primary font-semibold hover:underline inline p-0 m-0 bg-transparent border-none align-baseline cursor-pointer"
+                  >
+                    Terms of Service
+                  </button>{' '}
+                  and to occasionally receive emails from us. Please read our{' '}
+                  <button 
+                    type="button" 
+                    onClick={() => setIsPrivacyModalOpen(true)} 
+                    className="text-primary font-semibold hover:underline inline p-0 m-0 bg-transparent border-none align-baseline cursor-pointer"
+                  >
+                    Privacy Policy
+                  </button>{' '}
+                  to learn how we use your personal data.
                 </p>
                 
                 {step === 0 && (

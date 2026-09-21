@@ -456,6 +456,9 @@ class AdminModel extends BaseModel {
                 if (empty($c['evidence_image']) && !empty($c['evidence_url'])) {
                     $c['evidence_image'] = $c['evidence_url'];
                 }
+                if (empty($c['id'])) {
+                    $c['id'] = $c['complaint_ID'];
+                }
             }
             return $complaints;
         } catch (Exception $e) {
@@ -546,11 +549,11 @@ class AdminModel extends BaseModel {
 
         try {
             if ($status === 'Resolved') {
-                $stmt = $this->pdo->prepare("UPDATE complaints SET status = ?, resolved_at = NOW() WHERE complaint_ID = ? OR id = ?");
+                $stmt = $this->pdo->prepare("UPDATE complaints SET status = ?, resolved_at = NOW() WHERE complaint_ID = ?");
             } else {
-                $stmt = $this->pdo->prepare("UPDATE complaints SET status = ?, resolved_at = NULL WHERE complaint_ID = ? OR id = ?");
+                $stmt = $this->pdo->prepare("UPDATE complaints SET status = ?, resolved_at = NULL WHERE complaint_ID = ?");
             }
-            $stmt->execute([$status, $complaint_id, $complaint_id]);
+            $stmt->execute([$status, $complaint_id]);
             return ["success" => true, "message" => "Complaint status updated to $status successfully."];
         } catch (Exception $e) {
             return ["error" => $e->getMessage()];

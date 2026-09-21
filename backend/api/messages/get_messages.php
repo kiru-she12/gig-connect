@@ -15,7 +15,7 @@ try {
         exit;
     }
 
-    if ($user->role === 'admin') {
+    if ($user->role === 'admin' || $user->role === 'manager') {
         $stmt = $pdo->prepare("
             SELECT c.*, u1.name as sender_name, u2.name as receiver_name 
             FROM communication c

@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   LineChart, Line, ComposedChart
 } from 'recharts';
-import { TrendingUp, Briefcase, DollarSign, Star, Award } from 'lucide-react';
+import { TrendUp, Briefcase, Star, Medal } from '@phosphor-icons/react';
 
 /* ── colour palettes ── */
 const STATUS_COLORS = {
@@ -43,7 +43,7 @@ const ChartCard = ({ title, subtitle, children }) => (
 
 const Empty = ({ msg }) => (
   <div className="flex flex-col items-center justify-center h-48 text-slate-300 gap-3">
-    <Award size={36} className="stroke-[1.2]" />
+    <Medal size={36} />
     <p className="text-xs font-semibold text-slate-400 text-center">{msg}</p>
   </div>
 );
@@ -64,7 +64,7 @@ const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, perc
 };
 
 /* ── main component ── */
-const AnalyticsTab = ({ profile, applications, receivedReviews }) => {
+const AnalyticsTab = ({ profile, applications, receivedReviews, deliveries = [] }) => {
 
   /* 1. Application funnel — Pie */
   const statusData = useMemo(() => {
@@ -87,9 +87,9 @@ const AnalyticsTab = ({ profile, applications, receivedReviews }) => {
   const earningsWithCumulative = useMemo(() => {
     const map = {};
     (applications || []).forEach(a => {
-      const isCompleted =
-        (a.job_status || '').toLowerCase() === 'completed' ||
-        (a.status || '').toLowerCase() === 'completed';
+      const st = (a.job_status || '').toLowerCase();
+      const ast = (a.status || '').toLowerCase();
+      const isCompleted = st === 'completed' || ast === 'completed' || st === 'delivered' || ast === 'delivered';
       if (!isCompleted) return;
       const d = new Date(a.applied_date || Date.now());
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -97,19 +97,33 @@ const AnalyticsTab = ({ profile, applications, receivedReviews }) => {
       if (!map[key]) map[key] = { month: label, earnings: 0 };
       map[key].earnings += parseFloat(a.job_payment || 0);
     });
+
+    // Add confirmed self-delivery fees
+    (deliveries || []).forEach(del => {
+      const isSelf = (del.delivery_type || '').toLowerCase() === 'self';
+      const isDelivered = (del.status || '').toLowerCase() === 'delivered' || (del.status || '').toLowerCase() === 'confirmed';
+      if (isSelf && isDelivered) {
+        const d = new Date();
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
+        if (!map[key]) map[key] = { month: label, earnings: 0 };
+        map[key].earnings += parseFloat(del.delivery_fee || 0);
+      }
+    });
+
     let running = 0;
     return Object.entries(map)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([, d]) => { running += d.earnings; return { ...d, cumulative: running }; });
-  }, [applications]);
+  }, [applications, deliveries]);
 
   /* 3. Jobs by category — horizontal Bar */
   const categoryData = useMemo(() => {
     const map = {};
     (applications || []).forEach(a => {
-      const isCompleted =
-        (a.job_status || '').toLowerCase() === 'completed' ||
-        (a.status || '').toLowerCase() === 'completed';
+      const st = (a.job_status || '').toLowerCase();
+      const ast = (a.status || '').toLowerCase();
+      const isCompleted = st === 'completed' || ast === 'completed' || st === 'delivered' || ast === 'delivered';
       if (!isCompleted) return;
       const cat = a.job_category || a.category || 'Other';
       map[cat] = (map[cat] || 0) + 1;
@@ -135,11 +149,23 @@ const AnalyticsTab = ({ profile, applications, receivedReviews }) => {
   /* KPI */
   const apps = applications || [];
   const reviews = receivedReviews || [];
-  const completedCount = apps.filter(a =>
-    (a.job_status || a.status || '').toLowerCase() === 'completed').length;
+  const completedCount = apps.filter(a => {
+    const st = (a.job_status || '').toLowerCase();
+    const ast = (a.status || '').toLowerCase();
+    return st === 'completed' || ast === 'completed' || st === 'delivered' || ast === 'delivered';
+  }).length;
+
+  const confirmedDeliveryFees = (deliveries || [])
+    .filter(d => (d.delivery_type || '').toLowerCase() === 'self' && ((d.status || '').toLowerCase() === 'delivered' || (d.status || '').toLowerCase() === 'confirmed'))
+    .reduce((sum, d) => sum + parseFloat(d.delivery_fee || 0), 0);
+
   const totalEarned = apps
-    .filter(a => (a.job_status || a.status || '').toLowerCase() === 'completed')
-    .reduce((s, a) => s + parseFloat(a.job_payment || 0), 0);
+    .filter(a => {
+      const st = (a.job_status || '').toLowerCase();
+      const ast = (a.status || '').toLowerCase();
+      return st === 'completed' || ast === 'completed' || st === 'delivered' || ast === 'delivered';
+    })
+    .reduce((s, a) => s + parseFloat(a.job_payment || 0), 0) + confirmedDeliveryFees;
   const avgRating = parseFloat(profile?.student_details?.rating || 0);
 
   return (
@@ -148,7 +174,7 @@ const AnalyticsTab = ({ profile, applications, receivedReviews }) => {
       {/* Page heading */}
       <div>
         <h1 className="text-3xl font-heading font-black text-slate-800 flex items-center gap-2">
-          <TrendingUp size={28} className="text-primary" /> My Analytics
+          <TrendUp size={28} className="text-primary" /> My Analytics
         </h1>
         <p className="text-text-secondary mt-1 text-sm">
           A snapshot of your performance across all gigs.
@@ -159,7 +185,7 @@ const AnalyticsTab = ({ profile, applications, receivedReviews }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard icon={Briefcase}   label="Total Applications" value={apps.length}
           sub="all time"                  color="bg-emerald-50 text-emerald-600" />
-        <StatCard icon={TrendingUp}  label="Jobs Completed"     value={completedCount}
+        <StatCard icon={TrendUp}     label="Jobs Completed"     value={completedCount}
           sub="finished gigs"             color="bg-emerald-50 text-emerald-600" />
         <StatCard icon={Star}        label="Avg Rating"
           value={avgRating === 0 ? '—' : avgRating.toFixed(1)}

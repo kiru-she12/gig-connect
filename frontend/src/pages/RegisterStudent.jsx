@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Phone, Lock, CheckCircle, Loader2, X, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
+import { User, Envelope, Phone, Lock, CheckCircle, Spinner, X, ArrowLeft, ArrowRight, ShieldCheck } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SKILLS_LIST } from '../data/mockData';
 import logo from '../assets/logo/logo.png';
@@ -256,7 +256,7 @@ const RegisterStudent = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Official Student Email</label>
                       <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                        <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="email" 
                           required
@@ -509,7 +509,7 @@ const RegisterStudent = () => {
                       disabled={loading}
                       className="flex-[2] btn-primary py-4"
                     >
-                      {loading ? <Loader2 className="animate-spin" /> : 'Join the Network'}
+                      {loading ? <Spinner className="animate-spin" size={20} /> : 'Join the Network'}
                     </button>
                   </div>
                 </motion.div>
@@ -577,7 +577,7 @@ const RegisterStudent = () => {
                       disabled={loading || formData.otpCode?.length !== 6}
                       className="flex-[2] btn-primary py-4"
                     >
-                      {loading ? <Loader2 className="animate-spin" size={20} /> : 'Verify OTP'}
+                      {loading ? <Spinner className="animate-spin" size={20} /> : 'Verify OTP'}
                     </button>
                   </div>
                 </motion.div>

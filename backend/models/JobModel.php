@@ -416,7 +416,7 @@ class JobModel extends BaseModel {
         $action = $data['action'];
 
         $stmt = $this->pdo->prepare("
-            SELECT a.*, j.provider_ID, j.title, j.payment_status
+            SELECT a.*, j.provider_ID, j.title, j.payment_status, j.seekers_needed
             FROM application a
             JOIN job j ON a.job_ID = j.job_ID
             WHERE a.application_ID = ?
@@ -445,6 +445,21 @@ class JobModel extends BaseModel {
         $new_status = $status_map[$action];
 
         if ($action === 'accept') {
+            $seekers_needed = (int)($application['seekers_needed'] ?? 1);
+            
+            // Count already accepted or pending_payment applicants for this job excluding this application
+            $stmtCount = $this->pdo->prepare("
+                SELECT COUNT(*) FROM application 
+                WHERE job_ID = ? AND (status = 'accepted' OR status = 'pending_payment') 
+                AND application_ID != ?
+            ");
+            $stmtCount->execute([$application['job_ID'], $application_ID]);
+            $alreadyHired = (int)$stmtCount->fetchColumn();
+
+            if ($alreadyHired >= $seekers_needed) {
+                return ["error" => "This job already has the maximum required workers ({$seekers_needed}/{$seekers_needed}). You cannot hire more students."];
+            }
+
             // Check if job payment is paid
             if ($application['payment_status'] !== 'paid') {
                 $new_status = 'pending_payment';
@@ -457,6 +472,48 @@ class JobModel extends BaseModel {
         if ($action === 'accept' && $new_status === 'accepted') {
             $stmt = $this->pdo->prepare("UPDATE job SET status = 'in_progress', assigned_time = NOW() WHERE job_ID = ?");
             $stmt->execute([$application['job_ID']]);
+
+            // Check if total accepted now reached seekers_needed, then auto-reject remaining applicants
+            $seekers_needed = (int)($application['seekers_needed'] ?? 1);
+            $stmtTotal = $this->pdo->prepare("SELECT COUNT(*) FROM application WHERE job_ID = ? AND status = 'accepted'");
+            $stmtTotal->execute([$application['job_ID']]);
+            $totalAccepted = (int)$stmtTotal->fetchColumn();
+
+            if ($totalAccepted >= $seekers_needed) {
+                $stmtReject = $this->pdo->prepare("
+                    SELECT a.application_ID, u.email, u.name, u.user_ID AS student_user_ID, j.title
+                    FROM application a
+                    JOIN student s ON a.student_ID = s.student_ID
+                    JOIN users u ON s.user_ID = u.user_ID
+                    JOIN job j ON a.job_ID = j.job_ID
+                    WHERE a.job_ID = ? AND a.status IN ('applied', 'shortlisted', 'pending_payment') AND a.application_ID != ?
+                ");
+                $stmtReject->execute([$application['job_ID'], $application_ID]);
+                $other_apps = $stmtReject->fetchAll(PDO::FETCH_ASSOC);
+
+                if (count($other_apps) > 0) {
+                    $stmtUpdateOther = $this->pdo->prepare("
+                        UPDATE application 
+                        SET status = 'rejected' 
+                        WHERE job_ID = ? AND status IN ('applied', 'shortlisted', 'pending_payment') AND application_ID != ?
+                    ");
+                    $stmtUpdateOther->execute([$application['job_ID'], $application_ID]);
+
+                    require_once __DIR__ . '/NotificationModel.php';
+                    foreach ($other_apps as $other) {
+                        if (!empty($other['student_user_ID'])) {
+                            NotificationModel::create(
+                                $this->pdo,
+                                $other['student_user_ID'],
+                                "Position Filled",
+                                "Thank you for applying for '" . $other['title'] . "'. The required position has been filled by another applicant.",
+                                "job_rejected",
+                                "/dashboard/student/applications"
+                            );
+                        }
+                    }
+                }
+            }
         }
 
         $stmt = $this->pdo->prepare("
@@ -660,6 +717,48 @@ class JobModel extends BaseModel {
                         );
                     }
                 }
+
+                // Check if quota (seekers_needed) is fulfilled, then auto-reject remaining applicants
+                $seekers_needed = (int)($job['seekers_needed'] ?? 1);
+                $stmtCountAccepted = $this->pdo->prepare("SELECT COUNT(*) FROM application WHERE job_ID = ? AND status = 'accepted'");
+                $stmtCountAccepted->execute([$job_ID]);
+                $acceptedCount = (int)$stmtCountAccepted->fetchColumn();
+
+                if ($acceptedCount >= $seekers_needed) {
+                    $stmtRem = $this->pdo->prepare("
+                        SELECT a.application_ID, u.email, u.name, u.user_ID AS student_user_ID, j.title
+                        FROM application a
+                        JOIN student s ON a.student_ID = s.student_ID
+                        JOIN users u ON s.user_ID = u.user_ID
+                        JOIN job j ON a.job_ID = j.job_ID
+                        WHERE a.job_ID = ? AND a.status IN ('applied', 'shortlisted', 'pending_payment')
+                    ");
+                    $stmtRem->execute([$job_ID]);
+                    $remaining_apps = $stmtRem->fetchAll(PDO::FETCH_ASSOC);
+
+                    if (count($remaining_apps) > 0) {
+                        $stmtRejectAll = $this->pdo->prepare("
+                            UPDATE application 
+                            SET status = 'rejected' 
+                            WHERE job_ID = ? AND status IN ('applied', 'shortlisted', 'pending_payment')
+                        ");
+                        $stmtRejectAll->execute([$job_ID]);
+
+                        require_once __DIR__ . '/NotificationModel.php';
+                        foreach ($remaining_apps as $remApp) {
+                            if (!empty($remApp['student_user_ID'])) {
+                                NotificationModel::create(
+                                    $this->pdo,
+                                    $remApp['student_user_ID'],
+                                    "Position Filled",
+                                    "Thank you for applying for '" . $remApp['title'] . "'. The required position has been filled by another applicant.",
+                                    "job_rejected",
+                                    "/dashboard/student/applications"
+                                );
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -796,7 +895,25 @@ class JobModel extends BaseModel {
         }
 
         if(!$job_ID) {
-            return ["error" => "Job ID is required!"];
+            $stmt = $this->pdo->prepare("
+                SELECT a.application_ID, a.status, a.applied_date, a.job_ID,
+                       s.student_ID, s.skills, s.rating, s.year, s.degree, s.bio, s.languages, s.gender,
+                       u.name, u.email, u.user_ID AS student_user_ID, u.profile_pic,
+                       j.title, j.is_product_based, j.seekers_needed, j.payment_status
+                FROM application a
+                JOIN job j ON a.job_ID = j.job_ID
+                JOIN job_provider jp ON j.provider_ID = jp.provider_ID
+                JOIN student s ON a.student_ID = s.student_ID
+                JOIN users u ON s.user_ID = u.user_ID
+                WHERE jp.user_ID = ?
+                ORDER BY a.applied_date DESC
+            ");
+            $stmt->execute([$user->user_ID]);
+            $applicants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return [
+                "success" => true,
+                "applicants" => $applicants
+            ];
         }
 
         $stmt = $this->pdo->prepare("SELECT * FROM job WHERE job_ID = ? AND provider_ID = (SELECT provider_ID FROM job_provider WHERE user_ID = ?)");

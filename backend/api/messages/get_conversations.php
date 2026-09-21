@@ -77,32 +77,31 @@ try {
         $stmt->execute($params);
         $conversations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    } else if ($user->role === 'admin') {
-        // Admin gets all active conversations
+    } else if ($user->role === 'admin' || $user->role === 'manager') {
+        // Admin and Manager get all active conversations for monitoring
         $sql = "
-            SELECT DISTINCT 
+            SELECT 
                 c.job_ID as conversation_id,
                 c.job_ID,
-                j.title as job_title,
+                COALESCE(j.title, 'Campus Gig') as job_title,
+                (SELECT status FROM communication WHERE job_ID = c.job_ID LIMIT 1) as conversation_status,
                 'accepted' as application_status,
-                u1.user_ID as sender_ID,
-                u1.name as sender_name,
-                u2.user_ID as receiver_ID,
-                u2.name as receiver_name,
-                (SELECT content FROM communication WHERE job_ID = c.job_ID ORDER BY created_at DESC, timestamp DESC LIMIT 1) as last_message,
-                (SELECT COALESCE(created_at, timestamp) FROM communication WHERE job_ID = c.job_ID ORDER BY created_at DESC, timestamp DESC LIMIT 1) as last_message_time,
+                (SELECT u.name FROM users u JOIN communication c1 ON u.user_ID = c1.sender_ID WHERE c1.job_ID = c.job_ID LIMIT 1) as sender_name,
+                (SELECT u.name FROM users u JOIN communication c2 ON u.user_ID = c2.receiver_ID WHERE c2.job_ID = c.job_ID LIMIT 1) as receiver_name,
+                (SELECT u.user_ID FROM users u JOIN communication c1 ON u.user_ID = c1.sender_ID WHERE c1.job_ID = c.job_ID LIMIT 1) as sender_ID,
+                (SELECT u.user_ID FROM users u JOIN communication c2 ON u.user_ID = c2.receiver_ID WHERE c2.job_ID = c.job_ID LIMIT 1) as receiver_ID,
+                (SELECT content FROM communication WHERE job_ID = c.job_ID ORDER BY COALESCE(created_at, timestamp) DESC LIMIT 1) as last_message,
+                (SELECT COALESCE(created_at, timestamp) FROM communication WHERE job_ID = c.job_ID ORDER BY COALESCE(created_at, timestamp) DESC LIMIT 1) as last_message_time,
                 (SELECT COUNT(*) FROM communication WHERE job_ID = c.job_ID AND flagged = 1) as flagged_count
             FROM communication c
             LEFT JOIN job j ON c.job_ID = j.job_ID
-            JOIN users u1 ON c.sender_ID = u1.user_ID
-            JOIN users u2 ON c.receiver_ID = u2.user_ID
         ";
         $params = [];
         if ($search !== '') {
-            $sql .= " WHERE u1.name LIKE ? OR u2.name LIKE ? OR j.title LIKE ?";
+            $sql .= " WHERE j.title LIKE ? OR c.job_ID LIKE ? OR EXISTS (SELECT 1 FROM users u WHERE (u.user_ID = c.sender_ID OR u.user_ID = c.receiver_ID) AND u.name LIKE ?)";
             $params = ["%$search%", "%$search%", "%$search%"];
         }
-        $sql .= " ORDER BY last_message_time DESC";
+        $sql .= " GROUP BY c.job_ID ORDER BY last_message_time DESC";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);

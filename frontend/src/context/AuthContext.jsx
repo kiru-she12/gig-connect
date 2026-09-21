@@ -14,6 +14,8 @@ export const AuthProvider = ({ children }) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   const login = async (email, password, requestedRole) => {
     setLoading(true);
@@ -242,7 +244,9 @@ export const AuthProvider = ({ children }) => {
       user, setUser, updateUser, login, logout, register, verifyOtp, forgotPassword, resetPassword, loading, 
       isLoginModalOpen, setIsLoginModalOpen,
       isRegisterModalOpen, setIsRegisterModalOpen,
-      isContactModalOpen, setIsContactModalOpen
+      isContactModalOpen, setIsContactModalOpen,
+      isTermsModalOpen, setIsTermsModalOpen,
+      isPrivacyModalOpen, setIsPrivacyModalOpen
     }}>
       {children}
     </AuthContext.Provider>

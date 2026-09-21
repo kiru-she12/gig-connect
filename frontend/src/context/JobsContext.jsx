@@ -255,10 +255,7 @@ export const JobsProvider = ({ children }) => {
       return resData;
     } catch (err) {
       console.error('Error updating application status:', err);
-      // Fallback
-      setApplications(prev => prev.map(app => 
-        app.id === appId ? { ...app, status } : app
-      ));
+      throw err;
     }
   };
 

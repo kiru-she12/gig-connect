@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Phone, Send, CheckCircle2 } from 'lucide-react';
+import { X, CheckCircle, PaperPlaneRight } from '@phosphor-icons/react';
 import { useAuth } from '../../context/AuthContext';
 
 const ContactModal = () => {
@@ -83,7 +83,7 @@ const ContactModal = () => {
                 className="py-12 text-center flex flex-col items-center justify-center"
               >
                 <div className="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">
-                  <CheckCircle2 size={40} />
+                  <CheckCircle size={40} />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Message Sent!</h3>
                 <p className="text-slate-500 text-sm max-w-sm leading-relaxed mb-6">
@@ -177,7 +177,7 @@ const ContactModal = () => {
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      <Send size={16} />
+                      <PaperPlaneRight size={16} />
                       <span>Send Message</span>
                     </>
                   )}

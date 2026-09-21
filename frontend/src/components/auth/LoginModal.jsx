@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Eye, EyeOff, X, ArrowLeft, Check, Loader2, KeyRound } from 'lucide-react';
+import { Eye, EyeSlash, X, ArrowLeft, Check, Spinner } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const LoginModal = ({ isOpen, onClose }) => {
@@ -17,7 +17,7 @@ const LoginModal = ({ isOpen, onClose }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const { login, forgotPassword, resetPassword, loading, setIsRegisterModalOpen } = useAuth();
+  const { login, forgotPassword, resetPassword, loading, setIsRegisterModalOpen, setIsTermsModalOpen, setIsPrivacyModalOpen } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -200,7 +200,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
                       >
-                        {showPassword ? <Eye size={18} strokeWidth={1.5} /> : <EyeOff size={18} strokeWidth={1.5} />}
+                        {showPassword ? <Eye size={18} /> : <EyeSlash size={18} />}
                       </button>
                     </div>
                     <div className="text-right mt-2">
@@ -222,14 +222,30 @@ const LoginModal = ({ isOpen, onClose }) => {
                       disabled={loading || !email || !password}
                       className="w-full bg-primary disabled:bg-[#e4e5e7] disabled:text-[#b5b6ba] hover:bg-primary-dark text-white py-2.5 rounded font-bold text-sm flex items-center justify-center transition-all"
                     >
-                      {loading ? <Loader2 className="animate-spin" size={20} /> : 'Sign in'}
+                      {loading ? <Spinner className="animate-spin" size={20} /> : 'Sign in'}
                     </button>
                   </div>
                 </form>
 
                 <div className="mt-8">
                   <p className="text-[11px] text-slate-500 leading-relaxed">
-                    By joining, you agree to the GigConnect <a href="#" className="text-[#1dbf73] hover:underline">Terms of Service</a> and to occasionally receive emails from us. Please read our <a href="#" className="text-[#1dbf73] hover:underline">Privacy Policy</a> to learn how we use your personal data.
+                    By joining, you agree to the GigConnect{' '}
+                    <button 
+                      type="button" 
+                      onClick={() => setIsTermsModalOpen(true)} 
+                      className="text-[#1dbf73] hover:underline inline p-0 m-0 bg-transparent border-none align-baseline cursor-pointer"
+                    >
+                      Terms of Service
+                    </button>{' '}
+                    and to occasionally receive emails from us. Please read our{' '}
+                    <button 
+                      type="button" 
+                      onClick={() => setIsPrivacyModalOpen(true)} 
+                      className="text-[#1dbf73] hover:underline inline p-0 m-0 bg-transparent border-none align-baseline cursor-pointer"
+                    >
+                      Privacy Policy
+                    </button>{' '}
+                    to learn how we use your personal data.
                   </p>
                 </div>
               </>
@@ -269,7 +285,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                       disabled={loading || !resetEmail}
                       className="w-full bg-primary disabled:bg-[#e4e5e7] disabled:text-[#b5b6ba] hover:bg-primary-dark text-white py-2.5 rounded font-bold text-sm flex items-center justify-center transition-all"
                     >
-                      {loading ? <Loader2 className="animate-spin" size={20} /> : 'Send OTP'}
+                      {loading ? <Spinner className="animate-spin" size={20} /> : 'Send OTP'}
                     </button>
                   </div>
                 </form>
@@ -335,7 +351,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                       disabled={loading || otpCode.length !== 6 || !newPassword || !confirmPassword}
                       className="w-full bg-primary disabled:bg-[#e4e5e7] disabled:text-[#b5b6ba] hover:bg-primary-dark text-white py-2.5 rounded font-bold text-sm flex items-center justify-center transition-all"
                     >
-                      {loading ? <Loader2 className="animate-spin" size={20} /> : 'Reset Password'}
+                      {loading ? <Spinner className="animate-spin" size={20} /> : 'Reset Password'}
                     </button>
                   </div>
                 </form>

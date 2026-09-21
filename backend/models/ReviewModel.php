@@ -18,12 +18,12 @@ class ReviewModel extends BaseModel {
             return ["error" => "Job not found or not completed/delivered!"];
         }
 
-        $stmt = $this->pdo->prepare("SELECT * FROM rate_review WHERE job_ID = ? AND given_by = ?");
-        $stmt->execute([$job_ID, $user->user_ID]);
+        $stmt = $this->pdo->prepare("SELECT * FROM rate_review WHERE job_ID = ? AND given_by = ? AND given_to = ?");
+        $stmt->execute([$job_ID, $user->user_ID, $given_to]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if($existing) {
-            return ["error" => "You already reviewed this job!"];
+            return ["error" => "You already reviewed this user for this job!"];
         }
 
         if($score < 1 || $score > 5) {

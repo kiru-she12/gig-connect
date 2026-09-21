@@ -57,19 +57,24 @@ class AdminController extends BaseController {
                 $data = $_POST;
             }
 
-            $action = $data['action'] ?? 'create';
-            if ($action === 'create' || !isset($data['status'])) {
-                $result = $adminModel->createComplaint($data);
+            $action = $data['action'] ?? null;
+            $hasStatus = isset($data['status']);
+            $hasId = !empty($data['id']) || !empty($data['complaint_ID']);
+
+            // If updating status of an existing complaint
+            if ($action === 'update' || ($hasStatus && $hasId)) {
+                $userRole = $user->role ?? $user->data->role ?? null;
+                if ($userRole !== 'admin' && $userRole !== 'manager') {
+                    JsonView::render(["error" => "Unauthorized to update complaint status."]);
+                    return;
+                }
+                $result = $adminModel->updateComplaintStatus($data);
                 JsonView::render($result);
                 return;
             }
 
-            $userRole = $user->role ?? $user->data->role ?? null;
-            if ($userRole !== 'admin' && $userRole !== 'manager') {
-                JsonView::render(["error" => "Unauthorized to update complaint status."]);
-                return;
-            }
-            $result = $adminModel->updateComplaintStatus($data);
+            // Otherwise, create new complaint
+            $result = $adminModel->createComplaint($data);
             JsonView::render($result);
             return;
         } else {

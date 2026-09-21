@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Clock, DollarSign, CheckCircle, ArrowRight } from 'lucide-react';
+import { Clock, CurrencyDollar, CheckCircle, ArrowRight } from '@phosphor-icons/react';
 
 const JobCard = ({ job, onApply, applied = false, matchScore = null, isRecommended = false }) => {
   const isBoosted = Boolean(job.isBoosted || job.is_boosted == 1 || job.is_boosted === true || job.is_boosted === '1');
@@ -78,7 +78,7 @@ const JobCard = ({ job, onApply, applied = false, matchScore = null, isRecommend
       <div className="flex items-center justify-between mb-6 pt-4 border-t border-border/50">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <DollarSign size={16} />
+            <CurrencyDollar size={16} />
           </div>
           <div>
             <p className="text-[10px] text-text-muted font-bold uppercase">Budget</p>

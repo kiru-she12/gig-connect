@@ -7,8 +7,8 @@ require_once __DIR__ . '/../../middleware/auth.php';
 
 try {
     $user = authenticate();
-    if ($user->role !== 'admin') {
-        echo json_encode(["error" => "Unauthorized. Admin access required."]);
+    if ($user->role !== 'admin' && $user->role !== 'manager') {
+        echo json_encode(["error" => "Unauthorized. Admin or Manager access required."]);
         exit;
     }
 

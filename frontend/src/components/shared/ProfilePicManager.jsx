@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Camera, Trash2, Loader2, User, Check } from 'lucide-react';
+import { Camera, Trash, Spinner, Check } from '@phosphor-icons/react';
 
 const ProfilePicManager = ({ onUpdate }) => {
   const { user, updateUser } = useAuth();
@@ -117,7 +117,7 @@ const ProfilePicManager = ({ onUpdate }) => {
 
           {loading && (
             <div className="absolute inset-0 bg-slate-900/60 rounded-2xl flex items-center justify-center text-white backdrop-blur-2xs">
-              <Loader2 size={24} className="animate-spin text-emerald-400" />
+              <Spinner size={24} className="animate-spin text-emerald-400" />
             </div>
           )}
         </div>
@@ -144,7 +144,7 @@ const ProfilePicManager = ({ onUpdate }) => {
                 disabled={loading}
                 className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 active:scale-95"
               >
-                <Trash2 size={14} />
+                <Trash size={14} />
                 <span>Remove</span>
               </button>
             )}

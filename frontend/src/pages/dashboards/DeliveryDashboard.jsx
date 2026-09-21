@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useNotifications } from '../../context/NotificationsContext';
-import { Truck, List, BarChart2, MapPin, Package, Clock, CheckCircle, X, Lock, TrendingUp, RefreshCw, User, Mail, Phone, Calendar, ShieldCheck, Compass, Navigation, Bell } from 'lucide-react';
+import { Truck, List, ChartBar, MapPin, Package, Clock, CheckCircle, X, Lock, User, Phone, Calendar, ShieldCheck, Compass, NavigationArrow, Bell } from '@phosphor-icons/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const OverviewScreen = () => {
@@ -638,7 +638,7 @@ const OverviewScreen = () => {
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="font-heading font-black text-slate-800 text-lg flex items-center gap-2">
-                  <BarChart2 size={20} className="text-primary" /> Weekly Deliveries
+                  <ChartBar size={20} className="text-primary" /> Weekly Deliveries
                 </h3>
                 <p className="text-xs text-slate-400 font-medium">Completed dispatches per day (Mon - Sun)</p>
               </div>
@@ -1732,7 +1732,7 @@ const DeliveryManagementScreen = () => {
                         disabled={actionLoading}
                         className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-3 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
                       >
-                        <Navigation size={14} />
+                        <NavigationArrow size={14} />
                         <span>{actionLoading ? 'Updating...' : 'Start Transit / On the Way'}</span>
                       </button>
                     </div>

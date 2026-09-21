@@ -11,23 +11,25 @@ import AnalyticsTab from './AnalyticsTab';
 import ProfilePicManager from '../../components/shared/ProfilePicManager';
 import { motion } from 'framer-motion';
 import { 
-  TrendingUp, Briefcase, DollarSign, Star, Search, Clock, 
-  CheckCircle2, MessageSquare, Truck, Settings, Bell, CheckCircle,
-  AlertTriangle, Check, X, Award, ChevronRight, Send, ArrowRight,
-  List, LogOut, Lock, User, PlusCircle, Plus, RefreshCw, Eye, MapPin, Package,
-  ShieldAlert, Upload
-} from 'lucide-react';
+  Briefcase, Star, Clock, Truck, Bell, CheckCircle,
+  Warning, X, Medal, Lock, Plus, MapPin, Package,
+  ShieldWarning, UploadSimple
+} from '@phosphor-icons/react';
 
 const PRODUCT_KEYWORDS = [
   'cake', 'crochet', 'bakery', 'bake', 'craft', 'knit', 'sew', 'tailor', 'food', 'pastry', 'cookie', 'snack', 'meal', 'lunch', 'box', 'parcel', 'package', 'jewelry', 'handmade', 'product', 'deliver', 'item',
-  'bag', 'tote', 'canvas', 'paint', 'print', 'drawing', 'sketch', 'shirt', 'clothing', 'dress', 'garment', 'costume', 'outfit', 'cup', 'mug', 'gift', 'art', 'decor', 'hand-paint', 'screen-print', 't-shirt', 'bottle', 'pottery', 'toy', 'woodwork', 'knitting', 'sewing', 'embroidery', 'sweet', 'candle', 'card', 'dessert', 'cupcake', 'cushion', 'pillow', 'mat'
+  'bag', 'tote', 'canvas', 'paint', 'print', 'drawing', 'sketch', 'shirt', 'clothing', 'dress', 'garment', 'costume', 'outfit', 'cup', 'mug', 'gift', 'art', 'decor', 'hand-paint', 'screen-print', 't-shirt', 'bottle', 'pottery', 'toy', 'woodwork', 'knitting', 'sewing', 'embroidery', 'sweet', 'candle', 'card', 'dessert', 'cupcake', 'cushion', 'pillow'
 ];
 
 const isProductBased = (job) => {
   if (!job) return false;
-  if (job.is_product_based === true || job.is_product_based == 1 || job.is_product_based === '1' || job._isProduct) return true;
+  // Onsite jobs are performed on-site in person and never require product delivery
+  const jobType = (job.job_type || job.type || '').toLowerCase();
+  if (jobType === 'onsite' || jobType === 'on-site') return false;
+
+  if (job.is_product_based === true || job.is_product_based == 1 || job.is_product_based === '1') return true;
   const combined = ((job.title || '') + ' ' + (job.description || '') + ' ' + (job.category || '')).toLowerCase();
-  return PRODUCT_KEYWORDS.some(kw => combined.includes(kw));
+  return PRODUCT_KEYWORDS.some(kw => new RegExp(`\\b${kw}\\b`, 'i').test(combined));
 };
 
 const StudentDashboard = () => {
@@ -340,11 +342,13 @@ const StudentDashboard = () => {
             profile={profile}
             applications={applications}
             receivedReviews={receivedReviews}
+            deliveries={deliveries}
           />
         } />
         <Route path="applications" element={
           <ApplicationsTab 
             applications={applications}
+            deliveries={deliveries}
             profile={profile}
             fetchDashboardData={fetchDashboardData}
           />
@@ -352,6 +356,7 @@ const StudentDashboard = () => {
         <Route path="past-history" element={
           <PastHistoryTab 
             applications={applications}
+            deliveries={deliveries}
             profile={profile}
             fetchDashboardData={fetchDashboardData}
           />
@@ -425,7 +430,7 @@ const StudentDashboard = () => {
             <form onSubmit={handleConfirmApplication} className="flex-1 flex flex-col overflow-hidden mt-4">
               <div className="flex-1 overflow-y-auto space-y-4 pr-1 mb-4">
                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-start gap-3">
-                  <AlertTriangle size={20} className="text-amber-500 shrink-0 mt-0.5" />
+                  <Warning size={20} className="text-amber-500 shrink-0 mt-0.5" />
                   <div className="text-xs text-slate-600 leading-relaxed font-medium">
                     By applying, you commit to fulfilling this job to the best of your ability.
                     {applyModalJob._isProduct && (
@@ -515,7 +520,53 @@ const StudentDashboard = () => {
 
 /* 2. APPLICATIONS TAB */
 /* 2. APPLICATIONS TAB */
-const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
+const ApplicationsTab = ({ applications, deliveries = [], profile, fetchDashboardData }) => {
+  const [selfDeliveryOtps, setSelfDeliveryOtps] = useState({});
+  const [confirmingDeliveryId, setConfirmingDeliveryId] = useState(null);
+  const [deliverySuccessMsg, setDeliverySuccessMsg] = useState(null);
+
+  const pendingSelfDeliveries = (deliveries || []).filter((del) => {
+    const isSelf = (del.delivery_type || '').toLowerCase() === 'self';
+    const notDelivered = (del.status || '').toLowerCase() !== 'delivered' && (del.status || '').toLowerCase() !== 'confirmed';
+    const isJobCompleted = (del.job_status || '').toLowerCase() === 'completed' || applications.some(a => a.job_ID === del.job_ID && ((a.status || '').toLowerCase() === 'completed' || (a.job_status || '').toLowerCase() === 'completed'));
+    return isSelf && notDelivered && isJobCompleted;
+  });
+
+  const handleConfirmSelfDelivery = async (delivery_ID) => {
+    const otp = (selfDeliveryOtps[delivery_ID] || '').trim();
+    if (!otp || otp.length !== 6) {
+      alert("Please enter the 6-digit OTP received for this delivery.");
+      return;
+    }
+
+    setConfirmingDeliveryId(delivery_ID);
+    setDeliverySuccessMsg(null);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delivery/confirm_self_delivery.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ delivery_ID, otp })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        const fee = parseFloat(data.delivery_fee || 150).toLocaleString();
+        setDeliverySuccessMsg(`✅ Delivery confirmed! Delivery fee of LKR ${fee} has been added to your earnings.`);
+        setSelfDeliveryOtps(prev => ({ ...prev, [delivery_ID]: '' }));
+        fetchDashboardData(true);
+      } else {
+        alert(data.error || 'Failed to confirm self-delivery. Please check your OTP.');
+      }
+    } catch (err) {
+      alert('Network error while confirming delivery.');
+    } finally {
+      setConfirmingDeliveryId(null);
+    }
+  };
   const [activeTab, setActiveTab] = useState('All');
   
   // State for Mark as Completed form/modal
@@ -1054,6 +1105,82 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
         ))}
       </div>
 
+      {/* Self-Delivery Confirmation Banner & Cards */}
+      {deliverySuccessMsg && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-2xl flex items-center justify-between shadow-sm animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🎉</span>
+            <span className="text-sm font-bold">{deliverySuccessMsg}</span>
+          </div>
+          <button onClick={() => setDeliverySuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700 font-bold text-sm">✕</button>
+        </div>
+      )}
+
+      {(activeTab === 'All' || activeTab === 'Completed') && pendingSelfDeliveries.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+            <h2 className="text-lg font-heading font-black text-slate-800">
+              Confirm Self Delivery ({pendingSelfDeliveries.length})
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500 -mt-2">
+            You completed work on this product gig. Enter the 6-digit OTP code to confirm delivery and add the delivery fee to your earnings.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {pendingSelfDeliveries.map((del) => (
+              <div key={del.delivery_ID} className="bg-white border-2 border-amber-300 rounded-3xl p-6 shadow-sm space-y-4 relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-xs font-black uppercase tracking-wider">
+                    {del.delivery_ID} • Self Delivery
+                  </span>
+                  <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+                    Awaiting Confirmation
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base">{del.job_title}</h3>
+                  <div className="mt-2 text-xs text-slate-600 space-y-1">
+                    <p className="flex items-start gap-1">
+                      <strong className="text-slate-400 uppercase text-[10px] w-28 shrink-0">Dropoff Address:</strong>
+                      <span className="font-semibold text-slate-700">{del.delivery_address || 'Client Address'}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 space-y-3">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Enter 6-Digit Delivery OTP:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      placeholder="Enter 6-digit OTP"
+                      value={selfDeliveryOtps[del.delivery_ID] || ''}
+                      onChange={(e) => setSelfDeliveryOtps({
+                        ...selfDeliveryOtps,
+                        [del.delivery_ID]: e.target.value.replace(/\D/g, '').slice(0, 6)
+                      })}
+                      className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center font-mono font-bold tracking-widest text-base focus:bg-white focus:border-primary outline-none transition-all"
+                    />
+                    <button
+                      onClick={() => handleConfirmSelfDelivery(del.delivery_ID)}
+                      disabled={confirmingDeliveryId === del.delivery_ID}
+                      className="btn-primary px-5 py-2.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                    >
+                      {confirmingDeliveryId === del.delivery_ID ? 'Confirming...' : 'Confirm Delivery'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {filteredApps.length === 0 ? (
         <div className="bg-white border border-slate-100 rounded-3xl p-16 text-center text-slate-500 shadow-sm">
           <Briefcase size={48} className="mx-auto mb-4 text-slate-300" />
@@ -1214,7 +1341,7 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
                   {facingStatus === 'delivered' && (
                     <div className="space-y-3">
                       <div className="bg-orange-50 border border-orange-100 rounded-2xl p-3 text-xs text-orange-700 font-bold flex items-center gap-1.5 justify-center">
-                        <CheckCircle2 size={14} className="text-orange-600 shrink-0" />
+                        <CheckCircle size={14} className="text-orange-600 shrink-0" />
                         <span>Delivered successfully! Provider has received the product.</span>
                       </div>
                       {parseInt(app.student_reviewed) > 0 ? (
@@ -1243,7 +1370,7 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
                     onClick={() => handleOpenComplaint(app)}
                     className="w-full mt-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
                   >
-                    <ShieldAlert size={14} className="text-rose-500" />
+                    <ShieldWarning size={14} className="text-rose-500" />
                     <span>Report Issue / File Complaint</span>
                   </button>
                 </div>
@@ -1262,7 +1389,7 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
             <div className="flex justify-between items-start border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0">
-                  <ShieldAlert size={20} />
+                  <ShieldWarning size={20} />
                 </div>
                 <div>
                   <h3 className="font-heading font-black text-lg text-slate-800">File a Complaint</h3>
@@ -1389,7 +1516,7 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      <Upload className="mx-auto text-slate-400" size={20} />
+                      <UploadSimple className="mx-auto text-slate-400" size={20} />
                       <p className="text-xs text-slate-500 font-bold">Upload screenshot or image evidence (Max 5MB)</p>
                     </div>
                   )}
@@ -1431,7 +1558,7 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
             <div className="p-6 pb-4 bg-gradient-to-r from-primary/5 to-transparent border-b border-slate-100 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-sm">
-                  <CheckCircle size={20} className="stroke-[2.5]" />
+                  <CheckCircle size={20} weight="bold" />
                 </div>
                 <div>
                   <h3 className="font-heading font-black text-base text-slate-800">
@@ -1777,19 +1904,81 @@ const ApplicationsTab = ({ applications, profile, fetchDashboardData }) => {
 };
 
 /* 3. PAST HISTORY TAB */
-const PastHistoryTab = ({ applications, profile, fetchDashboardData }) => {
+const PastHistoryTab = ({ applications, deliveries = [], profile, fetchDashboardData }) => {
   const [selectedApp, setSelectedApp] = useState(null);
   const [ratingScore, setRatingScore] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Completed apps filter
-  const completedJobs = applications.filter((app) => 
-    app.status.toLowerCase() === 'completed' || app.job_status === 'completed'
-  );
+  // Self-delivery confirmation states
+  const [selfDeliveryOtps, setSelfDeliveryOtps] = useState({});
+  const [confirmingDeliveryId, setConfirmingDeliveryId] = useState(null);
+  const [deliverySuccessMsg, setDeliverySuccessMsg] = useState(null);
 
-  const totalEarned = completedJobs.reduce((sum, app) => sum + parseFloat(app.job_payment), 0);
+  // Completed apps filter (includes standard completed and product-based delivered gigs)
+  const completedJobs = applications.filter((app) => {
+    const appStatus = (app.status || '').toLowerCase();
+    const jobStatus = (app.job_status || '').toLowerCase();
+    return (
+      appStatus === 'completed' ||
+      jobStatus === 'completed' ||
+      appStatus === 'delivered' ||
+      jobStatus === 'delivered'
+    );
+  });
+
+  // Pending self-deliveries requiring student OTP confirmation
+  const pendingSelfDeliveries = (deliveries || []).filter((del) => {
+    const isSelf = (del.delivery_type || '').toLowerCase() === 'self';
+    const notDelivered = (del.status || '').toLowerCase() !== 'delivered' && (del.status || '').toLowerCase() !== 'confirmed';
+    const isJobCompleted = (del.job_status || '').toLowerCase() === 'completed' || completedJobs.some(cj => cj.job_ID === del.job_ID);
+    return isSelf && notDelivered && isJobCompleted;
+  });
+
+  // Confirmed self-delivery fees
+  const confirmedSelfDeliveryFees = (deliveries || [])
+    .filter((d) => (d.delivery_type || '').toLowerCase() === 'self' && ((d.status || '').toLowerCase() === 'delivered' || (d.status || '').toLowerCase() === 'confirmed'))
+    .reduce((sum, d) => sum + parseFloat(d.delivery_fee || 0), 0);
+
+  const jobEarnings = completedJobs.reduce((sum, app) => sum + parseFloat(app.job_payment || 0), 0);
+  const totalEarned = jobEarnings + confirmedSelfDeliveryFees;
   const averageRating = parseFloat(profile?.student_details?.rating || 0);
+
+  const handleConfirmSelfDelivery = async (delivery_ID) => {
+    const otp = (selfDeliveryOtps[delivery_ID] || '').trim();
+    if (!otp || otp.length !== 6) {
+      alert("Please enter the 6-digit OTP received for this delivery.");
+      return;
+    }
+
+    setConfirmingDeliveryId(delivery_ID);
+    setDeliverySuccessMsg(null);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delivery/confirm_self_delivery.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ delivery_ID, otp })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        const fee = parseFloat(data.delivery_fee || 150).toLocaleString();
+        setDeliverySuccessMsg(`✅ Delivery confirmed! Delivery fee of LKR ${fee} has been added to your earnings.`);
+        setSelfDeliveryOtps(prev => ({ ...prev, [delivery_ID]: '' }));
+        fetchDashboardData(true);
+      } else {
+        alert(data.error || 'Failed to confirm self-delivery. Please check your OTP.');
+      }
+    } catch (err) {
+      alert('Network error while confirming delivery.');
+    } finally {
+      setConfirmingDeliveryId(null);
+    }
+  };
 
   const handleOpenReview = (app) => {
     setSelectedApp(app);
@@ -1844,10 +2033,94 @@ const PastHistoryTab = ({ applications, profile, fetchDashboardData }) => {
         <p className="text-text-secondary mt-1">Review your completed tasks and achievements.</p>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Success Notification Banner */}
+      {deliverySuccessMsg && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-2xl flex items-center justify-between shadow-sm animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🎉</span>
+            <span className="text-sm font-bold">{deliverySuccessMsg}</span>
+          </div>
+          <button onClick={() => setDeliverySuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700 font-bold text-sm">✕</button>
+        </div>
+      )}
+
+      {/* Confirm Self Delivery Section */}
+      {pendingSelfDeliveries.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+            <h2 className="text-lg font-heading font-black text-slate-800">
+              Confirm Self Delivery ({pendingSelfDeliveries.length})
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500 -mt-2">
+            You completed work on this product gig. Enter the 6-digit OTP code to confirm delivery and claim your delivery fee.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {pendingSelfDeliveries.map((del) => (
+              <div key={del.delivery_ID} className="bg-white border-2 border-amber-300 rounded-3xl p-6 shadow-sm space-y-4 relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-xs font-black uppercase tracking-wider">
+                    {del.delivery_ID} • Self Delivery
+                  </span>
+                  <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+                    Awaiting Confirmation
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base">{del.job_title}</h3>
+                  <div className="mt-2 text-xs text-slate-600 space-y-1">
+                    <p className="flex items-start gap-1">
+                      <strong className="text-slate-400 uppercase text-[10px] w-28 shrink-0">Dropoff Address:</strong>
+                      <span className="font-semibold text-slate-700">{del.delivery_address || 'Client Address'}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 space-y-3">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Enter 6-Digit Delivery OTP:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      placeholder="Enter 6-digit OTP"
+                      value={selfDeliveryOtps[del.delivery_ID] || ''}
+                      onChange={(e) => setSelfDeliveryOtps({
+                        ...selfDeliveryOtps,
+                        [del.delivery_ID]: e.target.value.replace(/\D/g, '').slice(0, 6)
+                      })}
+                      className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center font-mono font-bold tracking-widest text-base focus:bg-white focus:border-primary outline-none transition-all"
+                    />
+                    <button
+                      onClick={() => handleConfirmSelfDelivery(del.delivery_ID)}
+                      disabled={confirmingDeliveryId === del.delivery_ID}
+                      className="btn-primary px-5 py-2.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                    >
+                      {confirmingDeliveryId === del.delivery_ID ? 'Confirming...' : 'Confirm Delivery'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Stats Row - Updated with Total Earnings including confirmed delivery fees */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: 'Total Jobs Completed', value: completedJobs.length, icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-600' },
+          { label: 'Total Jobs Completed', value: completedJobs.length, icon: CheckCircle, color: 'bg-emerald-50 text-emerald-600' },
+          { 
+            label: 'Total Earnings', 
+            value: `LKR ${totalEarned.toLocaleString()}`, 
+            icon: Briefcase, 
+            color: 'bg-primary/10 text-primary',
+            badge: confirmedSelfDeliveryFees > 0 ? `Includes LKR ${confirmedSelfDeliveryFees.toLocaleString()} delivery fees` : null
+          },
           { 
             label: 'Average Client Rating', 
             value: averageRating === 0 ? 'New' : `${averageRating.toFixed(1)} Stars`, 
@@ -1855,13 +2128,18 @@ const PastHistoryTab = ({ applications, profile, fetchDashboardData }) => {
             color: 'bg-amber-50 text-amber-600' 
           }
         ].map((stat, i) => (
-          <div key={i} className="card p-6 flex items-center gap-4 bg-white border border-slate-100 shadow-sm">
+          <div key={i} className="card p-6 flex items-center gap-4 bg-white border border-slate-100 shadow-sm rounded-3xl">
             <div className={`w-12 h-12 ${stat.color} rounded-2xl flex items-center justify-center`}>
               <stat.icon size={24} />
             </div>
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
               <p className="text-2xl font-heading font-black text-slate-800 mt-1">{stat.value}</p>
+              {stat.badge && (
+                <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                  {stat.badge}
+                </span>
+              )}
             </div>
           </div>
         ))}
@@ -1888,24 +2166,44 @@ const PastHistoryTab = ({ applications, profile, fetchDashboardData }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {completedJobs.map((app) => (
-                  <tr key={app.application_ID} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-800 text-sm">{app.job_title}</td>
-                    <td className="px-6 py-4 text-slate-600 text-sm">{app.client_name || 'Partner Client'}</td>
-                    <td className="px-6 py-4 font-black text-slate-800 text-sm">LKR {parseFloat(app.job_payment).toLocaleString()}</td>
-                    <td className="px-6 py-4 text-xs text-slate-400 font-semibold">
-                      {new Date(app.applied_date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleOpenReview(app)}
-                        className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-lg transition-all"
-                      >
-                        Leave a review
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {completedJobs.map((app) => {
+                  const isDeliveredProduct = app.is_product_based == 1 || app.status === 'delivered' || app.job_status === 'delivered';
+                  const isReviewed = parseInt(app.student_reviewed || 0) > 0;
+
+                  return (
+                    <tr key={app.application_ID} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4 font-bold text-slate-800 text-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
+                          <span>{app.job_title}</span>
+                          {isDeliveredProduct && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/70 w-fit">
+                              📦 Delivered Product
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 text-sm">{app.client_name || 'Partner Client'}</td>
+                      <td className="px-6 py-4 font-black text-slate-800 text-sm">LKR {parseFloat(app.job_payment).toLocaleString()}</td>
+                      <td className="px-6 py-4 text-xs text-slate-400 font-semibold">
+                        {new Date(app.applied_date).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {isReviewed ? (
+                          <span className="text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 inline-block">
+                            Reviewed ✓
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleOpenReview(app)}
+                            className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-lg transition-all cursor-pointer"
+                          >
+                            Leave a review
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -2162,14 +2460,17 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
                     </span>
                     <h3 className="font-bold text-slate-800 text-base mt-2">{del.job_title}</h3>
                     <span className={`badge ${
-                      del.status === 'delivered'  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                      del.status === 'picked_up'  ? 'bg-primary-light text-primary border border-primary/20' :
+                      del.status === 'delivered' || del.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                      del.status === 'in_transit' ? 'bg-cyan-50 text-cyan-700 border border-cyan-100' :
+                      del.status === 'picked_up'  ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' :
                       del.status === 'assigned'   ? 'bg-primary-light text-primary border border-primary/20' :
                       'bg-amber-50 text-amber-700 border border-amber-100'
                     } text-xs font-bold uppercase px-3 py-1 rounded-full`}>
                       {del.status === 'pending'   ? '🕐 Awaiting Action'
                       : del.status === 'assigned'  ? '🚴 Rider Assigned'
-                      : del.status === 'picked_up' ? '📦 Verification Pending / In Transit'
+                      : del.status === 'picked_up' ? '📦 Package Picked Up'
+                      : del.status === 'in_transit' ? '🚚 In Transit / On the Way'
+                      : del.status === 'delivered' ? '📍 Arrived at Destination'
                       : '✅ Delivered / Completed'}
                     </span>
                   </div>
@@ -2262,8 +2563,12 @@ const DeliveryTab = ({ profile, deliveries, fetchDashboardData }) => {
                         ⏳ Rider {del.delivery_staff_name} has been assigned and is on the way to pick up the product.
                       </p>
                     ) : del.status === 'picked_up' ? (
-                      <p className="text-xs text-primary font-bold bg-primary-light border border-primary/20 rounded-xl px-3 py-2">
-                        🚴 Rider is currently delivering the product.
+                      <p className="text-xs text-indigo-700 font-bold bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2">
+                        📦 Package picked up from student. Rider is preparing for transit.
+                      </p>
+                    ) : del.status === 'in_transit' ? (
+                      <p className="text-xs text-cyan-700 font-bold bg-cyan-50 border border-cyan-100 rounded-xl px-3 py-2">
+                        🚚 Rider is in transit and on the way to the client.
                       </p>
                     ) : null
                   )}
@@ -2503,7 +2808,7 @@ const ReviewsTab = ({ profile, receivedReviews, givenReviews }) => {
       {displayList.length === 0 ? (
         <div className="bg-white border border-slate-100 rounded-3xl p-16 text-center shadow-sm max-w-xl mx-auto space-y-4">
           <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500">
-            <Award size={40} className="stroke-[1.5]" />
+            <Medal size={40} />
           </div>
           <div>
             <h3 className="font-bold text-lg text-slate-800">No reviews found</h3>

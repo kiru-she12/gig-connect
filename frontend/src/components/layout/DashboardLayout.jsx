@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
 import { useAuth } from '../../context/AuthContext';
-import { Menu, Bell, Search, X, CheckCheck, Home, Info, Package, Truck, AlertCircle } from 'lucide-react';
+import { List, Bell, X, Checks, House, Info, Package, Truck, WarningCircle } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 
 /* ── Notification icon by type ── */
@@ -10,7 +10,7 @@ const NotifIcon = ({ type }) => {
     delivery_request: <Truck size={14} className="text-teal-600" />,
     application:      <Package size={14} className="text-emerald-600" />,
     info:             <Info size={14} className="text-slate-600" />,
-    alert:            <AlertCircle size={14} className="text-amber-500" />,
+    alert:            <WarningCircle size={14} className="text-amber-500" />,
   };
   return (
     <div className="w-8 h-8 rounded-xl bg-slate-100/80 border border-slate-200/60 flex items-center justify-center flex-shrink-0">
@@ -75,6 +75,14 @@ const DashboardLayout = ({ children }) => {
   const initials = (user?.name || 'U')
     .split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
+  const formatRole = (role) => {
+    if (!role) return '';
+    const r = role.toLowerCase();
+    if (r === 'client' || r === 'job_provider') return 'Job Provider';
+    if (r === 'delivery_staff') return 'Delivery Staff';
+    return r.replace('_', ' ');
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50/80 font-sans">
       {/* Sidebar */}
@@ -96,7 +104,7 @@ const DashboardLayout = ({ children }) => {
               onClick={() => setIsSidebarOpen(true)}
               className="lg:hidden p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition-all active:scale-95"
             >
-              <Menu size={20} />
+              <List size={20} />
             </button>
 
             <div className="hidden sm:block">
@@ -106,7 +114,7 @@ const DashboardLayout = ({ children }) => {
                 </p>
               </div>
               <p className="text-[11px] text-slate-400 font-medium capitalize">
-                {(user?.role || '').replace('_', ' ')} Control Center
+                {formatRole(user?.role)} Control Center
               </p>
             </div>
           </div>
@@ -120,7 +128,7 @@ const DashboardLayout = ({ children }) => {
               title="Return to Landing Page"
               className="p-2.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-teal-600 transition-all border border-transparent hover:border-slate-200 active:scale-95"
             >
-              <Home size={18} />
+              <House size={18} />
             </button>
 
             {/* Bell Dropdown */}
@@ -156,7 +164,7 @@ const DashboardLayout = ({ children }) => {
                   <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 no-scrollbar">
                     {notifications.length === 0 ? (
                       <div className="py-10 text-center px-4">
-                        <CheckCheck size={32} className="mx-auto text-teal-500/40 mb-2" />
+                        <Checks size={32} className="mx-auto text-teal-500/40 mb-2" />
                         <p className="text-xs font-bold text-slate-700">All caught up!</p>
                         <p className="text-[11px] text-slate-400 mt-0.5">No new notifications at the moment.</p>
                       </div>
@@ -240,7 +248,7 @@ const DashboardLayout = ({ children }) => {
               )}
               <div className="hidden md:block text-left leading-tight">
                 <p className="text-xs font-extrabold text-slate-900">{user?.name?.split(' ')[0] || 'User'}</p>
-                <p className="text-[10px] font-semibold text-slate-400 capitalize">{(user?.role || '').replace('_', ' ')}</p>
+                <p className="text-[10px] font-semibold text-slate-400 capitalize">{formatRole(user?.role)}</p>
               </div>
             </button>
 

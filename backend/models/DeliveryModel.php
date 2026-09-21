@@ -43,12 +43,29 @@ class DeliveryModel extends BaseModel {
         ];
     }
 
+    private function getProviderUserId($provider_ID) {
+        if (empty($provider_ID)) return null;
+        $stmt = $this->pdo->prepare("
+            SELECT u.user_ID 
+            FROM job_provider jp 
+            JOIN users u ON jp.user_ID = u.user_ID 
+            WHERE jp.provider_ID = ?
+        ");
+        $stmt->execute([$provider_ID]);
+        $uid = $stmt->fetchColumn();
+        if ($uid) return $uid;
+
+        $stmt2 = $this->pdo->prepare("SELECT user_ID FROM users WHERE user_ID = ?");
+        $stmt2->execute([$provider_ID]);
+        return $stmt2->fetchColumn() ?: $provider_ID;
+    }
+
     public function updateDelivery($data, $user) {
         $delivery_ID = $data['delivery_ID'];
         $action = $data['action'];
 
         $stmt = $this->pdo->prepare("
-            SELECT d.*, j.title as job_title 
+            SELECT d.*, j.title as job_title, j.provider_ID 
             FROM delivery d 
             JOIN job j ON d.job_ID = j.job_ID 
             WHERE d.delivery_ID = ?
@@ -277,6 +294,18 @@ class DeliveryModel extends BaseModel {
                 sendEmail($provider_email, "GigConnect - Delivery Accepted & OTP", $provider_body);
             }
 
+            // In-app notification to job provider
+            if (!empty($provider['user_ID'])) {
+                NotificationModel::create(
+                    $this->pdo,
+                    $provider['user_ID'],
+                    "Delivery Request Accepted 🚴",
+                    "Rider {$rider_name} has accepted delivery for '{$delivery['job_title']}'.",
+                    "delivery_accepted",
+                    "/dashboard/client/delivery"
+                );
+            }
+
             return ["success" => "Delivery request accepted successfully! Status set to busy and OTPs sent."];
 
         } else if($action === 'pickup') {
@@ -285,6 +314,21 @@ class DeliveryModel extends BaseModel {
             }
             $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'picked_up' WHERE delivery_ID = ?");
             $stmt->execute([$delivery_ID]);
+
+            // Notify job provider via In-App notification ONLY
+            $prov_user_id = $this->getProviderUserId($delivery['provider_ID'] ?? '');
+            if ($prov_user_id) {
+                require_once __DIR__ . '/NotificationModel.php';
+                NotificationModel::create(
+                    $this->pdo,
+                    $prov_user_id,
+                    "Package Picked Up 📦",
+                    "The delivery rider has collected the product for '{$delivery['job_title']}' from the student.",
+                    "delivery_picked_up",
+                    "/dashboard/client/delivery"
+                );
+            }
+
             return ["success" => "Product picked up successfully! Status set to picked up."];
 
         } else if($action === 'start_transit') {
@@ -293,6 +337,21 @@ class DeliveryModel extends BaseModel {
             }
             $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'in_transit' WHERE delivery_ID = ?");
             $stmt->execute([$delivery_ID]);
+
+            // Notify job provider via In-App notification ONLY
+            $prov_user_id = $this->getProviderUserId($delivery['provider_ID'] ?? '');
+            if ($prov_user_id) {
+                require_once __DIR__ . '/NotificationModel.php';
+                NotificationModel::create(
+                    $this->pdo,
+                    $prov_user_id,
+                    "Package In Transit 🚚",
+                    "Your package for '{$delivery['job_title']}' is now on the way.",
+                    "delivery_in_transit",
+                    "/dashboard/client/delivery"
+                );
+            }
+
             return ["success" => "Package is now in transit!"];
 
         } else if($action === 'deliver') {
@@ -301,6 +360,21 @@ class DeliveryModel extends BaseModel {
             }
             $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'delivered' WHERE delivery_ID = ?");
             $stmt->execute([$delivery_ID]);
+
+            // Notify job provider via In-App notification ONLY
+            $prov_user_id = $this->getProviderUserId($delivery['provider_ID'] ?? '');
+            if ($prov_user_id) {
+                require_once __DIR__ . '/NotificationModel.php';
+                NotificationModel::create(
+                    $this->pdo,
+                    $prov_user_id,
+                    "Rider Arrived at Location 📍",
+                    "The delivery rider has arrived at your location with '{$delivery['job_title']}'. Please provide your 6-digit OTP to complete delivery.",
+                    "delivery_arrived",
+                    "/dashboard/client/delivery"
+                );
+            }
+
             return ["success" => "Arrived at client location! Status set to delivered. Please verify OTP to confirm delivery."];
 
         } else if($action === 'decline') {
@@ -351,6 +425,7 @@ class DeliveryModel extends BaseModel {
         if ($user->role === 'student') {
             $stmt = $this->pdo->prepare("
                 SELECT d.*, j.title as job_title, j.payment as job_payment, j.is_product_based,
+                       j.status as job_status,
                        u.name as delivery_staff_name
                 FROM delivery d
                 JOIN job j ON d.job_ID = j.job_ID AND j.is_product_based = 1
@@ -361,18 +436,19 @@ class DeliveryModel extends BaseModel {
             $stmt->execute([$user->user_ID]);
             return ["success" => true, "deliveries" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
 
-        } else if ($user->role === 'client') {
+        } else if ($user->role === 'client' || $user->role === 'job_provider') {
             $stmt = $this->pdo->prepare("
                 SELECT d.*, j.title as job_title, j.payment as job_payment, j.is_product_based,
                        u1.name as sender_name, u2.name as delivery_staff_name
                 FROM delivery d
                 JOIN job j ON d.job_ID = j.job_ID AND j.is_product_based = 1
-                LEFT JOIN users u1 ON d.sender_std_ID = u1.user_ID
+                LEFT JOIN student s ON d.sender_std_ID = s.student_ID
+                LEFT JOIN users u1 ON (d.sender_std_ID = u1.user_ID OR s.user_ID = u1.user_ID)
                 LEFT JOIN users u2 ON d.delivery_person_ID = u2.user_ID
-                WHERE j.provider_ID = ?
+                WHERE (j.provider_ID = ? OR j.provider_ID IN (SELECT provider_ID FROM job_provider WHERE user_ID = ?))
                 ORDER BY d.delivery_ID DESC
             ");
-            $stmt->execute([$user->user_ID]);
+            $stmt->execute([$user->user_ID, $user->user_ID]);
             return ["success" => true, "deliveries" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
 
         } else if ($user->role === 'delivery_staff') {
@@ -609,7 +685,7 @@ class DeliveryModel extends BaseModel {
         $delivery_fee = 0.00;
         $pickup_coords = null;
 
-        if ($app['delivery_needed'] == 1 && !empty($pickup_address) && !empty($dropoff_address)) {
+        if (!empty($pickup_address) && !empty($dropoff_address)) {
             global $mapbox_token;
             if (!empty($mapbox_token)) {
                 $pickup_coords = $this->geocodeAddressHelper($pickup_address, $mapbox_token);
@@ -1057,7 +1133,18 @@ class DeliveryModel extends BaseModel {
             sendSMS($student_phone, $student_sms);
         }
 
-        $provider_sms = "Product delivered for job '" . $delivery['job_title'] . "'. Please process payment.";
+        $delivery_fee = floatval($delivery['delivery_fee'] ?? 0);
+        if ($delivery_fee <= 0) {
+            $distance = floatval($delivery['distance'] ?? 0);
+            if ($distance > 0) {
+                $delivery_fee = round($distance * 30.00, 2);
+            } else {
+                $delivery_fee = 150.00;
+            }
+        }
+        $formatted_fee = number_format($delivery_fee, 2);
+
+        $provider_sms = "GigConnect: Product delivered for job '" . $delivery['job_title'] . "'. Delivery fee to pay: LKR " . $formatted_fee . ". Please process payment.";
         if (!empty($provider_phone)) {
             sendSMS($provider_phone, $provider_sms);
         }
@@ -1092,6 +1179,171 @@ class DeliveryModel extends BaseModel {
         $stmt->execute([$notif_ID, $admin_id, $admin_msg]);
 
         return ["success" => true, "message" => "Delivery confirmed successfully!"];
+    }
+
+    public function confirmSelfDelivery($data, $user) {
+        if ($user->role !== 'student') {
+            return ["error" => "Unauthorized! Only students can confirm self-deliveries."];
+        }
+
+        $delivery_ID = $data['delivery_ID'] ?? null;
+        $otp = $data['otp'] ?? null;
+
+        if (!$delivery_ID || !$otp) {
+            return ["error" => "Delivery ID and OTP are required!"];
+        }
+
+        // Fetch delivery and associated job details
+        $stmt = $this->pdo->prepare("
+            SELECT d.*, j.title as job_title, j.provider_ID, j.status as job_status
+            FROM delivery d
+            JOIN job j ON d.job_ID = j.job_ID
+            WHERE d.delivery_ID = ?
+        ");
+        $stmt->execute([$delivery_ID]);
+        $delivery = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$delivery) {
+            return ["error" => "Delivery record not found!"];
+        }
+
+        // Verify student owns this delivery
+        $student_ID = $this->ensureStudentProfile($user->user_ID);
+        if ($delivery['sender_std_ID'] !== $user->user_ID && $delivery['sender_std_ID'] !== $student_ID) {
+            return ["error" => "Unauthorized! You are not the sender of this delivery."];
+        }
+
+        // Check delivery type is 'self'
+        if (strtolower($delivery['delivery_type'] ?? '') !== 'self') {
+            return ["error" => "This delivery is not configured for self-delivery."];
+        }
+
+        // Check OTP matches
+        if (trim((string)$delivery['otp']) !== trim((string)$otp)) {
+            return ["error" => "Invalid OTP. Please enter the correct 6-digit OTP code."];
+        }
+
+        // Check OTP expiration if set and delivery is not already delivered
+        if (!empty($delivery['otp_expiry']) && strtolower($delivery['status'] ?? '') !== 'delivered') {
+            $expiry = strtotime($delivery['otp_expiry']);
+            if (time() > $expiry) {
+                return ["error" => "OTP has expired. Please request a new one."];
+            }
+        }
+
+        // Determine distance and delivery fee from distance (30 LKR per km)
+        $distance = floatval($delivery['distance'] ?? 0);
+        $delivery_fee = floatval($delivery['delivery_fee'] ?? 0);
+
+        if ($distance <= 0 && !empty($delivery['pickup_address']) && !empty($delivery['delivery_address'])) {
+            global $mapbox_token;
+            if (!empty($mapbox_token)) {
+                $p_coords = $this->geocodeAddressHelper($delivery['pickup_address'], $mapbox_token);
+                $d_coords = $this->geocodeAddressHelper($delivery['delivery_address'], $mapbox_token);
+                if ($p_coords && $d_coords) {
+                    $road_dist = $this->getMapboxRoadDistance(
+                        $p_coords['latitude'], $p_coords['longitude'],
+                        $d_coords['latitude'], $d_coords['longitude'],
+                        $mapbox_token
+                    );
+                    $distance = ($road_dist !== null) ? $road_dist : $this->getDistanceHelper(
+                        $p_coords['latitude'], $p_coords['longitude'],
+                        $d_coords['latitude'], $d_coords['longitude']
+                    );
+                }
+            }
+        }
+
+        if ($delivery_fee <= 0) {
+            if ($distance > 0) {
+                $delivery_fee = round($distance * 30.00, 2); // 30 LKR per km
+            } else {
+                $delivery_fee = 150.00; // Standard base self-delivery fee in LKR
+            }
+        }
+
+        // Update delivery status to 'confirmed' and persist distance and fee
+        $stmt = $this->pdo->prepare("UPDATE delivery SET status = 'confirmed', distance = ?, delivery_fee = ? WHERE delivery_ID = ?");
+        $stmt->execute([$distance, $delivery_fee, $delivery_ID]);
+
+        // Update job status to 'delivered'
+        $stmt = $this->pdo->prepare("UPDATE job SET status = 'delivered' WHERE job_ID = ?");
+        $stmt->execute([$delivery['job_ID']]);
+
+        // Update application status to 'delivered'
+        $stmt = $this->pdo->prepare("UPDATE application SET status = 'delivered' WHERE job_ID = ? AND (status = 'completed' OR status = 'accepted')");
+        $stmt->execute([$delivery['job_ID']]);
+
+        // Create payment record for delivery_fee (payment_type = 'delivery', status = 'pending')
+        $chk_pay = $this->pdo->prepare("SELECT payment_ID FROM payment WHERE job_ID = ? AND payment_type = 'delivery' LIMIT 1");
+        $chk_pay->execute([$delivery['job_ID']]);
+        $existing_payment = $chk_pay->fetchColumn();
+
+        if (!$existing_payment) {
+            $payment_ID = $this->generateNextID('payment', 'payment_ID', 'PAY');
+            $stmt_pay = $this->pdo->prepare("
+                INSERT INTO payment (payment_ID, job_ID, provider_ID, amount, payment_type, status, created_at)
+                VALUES (?, ?, ?, ?, 'delivery', 'pending', NOW())
+            ");
+            $stmt_pay->execute([$payment_ID, $delivery['job_ID'], $delivery['provider_ID'], $delivery_fee]);
+        }
+
+        // Fetch job provider user details to notify
+        $stmt_prov = $this->pdo->prepare("
+            SELECT u.user_ID, u.name, u.phone, u.email 
+            FROM job_provider jp
+            JOIN users u ON jp.user_ID = u.user_ID
+            WHERE jp.provider_ID = ?
+        ");
+        $stmt_prov->execute([$delivery['provider_ID']]);
+        $provider = $stmt_prov->fetch(PDO::FETCH_ASSOC);
+
+        if (!$provider) {
+            $stmt_direct = $this->pdo->prepare("SELECT user_ID, name, phone, email FROM users WHERE user_ID = ?");
+            $stmt_direct->execute([$delivery['provider_ID']]);
+            $provider = $stmt_direct->fetch(PDO::FETCH_ASSOC);
+        }
+
+        $prov_user_id = $provider['user_ID'] ?? $delivery['provider_ID'];
+        $formatted_fee = number_format($delivery_fee, 2);
+
+        // In-app notification to job provider
+        require_once __DIR__ . '/NotificationModel.php';
+        if ($prov_user_id) {
+            NotificationModel::create(
+                $this->pdo,
+                $prov_user_id,
+                "Product Delivered 📦",
+                "Product delivered by student. Delivery fee: LKR {$formatted_fee}. Please confirm receipt",
+                "delivery_completed",
+                "/dashboard/client/home"
+            );
+        }
+
+        // SMS notification to job provider
+        if (!empty($provider['phone'])) {
+            sendSMS($provider['phone'], "GigConnect: Product delivered by student for '{$delivery['job_title']}'. Delivery fee to pay: LKR {$formatted_fee}. Please confirm receipt.");
+        }
+
+        // Email notification to job provider
+        if (!empty($provider['email'])) {
+            require_once __DIR__ . '/../config/mail.php';
+            $mail_body = "
+                <h2>Product Delivered by Student</h2>
+                <p>Dear " . htmlspecialchars($provider['name'] ?? 'Client') . ",</p>
+                <p>The student has confirmed delivery of the product for <strong>" . htmlspecialchars($delivery['job_title']) . "</strong>.</p>
+                <p>Delivery fee to pay: <strong>LKR {$formatted_fee}</strong>.</p>
+                <p>Please log in to your dashboard to confirm receipt and release payment.</p>
+            ";
+            sendEmail($provider['email'], "GigConnect - Product Delivered by Student", $mail_body);
+        }
+
+        return [
+            "success" => true,
+            "delivery_fee" => $delivery_fee,
+            "delivery_ID" => $delivery_ID,
+            "message" => "Delivery confirmed! Delivery fee of LKR " . number_format($delivery_fee, 2) . " has been added to your earnings."
+        ];
     }
 
     public function getPendingAssignments($user) {

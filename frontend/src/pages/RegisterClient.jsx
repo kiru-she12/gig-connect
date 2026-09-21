@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Building, Mail, Phone, Lock, FileText, Loader2, X, ShieldCheck, ArrowLeft, ArrowRight, Briefcase } from 'lucide-react';
+import { Buildings, Envelope, Phone, Lock, FileText, Spinner, X, ShieldCheck, ArrowLeft, ArrowRight, Briefcase } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../assets/logo/logo.png';
 import Footer from '../components/layout/Footer';
@@ -23,7 +23,7 @@ const RegisterClient = () => {
   const [error, setError] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { register, verifyOtp, forgotPassword, loading, setIsLoginModalOpen } = useAuth();
+  const { register, verifyOtp, forgotPassword, loading, setIsLoginModalOpen, setIsTermsModalOpen, setIsPrivacyModalOpen } = useAuth();
   const navigate = useNavigate();
 
   const nextStep = () => {
@@ -241,7 +241,7 @@ const RegisterClient = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Name (Optional)</label>
                       <div className="relative group">
-                        <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                        <Buildings className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="text" 
                           placeholder="Company or Brand"
@@ -257,7 +257,7 @@ const RegisterClient = () => {
                     <div className="space-y-2">
                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Corporate Email</label>
                       <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                        <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
                         <input 
                           type="email" 
                           required
@@ -409,7 +409,23 @@ const RegisterClient = () => {
                         onChange={(e) => setFormData({ ...formData, terms: e.target.checked })}
                       />
                       <span className="text-xs text-slate-500 leading-relaxed font-medium">
-                        I agree to the <Link to="#" className="text-primary font-bold hover:underline">Terms of Service</Link> and <Link to="#" className="text-primary font-bold hover:underline">Privacy Policy</Link> for business entities on GigConnect.
+                        I agree to the{' '}
+                        <button 
+                          type="button" 
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsTermsModalOpen(true); }}
+                          className="text-primary font-bold hover:underline inline p-0 m-0 bg-transparent border-none align-baseline cursor-pointer"
+                        >
+                          Terms of Service
+                        </button>{' '}
+                        and{' '}
+                        <button 
+                          type="button" 
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPrivacyModalOpen(true); }}
+                          className="text-primary font-bold hover:underline inline p-0 m-0 bg-transparent border-none align-baseline cursor-pointer"
+                        >
+                          Privacy Policy
+                        </button>{' '}
+                        for business entities on GigConnect.
                       </span>
                     </label>
                   </div>
@@ -421,7 +437,7 @@ const RegisterClient = () => {
                       disabled={loading}
                       className="flex-[2] bg-primary hover:bg-primary-dark text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-primary/20 disabled:opacity-70 transition-all"
                     >
-                      {loading ? <Loader2 className="animate-spin" /> : 'Register Business'}
+                      {loading ? <Spinner className="animate-spin" size={20} /> : 'Register Business'}
                     </button>
                   </div>
                 </motion.div>
@@ -481,7 +497,7 @@ const RegisterClient = () => {
                       disabled={loading || formData.otpCode?.length !== 6}
                       className="flex-[2] bg-primary hover:bg-primary-dark text-white py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-primary/20 transition-all"
                     >
-                      {loading ? <Loader2 className="animate-spin" size={20} /> : 'Verify OTP'}
+                      {loading ? <Spinner className="animate-spin" size={20} /> : 'Verify OTP'}
                     </button>
                   </div>
                 </motion.div>

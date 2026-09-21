@@ -7,13 +7,14 @@ require_once __DIR__ . '/../views/JsonView.php';
 class AuthController extends BaseController {
     public function login() {
         $data = json_decode(file_get_contents("php://input"), true);
-        if (!$data || !isset($data['email']) || !isset($data['password'])) {
-            JsonView::render(["error" => "Invalid email or password input data!"]);
+        $identifier = $data['email'] ?? $data['username'] ?? null;
+        if (!$data || empty(trim($identifier ?? '')) || !isset($data['password']) || $data['password'] === '') {
+            JsonView::render(["error" => "Invalid username or password!"]);
             return;
         }
 
         $userModel = new UserModel($this->pdo);
-        $result = $userModel->authenticate($data['email'], $data['password']);
+        $result = $userModel->authenticate($identifier, $data['password']);
 
         if (isset($result['error'])) {
             JsonView::render($result);

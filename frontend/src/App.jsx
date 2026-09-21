@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginModal from './components/auth/LoginModal';
 import RegisterModal from './components/auth/RegisterModal';
 import ContactModal from './components/auth/ContactModal';
+import TermsModal from './components/auth/TermsModal';
+import PrivacyModal from './components/auth/PrivacyModal';
 import { JobsProvider } from './context/JobsContext';
 import { NotificationsProvider } from './context/NotificationsContext';
 import { AlertProvider } from './context/AlertContext';
@@ -101,6 +103,8 @@ const AppContent = () => {
         onClose={() => setIsRegisterModalOpen(false)} 
       />
       <ContactModal />
+      <TermsModal />
+      <PrivacyModal />
     </div>
   );
 };

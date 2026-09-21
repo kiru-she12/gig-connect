@@ -77,6 +77,51 @@ class PaymentModel extends BaseModel {
                     );
                     sendEmail($app['email'], "GigConnect - Application Update", $email_body);
                 }
+
+                // Check if quota (seekers_needed) is fulfilled, then auto-reject remaining applicants
+                $stmtJobInfo = $this->pdo->prepare("SELECT seekers_needed FROM job WHERE job_ID = ?");
+                $stmtJobInfo->execute([$job_ID]);
+                $seekers_needed = (int)($stmtJobInfo->fetchColumn() ?: 1);
+
+                $stmtCountAccepted = $this->pdo->prepare("SELECT COUNT(*) FROM application WHERE job_ID = ? AND status = 'accepted'");
+                $stmtCountAccepted->execute([$job_ID]);
+                $acceptedCount = (int)$stmtCountAccepted->fetchColumn();
+
+                if ($acceptedCount >= $seekers_needed) {
+                    $stmtRem = $this->pdo->prepare("
+                        SELECT a.application_ID, u.email, u.name, u.user_ID AS student_user_ID, j.title
+                        FROM application a
+                        JOIN student s ON a.student_ID = s.student_ID
+                        JOIN users u ON s.user_ID = u.user_ID
+                        JOIN job j ON a.job_ID = j.job_ID
+                        WHERE a.job_ID = ? AND a.status IN ('applied', 'shortlisted', 'pending_payment')
+                    ");
+                    $stmtRem->execute([$job_ID]);
+                    $remaining_apps = $stmtRem->fetchAll(PDO::FETCH_ASSOC);
+
+                    if (count($remaining_apps) > 0) {
+                        $stmtRejectAll = $this->pdo->prepare("
+                            UPDATE application 
+                            SET status = 'rejected' 
+                            WHERE job_ID = ? AND status IN ('applied', 'shortlisted', 'pending_payment')
+                        ");
+                        $stmtRejectAll->execute([$job_ID]);
+
+                        require_once __DIR__ . '/NotificationModel.php';
+                        foreach ($remaining_apps as $remApp) {
+                            if (!empty($remApp['student_user_ID'])) {
+                                NotificationModel::create(
+                                    $this->pdo,
+                                    $remApp['student_user_ID'],
+                                    "Position Filled",
+                                    "Thank you for applying for '" . $remApp['title'] . "'. The required position has been filled by another applicant.",
+                                    "job_rejected",
+                                    "/dashboard/student/applications"
+                                );
+                            }
+                        }
+                    }
+                }
             }
         }
 

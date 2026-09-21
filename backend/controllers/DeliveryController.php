@@ -63,6 +63,17 @@ class DeliveryController extends BaseController {
         JsonView::render($result);
     }
 
+    public function confirmSelfDelivery($user) {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data || !isset($data['delivery_ID']) || !isset($data['otp'])) {
+            JsonView::render(["error" => "Delivery ID and OTP are required!"]);
+            return;
+        }
+        $model = new DeliveryModel($this->pdo);
+        $result = $model->confirmSelfDelivery($data, $user);
+        JsonView::render($result);
+    }
+
     public function getPendingAssignments($user) {
         $model = new DeliveryModel($this->pdo);
         $result = $model->getPendingAssignments($user);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Bell, User, LogOut, Menu, X, ChevronDown, Search, ArrowRight, Moon, Sun } from 'lucide-react';
+import { Bell, User, SignOut, List, X, CaretDown, ArrowRight } from '@phosphor-icons/react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationsContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,7 +56,14 @@ const Navbar = ({ dashboard = false }) => {
 
   const dashboardLinks = getLinksByRole(user?.role);
   const unreadCount = notifications.filter(n => !n.read).length;
-  const showScrolledStyle = isScrolled || dashboard || (user !== null) || location.pathname !== '/';
+  const useDarkText = true;
+
+  const PUBLIC_NAV_LINKS = [
+    { name: 'Home', id: '#home' },
+    { name: 'About', id: '#about' },
+    { name: 'Find Jobs', to: '/jobs' },
+    { name: 'Contact', action: 'contact' }
+  ];
 
   const handleLogout = () => {
     logout();
@@ -65,10 +72,10 @@ const Navbar = ({ dashboard = false }) => {
 
   return (
     <nav 
-      className={`fixed top-0 left-0 w-full z-[100] transition-all duration-500 ${
-        showScrolledStyle 
-          ? 'py-2 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-md' 
-          : 'py-5 bg-transparent border-b border-transparent'
+      className={`fixed top-0 left-0 w-full z-[100] transition-all duration-300 py-3 sm:py-3.5 ${
+        isScrolled
+          ? 'bg-white/95 backdrop-blur-md shadow-xs border-b border-slate-200/70'
+          : 'bg-white/85 backdrop-blur-md border-b border-slate-100/60'
       }`}
     >
       <div className="w-full max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-16">
@@ -83,9 +90,9 @@ const Navbar = ({ dashboard = false }) => {
           >
             <Link to="/" onClick={(e) => scrollToSection(e, '')} className="flex items-center gap-2 group">
               <span className={`font-heading font-black tracking-tight transition-all duration-300 ${
-                user?.role === 'student'
-                  ? 'text-xl md:text-2xl text-slate-900'
-                  : showScrolledStyle ? 'text-xl md:text-2xl text-slate-800' : 'text-2xl md:text-3xl text-white drop-shadow-md'
+                useDarkText 
+                  ? 'text-xl md:text-2xl text-slate-900' 
+                  : 'text-2xl md:text-3xl text-white drop-shadow-md'
               }`}>
                 GigConnect
               </span>
@@ -114,32 +121,20 @@ const Navbar = ({ dashboard = false }) => {
                 }}
                 className="hidden lg:flex items-center space-x-6 mr-4"
               >
-                {(user?.role === 'student' ? [
-                  { name: 'Home', id: '#home' },
-                  { name: 'Find Jobs', to: '/jobs' },
-                  { name: 'How It Works', id: '#how-it-works' },
-                  { name: 'Contact', action: 'contact' }
-                ] : [
-                  { name: 'Home', id: '#home' },
-                  { name: 'About', id: '#about' },
-                  { name: 'Find Jobs', to: '/jobs' },
-                  { name: 'Contact', action: 'contact' }
-                ]).map((link) => 
+                {PUBLIC_NAV_LINKS.map((link) => 
                   link.to ? (
                     <Link
                       key={link.name}
                       to={link.to}
                       className={`group relative transition-all duration-300 flex items-center gap-1 ${
-                        user?.role === 'student'
-                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-accent'
-                          : showScrolledStyle 
-                            ? 'text-sm lg:text-base text-slate-600 hover:text-primary' 
-                            : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
+                        useDarkText 
+                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-800 hover:text-emerald-700' 
+                          : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
                       }`}
                     >
                       {link.name}
                       <span className={`absolute -bottom-1 left-0 w-0 h-[2px] rounded-full transition-all duration-300 group-hover:w-full ${
-                        user?.role === 'student' ? 'bg-accent' : showScrolledStyle ? 'bg-primary' : 'bg-white'
+                        useDarkText ? 'bg-emerald-600' : 'bg-white'
                       }`}></span>
                     </Link>
                   ) : link.action === 'contact' ? (
@@ -147,16 +142,14 @@ const Navbar = ({ dashboard = false }) => {
                       key={link.name}
                       onClick={() => setIsContactModalOpen(true)}
                       className={`group relative transition-all duration-300 flex items-center gap-1 ${
-                        user?.role === 'student'
-                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-accent'
-                          : showScrolledStyle 
-                            ? 'text-sm lg:text-base text-slate-600 hover:text-primary' 
-                            : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
+                        useDarkText 
+                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-800 hover:text-emerald-700' 
+                          : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
                       }`}
                     >
                       {link.name}
                       <span className={`absolute -bottom-1 left-0 w-0 h-[2px] rounded-full transition-all duration-300 group-hover:w-full ${
-                        user?.role === 'student' ? 'bg-accent' : showScrolledStyle ? 'bg-primary' : 'bg-white'
+                        useDarkText ? 'bg-emerald-600' : 'bg-white'
                       }`}></span>
                     </button>
                   ) : (
@@ -171,16 +164,14 @@ const Navbar = ({ dashboard = false }) => {
                         scrollToSection(e, link.id);
                       }}
                       className={`group relative transition-all duration-300 flex items-center gap-1 ${
-                        user?.role === 'student'
-                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-900 hover:text-accent'
-                          : showScrolledStyle 
-                            ? 'text-sm lg:text-base text-slate-600 hover:text-primary' 
-                            : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
+                        useDarkText 
+                          ? 'text-xs lg:text-sm font-extrabold uppercase tracking-wider text-slate-800 hover:text-emerald-700' 
+                          : 'text-base lg:text-lg text-white hover:text-white/80 drop-shadow-sm'
                       }`}
                     >
                       {link.name}
                       <span className={`absolute -bottom-1 left-0 w-0 h-[2px] rounded-full transition-all duration-300 group-hover:w-full ${
-                        user?.role === 'student' ? 'bg-accent' : showScrolledStyle ? 'bg-primary' : 'bg-white'
+                        useDarkText ? 'bg-emerald-600' : 'bg-white'
                       }`}></span>
                     </motion.a>
                   )
@@ -195,9 +186,9 @@ const Navbar = ({ dashboard = false }) => {
                   <button 
                     onClick={() => setShowNotifications(!showNotifications)}
                     className={`p-2.5 rounded-full relative transition-all duration-300 ${
-                      user?.role === 'student'
-                        ? 'text-slate-800 hover:text-accent hover:bg-slate-100'
-                        : showScrolledStyle ? 'text-text-secondary hover:bg-slate-100' : 'text-white/80 hover:bg-white/10'
+                      useDarkText 
+                        ? 'text-slate-800 hover:text-emerald-700 hover:bg-slate-100/60' 
+                        : 'text-white/80 hover:bg-white/10'
                     }`}
                   >
                     <Bell size={20} />
@@ -302,11 +293,9 @@ const Navbar = ({ dashboard = false }) => {
                   <button 
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className={`flex items-center gap-2 p-1 rounded-full transition-all border ${
-                      user?.role === 'student'
-                        ? 'bg-slate-50 border-slate-200 hover:bg-white hover:shadow-md'
-                        : showScrolledStyle 
-                          ? 'bg-slate-50 border-slate-200 hover:bg-white hover:shadow-md' 
-                          : 'bg-white/10 border-white/20 hover:bg-white/20'
+                      useDarkText 
+                        ? 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300 shadow-2xs' 
+                        : 'bg-white/10 border-white/20 hover:bg-white/20'
                     }`}
                   >
                     {user?.profile_pic ? (
@@ -324,7 +313,7 @@ const Navbar = ({ dashboard = false }) => {
                         {user.name ? user.name[0].toUpperCase() : 'U'}
                       </div>
                     )}
-                    <ChevronDown size={14} className={user?.role === 'student' || showScrolledStyle ? 'text-text-secondary' : 'text-white'} />
+                    <CaretDown size={14} className={useDarkText ? 'text-slate-600' : 'text-white'} />
                   </button>
 
                   <AnimatePresence>
@@ -373,7 +362,7 @@ const Navbar = ({ dashboard = false }) => {
                               }}
                               className="w-full mt-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50/70 hover:bg-rose-100/80 active:bg-rose-200/80 border border-rose-200/80 rounded-xl transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.98]"
                             >
-                              <LogOut size={14} />
+                              <SignOut size={14} />
                               <span>Log Out</span>
                             </button>
                           </div>
@@ -388,33 +377,33 @@ const Navbar = ({ dashboard = false }) => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
-                className="hidden md:flex items-center gap-4"
+                className="hidden md:flex items-center gap-3"
               >
                 <button 
                   onClick={() => setIsLoginModalOpen(true)}
-                  className={`px-6 rounded-full font-semibold transition-all duration-300 ${
-                    showScrolledStyle 
-                      ? 'py-2 text-sm text-slate-600 hover:text-primary bg-slate-100/50 hover:bg-slate-100' 
-                      : 'py-2.5 text-base text-white/90 hover:text-white border border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-md'
+                  className={`px-5 py-2 rounded-full font-semibold transition-all duration-300 text-xs sm:text-sm ${
+                    useDarkText 
+                      ? 'text-slate-700 hover:text-slate-900 bg-slate-100/70 hover:bg-slate-200/70' 
+                      : 'text-white/90 hover:text-white border border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-md'
                   }`}
                 >
                   Log In
                 </button>
                 <button 
                   onClick={() => setIsRegisterModalOpen(true)}
-                  className={`group pl-6 pr-2 rounded-full font-semibold flex items-center gap-3 transition-all duration-300 active:scale-95 ${
-                    showScrolledStyle
-                      ? 'py-1.5 text-sm bg-[#32cd32] hover:bg-[#2ebc2e] text-white shadow-lg shadow-[#32cd32]/30 hover:shadow-xl hover:shadow-[#32cd32]/40 hover:-translate-y-0.5'
-                      : 'py-2.5 text-base bg-white text-slate-900 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:-translate-y-0.5'
+                  className={`group pl-5 pr-2 py-1.5 rounded-full font-semibold flex items-center gap-2.5 transition-all duration-300 text-xs sm:text-sm active:scale-95 ${
+                    useDarkText
+                      ? 'bg-[#1A312C] hover:bg-[#142622] text-white shadow-sm'
+                      : 'bg-white text-slate-900 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:-translate-y-0.5'
                   }`}
                 >
                   <span>Sign Up</span>
                   <div className={`rounded-full flex items-center justify-center transition-all duration-300 ${
-                    showScrolledStyle 
+                    useDarkText 
                       ? 'w-7 h-7 bg-white/20 group-hover:bg-white/30 group-hover:translate-x-1' 
                       : 'w-8 h-8 bg-slate-100 group-hover:bg-slate-200 group-hover:translate-x-1'
                   }`}>
-                    <ArrowRight size={14} className={showScrolledStyle ? 'text-white' : 'text-slate-900'} />
+                    <ArrowRight size={14} className={useDarkText ? 'text-white' : 'text-slate-900'} />
                   </div>
                 </button>
               </motion.div>
@@ -424,12 +413,10 @@ const Navbar = ({ dashboard = false }) => {
             <button 
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className={`lg:hidden p-2 rounded-xl transition-colors ${
-                user?.role === 'student'
-                  ? 'text-slate-900 hover:bg-slate-100'
-                  : showScrolledStyle ? 'text-text-secondary hover:bg-slate-100' : 'text-white hover:bg-white/10'
+                useDarkText ? 'text-slate-900 hover:bg-slate-100/60' : 'text-white hover:bg-white/10'
               }`}
             >
-              {showMobileMenu ? <X size={24} /> : <Menu size={24} />}
+              {showMobileMenu ? <X size={24} /> : <List size={24} />}
             </button>
           </div>
         </div>
@@ -445,17 +432,7 @@ const Navbar = ({ dashboard = false }) => {
             className="lg:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 shadow-2xl p-6 flex flex-col gap-4"
           >
             <div className="space-y-1">
-              {(user?.role === 'student' ? [
-                { name: 'Home', id: '#home' },
-                { name: 'Find Jobs', to: '/jobs' },
-                { name: 'How It Works', id: '#how-it-works' },
-                { name: 'Contact', action: 'contact' }
-              ] : [
-                { name: 'Home', id: '#home' },
-                { name: 'About', id: '#about' },
-                { name: 'Find Jobs', to: '/jobs' },
-                { name: 'Contact', action: 'contact' }
-              ]).map((item) => 
+              {PUBLIC_NAV_LINKS.map((item) => 
                 item.to ? (
                   <Link
                     key={item.name}
@@ -533,7 +510,7 @@ const Navbar = ({ dashboard = false }) => {
                   onClick={() => { setShowMobileMenu(false); handleLogout(); }}
                   className="w-full py-3 px-4 text-left font-semibold text-rose-600 hover:bg-rose-50 transition-colors rounded-2xl flex items-center gap-2"
                 >
-                  <LogOut size={18} />
+                  <SignOut size={18} />
                   <span>Log Out</span>
                 </button>
               </div>

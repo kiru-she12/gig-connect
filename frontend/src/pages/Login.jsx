@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, ArrowLeft, Check, Loader2, Mail, Lock, ShieldCheck, Zap } from 'lucide-react';
+import { Eye, EyeSlash, ArrowLeft, Check, Spinner, Envelope, Lock, ShieldCheck } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../assets/logo/logo.png';
 
@@ -190,7 +190,7 @@ const Login = () => {
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-0.5">Email or Username</label>
                     <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors" size={18} />
+                      <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors" size={18} />
                       <input 
                         type="text" 
                         required
@@ -228,7 +228,7 @@ const Login = () => {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                       >
-                        {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                        {showPassword ? <Eye size={18} /> : <EyeSlash size={18} />}
                       </button>
                     </div>
                   </div>
@@ -238,7 +238,7 @@ const Login = () => {
                     disabled={loading || !email || !password}
                     className="w-full py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold text-sm flex items-center justify-center transition-all shadow-lg shadow-teal-600/25 active:scale-[0.98] mt-2"
                   >
-                    {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : 'Sign In to Account'}
+                    {loading ? <Spinner className="animate-spin mr-2" size={18} /> : 'Sign In to Account'}
                   </button>
                 </form>
 
@@ -284,7 +284,7 @@ const Login = () => {
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-0.5">Email Address</label>
                     <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors" size={18} />
+                      <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors" size={18} />
                       <input 
                         type="email" 
                         required
@@ -309,7 +309,7 @@ const Login = () => {
                       disabled={loading || !resetEmail}
                       className="flex-[2] py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 disabled:from-slate-200 disabled:to-slate-200 text-white rounded-xl font-bold text-sm flex items-center justify-center transition-all shadow-lg shadow-teal-600/20"
                     >
-                      {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : 'Send OTP'}
+                      {loading ? <Spinner className="animate-spin mr-2" size={18} /> : 'Send OTP'}
                     </button>
                   </div>
                 </form>
@@ -389,7 +389,7 @@ const Login = () => {
                       disabled={loading || otpCode.length !== 6 || !newPassword || !confirmPassword}
                       className="flex-[2] py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 disabled:from-slate-200 disabled:to-slate-200 text-white rounded-xl font-bold text-sm flex items-center justify-center transition-all shadow-lg shadow-teal-600/20"
                     >
-                      {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : 'Reset Password'}
+                      {loading ? <Spinner className="animate-spin mr-2" size={18} /> : 'Reset Password'}
                     </button>
                   </div>
                 </form>

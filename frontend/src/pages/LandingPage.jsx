@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Filter, ArrowRight, CheckCircle, Zap, Shield, Users, DollarSign, Briefcase, PlusCircle, User, Calendar, MapPin, Clock, ChevronDown, GraduationCap, Star, Play, Pause, Truck, MessageSquare, Percent, CheckCircle2, Heart, PenTool } from 'lucide-react';
+import {
+  MagnifyingGlass, ArrowRight, CheckCircle, Lightning, Shield,
+  Briefcase, PlusCircle, Calendar, CaretDown,
+  GraduationCap, Star, Play, Pause, Heart, PenNib,
+  Camera, Trash, Spinner
+} from '@phosphor-icons/react';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import JobCard from '../components/shared/JobCard';
@@ -17,6 +22,7 @@ import heroChef from '../assets/images/hero-chef.jpg';
 import heroVideo from '../assets/images/hero-video.jpg';
 import heroAuditorium from '../assets/images/hero-auditorium.jpg';
 import chefsEvent from '../assets/images/chefs-event.jpg';
+import heroProfessional from '../assets/images/hero-professional.jpg';
 
 const getCategoryIcon = (category, title) => {
   const t = (title || '').toLowerCase();
@@ -24,7 +30,7 @@ const getCategoryIcon = (category, title) => {
   
   if (c.includes('design') || t.includes('design') || t.includes('graphic')) {
     return {
-      icon: <PenTool size={20} className="text-violet-600" />,
+      icon: <PenNib size={20} className="text-violet-600" />,
       bg: 'bg-violet-100'
     };
   }
@@ -36,7 +42,7 @@ const getCategoryIcon = (category, title) => {
   }
   if (c.includes('photo') || t.includes('photo') || t.includes('video')) {
     return {
-      icon: <PenTool size={20} className="text-pink-600" />,
+      icon: <PenNib size={20} className="text-pink-600" />,
       bg: 'bg-pink-100'
     };
   }
@@ -81,6 +87,42 @@ const getJobCardImage = (category, title, index = 0) => {
   const fallbackImages = [studentsStudying, heroVideo, studentBenchImg, heroChef, heroAuditorium, studentImg];
   return fallbackImages[index % fallbackImages.length];
 };
+
+const SparkleStar = ({ className = "w-4 h-4 text-[#4E8C7E]" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 0C12 6.627 6.627 12 0 12C6.627 12 12 17.373 12 24C12 17.373 17.373 12 24 12C17.373 12 12 6.627 12 0Z" />
+  </svg>
+);
+
+const BotanicalSprig = ({ className = "w-20 h-40 text-[#1A312C]/40" }) => (
+  <svg className={className} viewBox="0 0 100 200" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M50 195 Q 52 110 50 10" />
+    <path d="M50 160 Q 30 145 22 135 Q 26 130 42 145 Q 50 152 50 155" fill="currentColor" fillOpacity="0.2" />
+    <path d="M50 135 Q 70 120 78 110 Q 74 105 58 120 Q 50 127 50 130" fill="currentColor" fillOpacity="0.2" />
+    <path d="M50 110 Q 28 95 20 85 Q 24 80 40 95 Q 50 102 50 105" fill="currentColor" fillOpacity="0.2" />
+    <path d="M50 85 Q 72 70 80 60 Q 76 55 60 70 Q 50 77 50 80" fill="currentColor" fillOpacity="0.2" />
+    <path d="M50 60 Q 32 45 26 35 Q 30 30 44 45 Q 50 52 50 55" fill="currentColor" fillOpacity="0.2" />
+    <path d="M50 35 Q 65 20 70 12 Q 66 8 52 22 Q 50 28 50 30" fill="currentColor" fillOpacity="0.2" />
+    <circle cx="50" cy="10" r="4" fill="currentColor" />
+  </svg>
+);
+
+const WashiTape = ({ className = "" }) => (
+  <div 
+    className={`h-5 sm:h-6 bg-white/75 backdrop-blur-xs border-y border-white/90 shadow-2xs rotate-[-3deg] pointer-events-none ${className}`} 
+    style={{
+      backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(78, 140, 126, 0.06) 8px, rgba(78, 140, 126, 0.06) 16px)'
+    }} 
+  />
+);
+
+const ColorPaletteDots = ({ className = "" }) => (
+  <div className={`flex flex-col gap-2.5 z-20 ${className}`}>
+    <span className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full bg-[#1A312C] shadow-xs border-2 border-white ring-1 ring-slate-200/50" />
+    <span className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full bg-[#4E8C7E] shadow-xs border-2 border-white ring-1 ring-slate-200/50" />
+    <span className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full bg-[#A3D4C7] shadow-xs border-2 border-white ring-1 ring-slate-200/50" />
+  </div>
+);
 
 const DetailedStudentJobCard = ({ job, onApply, applied = false, matchScore = null, isRecommended = false }) => {
   const isBoosted = Boolean(job.isBoosted || job.is_boosted == 1 || job.is_boosted === true || job.is_boosted === '1');
@@ -203,7 +245,7 @@ const DetailedStudentJobCard = ({ job, onApply, applied = false, matchScore = nu
 
 const LandingPage = () => {
   const { jobs, applications, applyForJob } = useJobs();
-  const { user, setIsLoginModalOpen, setIsRegisterModalOpen } = useAuth();
+  const { user, updateUser, setIsLoginModalOpen, setIsRegisterModalOpen } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -333,14 +375,18 @@ const LandingPage = () => {
 
   const PRODUCT_KEYWORDS = [
     'cake', 'crochet', 'bakery', 'bake', 'craft', 'knit', 'sew', 'tailor', 'food', 'pastry', 'cookie', 'snack', 'meal', 'lunch', 'box', 'parcel', 'package', 'jewelry', 'handmade', 'product', 'deliver', 'item',
-    'bag', 'tote', 'canvas', 'paint', 'print', 'drawing', 'sketch', 'shirt', 'clothing', 'dress', 'garment', 'costume', 'outfit', 'cup', 'mug', 'gift', 'art', 'decor', 'hand-paint', 'screen-print', 't-shirt', 'bottle', 'pottery', 'toy', 'woodwork', 'knitting', 'sewing', 'embroidery', 'sweet', 'candle', 'card', 'dessert', 'cupcake', 'cushion', 'pillow', 'mat'
+    'bag', 'tote', 'canvas', 'paint', 'print', 'drawing', 'sketch', 'shirt', 'clothing', 'dress', 'garment', 'costume', 'outfit', 'cup', 'mug', 'gift', 'art', 'decor', 'hand-paint', 'screen-print', 't-shirt', 'bottle', 'pottery', 'toy', 'woodwork', 'knitting', 'sewing', 'embroidery', 'sweet', 'candle', 'card', 'dessert', 'cupcake', 'cushion', 'pillow'
   ];
 
   const isProductBased = (job) => {
     if (!job) return false;
-    if (job.is_product_based === true || job.is_product_based == 1 || job.is_product_based === '1' || job._isProduct) return true;
+    // Onsite jobs are performed on-site in person and never require product delivery
+    const jobType = (job.job_type || job.type || '').toLowerCase();
+    if (jobType === 'onsite' || jobType === 'on-site') return false;
+
+    if (job.is_product_based === true || job.is_product_based == 1 || job.is_product_based === '1') return true;
     const combined = ((job.title || '') + ' ' + (job.description || '') + ' ' + (job.category || '')).toLowerCase();
-    return PRODUCT_KEYWORDS.some(kw => combined.includes(kw));
+    return PRODUCT_KEYWORDS.some(kw => new RegExp(`\\b${kw}\\b`, 'i').test(combined));
   };
 
   const handleApplyClick = (job) => {
@@ -393,6 +439,85 @@ const LandingPage = () => {
       alert('Failed to process application request.');
     } finally {
       setApplying(false);
+    }
+  };
+
+  const [uploadingHeroPic, setUploadingHeroPic] = useState(false);
+
+  const getHeroImageUrl = (pic) => {
+    if (!pic) return heroProfessional;
+    if (pic.startsWith('http://') || pic.startsWith('https://') || pic.startsWith('/')) {
+      return pic;
+    }
+    const backendBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend';
+    return `${backendBase}/uploads/profile_pics/${pic}`;
+  };
+
+  const handleHeroPicUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image file size must be less than 5MB.');
+      return;
+    }
+
+    setUploadingHeroPic(true);
+
+    const formData = new FormData();
+    formData.append('profile_pic', file);
+
+    try {
+      const token = localStorage.getItem('token');
+      const backendBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend';
+      const res = await fetch(`${backendBase}/api/profile/upload_profile_pic.php`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        updateUser({ profile_pic: data.profile_pic });
+      } else {
+        alert(data.error || 'Failed to upload photo.');
+      }
+    } catch (err) {
+      alert('Connection error. Could not upload photo.');
+    } finally {
+      setUploadingHeroPic(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleHeroPicRemove = async () => {
+    if (!window.confirm('Are you sure you want to delete your photo and revert to the default picture?')) return;
+
+    setUploadingHeroPic(true);
+    try {
+      const token = localStorage.getItem('token');
+      const backendBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost/gigconnect/backend';
+      const res = await fetch(`${backendBase}/api/profile/upload_profile_pic.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'remove' })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        updateUser({ profile_pic: null });
+      } else {
+        alert(data.error || 'Failed to remove photo.');
+      }
+    } catch (err) {
+      alert('Connection error. Could not remove photo.');
+    } finally {
+      setUploadingHeroPic(false);
     }
   };
 
@@ -599,124 +724,298 @@ const LandingPage = () => {
     };
 
     return (
-      <div ref={heroRef} className="flex-1 flex flex-col overflow-x-hidden bg-white min-h-screen pt-20">
+      <div ref={heroRef} className="flex-1 flex flex-col overflow-x-hidden bg-[#F7FAF9] min-h-screen">
         <Navbar />
 
-        {/* Hero Section Container */}
-        <section id="home" className="max-w-7xl mx-auto w-full px-6 sm:px-10 lg:px-16 py-8 relative">
-          <div className="bg-[#1A312C] border border-emerald-900/50 rounded-[2.5rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between min-h-[450px] shadow-2xl text-white gap-8 text-left">
-            
-            {/* Outlined text in background */}
-            <div className="absolute inset-0 flex items-center justify-start pl-8 sm:pl-16 pointer-events-none select-none overflow-hidden">
-              <span className="text-[15vw] font-black text-white/[0.04] uppercase tracking-widest font-sans leading-none select-none">
-                STUDENT
-              </span>
-            </div>
+        {/* ── SECTION 1: EDITORIAL HERO SECTION (Matches Reference Section 1) ── */}
+        <section id="home" className="relative pt-24 sm:pt-28 lg:pt-32 pb-16 lg:pb-24 overflow-hidden">
+          {/* Subtle natural background glow */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100/40 rounded-full blur-[120px] pointer-events-none -z-10" />
+          <div className="absolute top-1/3 left-0 w-80 h-80 bg-teal-100/30 rounded-full blur-[100px] pointer-events-none -z-10" />
 
-            {/* Subtle background glow */}
-            <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-500/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
 
-            {/* Content Column */}
-            <div className="relative z-10 w-full md:w-3/5 flex flex-col items-start">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-black tracking-tight leading-none mb-6 uppercase text-white">
-                Welcome back, <br />
-                <span className="text-emerald-400">{user.name.split(' ')[0]}</span>!
-              </h1>
+              {/* Left Content Column */}
+              <div className="lg:col-span-7 space-y-6 sm:space-y-8 text-left">
+                {/* Editorial Title */}
+                <div>
+                  <h1 className="font-heading font-black text-4xl sm:text-5xl lg:text-6xl text-[#1A312C] tracking-tight leading-[1.1]">
+                    <span className="font-serif italic font-normal text-slate-500 block text-2xl sm:text-3xl lg:text-4xl mb-1">
+                      Welcome back,
+                    </span>
+                    <span className="text-[#1A312C] uppercase">
+                      {user.name.split(' ')[0]}!
+                    </span>
+                  </h1>
+                  <p className="text-slate-600 text-sm sm:text-base font-medium mt-4 max-w-lg leading-relaxed">
+                    Find high-quality Jobs opportunities matching your skill set and study schedule.
+                  </p>
+                </div>
 
-              {/* Integrated Search Input */}
-              <div className="w-full max-w-md bg-white rounded-full p-1.5 pl-4 flex items-center shadow-2xl border border-white/20 mb-4 transition-all focus-within:ring-2 focus-within:ring-emerald-400">
-                <Search className="text-slate-400 flex-shrink-0" size={18} />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSearchSubmit();
-                    }
-                  }}
-                  placeholder="Search for any service or gig..."
-                  className="w-full bg-transparent border-0 outline-none text-slate-800 px-3 text-xs sm:text-sm placeholder:text-slate-400 font-semibold"
-                />
-                <button
-                  onClick={handleSearchSubmit}
-                  className="w-10 h-10 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-full flex items-center justify-center transition-all active:scale-95 flex-shrink-0 font-bold"
-                >
-                  <ArrowRight size={18} />
-                </button>
-              </div>
-
-              {/* Popular tags list */}
-              <div className="flex flex-wrap items-center gap-1.5 text-white/90 mb-6">
-                <span className="font-bold opacity-90 mr-1 text-white text-xs">Popular skills:</span>
-                {['All', 'Design', 'Data Entry', 'Photography', 'Web Dev', 'Translation'].map((cat) => (
+                {/* Pill Search Bar */}
+                <div className="w-full max-w-xl bg-white rounded-full p-2 pl-5 flex items-center shadow-lg shadow-emerald-950/5 border border-slate-200/90 transition-all focus-within:ring-2 focus-within:ring-[#4E8C7E] focus-within:border-transparent">
+                  <MagnifyingGlass className="text-slate-400 flex-shrink-0" size={18} />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearchSubmit();
+                      }
+                    }}
+                    placeholder="Search for any service or gig..."
+                    className="w-full bg-transparent border-0 outline-none text-slate-800 px-3 text-xs sm:text-sm placeholder:text-slate-400 font-semibold"
+                  />
                   <button
-                     key={cat}
-                     onClick={() => {
-                       navigate('/jobs', { state: { category: cat } });
-                     }}
-                     className="px-3.5 py-1.5 rounded-full border text-[11px] font-bold transition-all whitespace-nowrap bg-white/10 text-white border-white/20 hover:bg-white hover:text-[#1A312C]"
-                   >
-                     {cat}
-                   </button>
-                ))}
+                    onClick={handleSearchSubmit}
+                    className="w-10 h-10 bg-[#1A312C] hover:bg-[#4E8C7E] text-white rounded-full flex items-center justify-center transition-all active:scale-95 flex-shrink-0 font-bold shadow-sm"
+                    title="Search Jobs"
+                  >
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+
+                {/* Popular Skills Pills */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="font-bold text-slate-400 text-xs mr-1">Popular skills:</span>
+                    {['All', 'Design', 'Data Entry', 'Photography', 'Web Dev', 'Translation'].map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => {
+                          navigate('/jobs', { state: { category: cat } });
+                        }}
+                        className="px-3.5 py-1.5 rounded-full border text-xs font-bold transition-all whitespace-nowrap bg-white hover:bg-[#1A312C] text-slate-600 hover:text-white border-slate-200/90 shadow-2xs active:scale-95 cursor-pointer"
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action Buttons (Matches Pill Button + Circular Play Button in Reference) */}
+                <div className="flex items-center gap-4 pt-2">
+                  <Link
+                    to="/jobs"
+                    className="px-7 py-3 bg-[#4E8C7E] hover:bg-[#1A312C] text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-md shadow-[#4E8C7E]/20 transition-all active:scale-95 flex items-center gap-2"
+                  >
+                    <span>Explore Gigs</span>
+                    <ArrowRight size={14} />
+                  </Link>
+
+                  <a
+                    href="#student-overview"
+                    className="w-11 h-11 rounded-full border border-slate-300 hover:border-[#4E8C7E] bg-white text-[#1A312C] hover:text-[#4E8C7E] flex items-center justify-center shadow-xs transition-all hover:scale-105 active:scale-95"
+                    title="View Profile Overview"
+                  >
+                    <Play size={14} weight="fill" className="ml-0.5" />
+                  </a>
+                </div>
+
               </div>
 
-              {/* Description */}
-              <p className="text-slate-300 text-sm sm:text-base font-medium max-w-md leading-relaxed">
-                Find high-quality Jobs opportunities matching your skill set and study schedule.
-              </p>
+              {/* Right Arched Card Column */}
+              <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end mt-4 lg:mt-0">
+                <div className="relative w-full max-w-[320px] sm:max-w-[360px]">
+
+                  {/* Arched Background Shadow Layer */}
+                  <div className="absolute -inset-2 rounded-t-[140px] rounded-b-[44px] bg-[#E2EFEA] -rotate-2 -z-10 shadow-lg" />
+
+                  {/* Main Arched Photo Container */}
+                  <div className="relative rounded-t-[136px] rounded-b-[40px] overflow-hidden aspect-[3.8/5] w-full border-4 border-white shadow-2xl bg-[#1A312C] z-10 group">
+                    <img
+                      src={getHeroImageUrl(user?.profile_pic)}
+                      alt={user?.name || "Student Professional"}
+                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1A312C]/40 via-transparent to-transparent pointer-events-none" />
+
+                    {/* Upload / Delete Action Buttons Overlay */}
+                    <div className="absolute top-3.5 right-3.5 flex items-center gap-2 z-20">
+                      {/* Upload/Change Button */}
+                      <label
+                        htmlFor="hero-pic-upload-input"
+                        className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-md flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95"
+                        title="Upload or change your photo"
+                      >
+                        <Camera size={16} />
+                      </label>
+                      <input
+                        id="hero-pic-upload-input"
+                        type="file"
+                        accept="image/png, image/jpeg, image/webp"
+                        className="hidden"
+                        onChange={handleHeroPicUpload}
+                        disabled={uploadingHeroPic}
+                      />
+
+                      {/* Delete Photo Button (Shown when custom profile picture exists) */}
+                      {user?.profile_pic && (
+                        <button
+                          type="button"
+                          onClick={handleHeroPicRemove}
+                          disabled={uploadingHeroPic}
+                          className="w-8 h-8 rounded-full bg-rose-500/90 hover:bg-rose-600 text-white shadow-md flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95"
+                          title="Delete photo and revert to default"
+                        >
+                          <Trash size={15} />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Loading Spinner Indicator */}
+                    {uploadingHeroPic && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center text-white z-30">
+                        <Spinner size={28} className="animate-spin text-emerald-400 mb-1.5" />
+                        <span className="text-[11px] font-bold">Saving photo...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Botanical Sprig Silhouette Accent */}
+                  <div className="absolute -left-12 -bottom-6 z-20 pointer-events-none select-none">
+                    <BotanicalSprig className="w-24 h-48 text-[#1A312C]/60" />
+                  </div>
+
+                  {/* Washi Tape Strip across lower botanical stem */}
+                  <WashiTape className="absolute -left-8 bottom-12 w-24 z-30" />
+
+                  {/* Vertical Color Palette Dots on Right Edge */}
+                  <ColorPaletteDots className="absolute -right-3 top-1/2 -translate-y-1/2" />
+
+                  {/* Sparkle Star near Top Right */}
+                  <div className="absolute -top-4 -right-4 z-20 text-[#4E8C7E]">
+                    <SparkleStar className="w-6 h-6 animate-pulse" />
+                  </div>
+
+                  {/* Floating Rating Card Overlay */}
+                  <div className="absolute -bottom-4 -right-2 sm:-right-4 bg-white/95 backdrop-blur-md rounded-2xl px-4 py-3 shadow-xl border border-slate-100 flex items-center gap-3 z-30 animate-fadeIn">
+                    <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 shrink-0">
+                      <Star size={18} weight="fill" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-slate-900 leading-tight">
+                        {studentRating > 0 ? `${studentRating.toFixed(1)} / 5.0 Rating` : "Top Rated Student"}
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                        {studentRating > 0 ? "High performance" : "Ready to hire"}
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
             </div>
+          </div>
+        </section>
 
-            {/* Right Column / Rating Box */}
-            <div className="relative z-10 w-full md:w-auto flex flex-col items-center justify-center flex-shrink-0">
-              <div className="bg-[#132521]/90 backdrop-blur-md rounded-[2rem] p-6 shadow-2xl border border-emerald-500/20 flex flex-col gap-5 w-full min-w-[260px] max-w-[280px] text-left animate-fadeIn">
-                {/* Item 1: Profile Status */}
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-[#89D7B7]/10 rounded-full flex items-center justify-center flex-shrink-0 text-[#89D7B7]">
-                    {studentRating > 0 ? <Zap size={18} /> : <CheckCircle size={18} />}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white leading-tight">
-                      {studentRating > 0 ? "Experienced Student" : "New Student"}
-                    </h4>
-                    <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                      {studentRating > 0 ? "Active profile" : "Fresh account"}
-                    </p>
-                  </div>
-                </div>
+        {/* ── SECTION 2: STUDENT PROFILE OVERVIEW & 3 STAT CARDS (Matches Reference Section 2) ── */}
+        <section id="student-overview" className="relative py-16 sm:py-20 bg-white/80 border-t border-slate-200/50">
+          <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
 
-                {/* Item 2: Rating */}
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center flex-shrink-0 text-amber-400">
-                    <Star className="fill-amber-400 text-amber-400" size={18} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white leading-tight">
-                      {studentRating > 0 ? `${studentRating.toFixed(1)} / 5.0 Rating` : "No Ratings Yet"}
-                    </h4>
-                    <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                      {studentRating > 0 ? "High performance" : "Start your first gig"}
-                    </p>
-                  </div>
-                </div>
+              {/* Left Column: Asymmetrical Arched Card with Botanical Accent */}
+              <div className="lg:col-span-5 relative flex items-center justify-center">
+                <div className="relative w-full max-w-[320px] sm:max-w-[350px]">
+                  
+                  {/* Pastel backing layer */}
+                  <div className="absolute -inset-2 rounded-tl-[100px] rounded-br-[100px] rounded-tr-3xl rounded-bl-3xl bg-[#EAF4F0] rotate-1 -z-10 shadow-md" />
 
-                {/* Item 3: Completed Gigs */}
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center flex-shrink-0 text-emerald-400">
-                    <Briefcase size={18} />
+                  {/* Main Arched Photo Card */}
+                  <div className="relative rounded-tl-[96px] rounded-br-[96px] rounded-tr-3xl rounded-bl-3xl overflow-hidden aspect-[4/4.5] w-full border-4 border-white shadow-xl bg-[#1A312C] z-10">
+                    <img
+                      src={studentBenchImg}
+                      alt="Student Studying"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1A312C]/30 via-transparent to-transparent pointer-events-none" />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white leading-tight">
-                      {completedCount} Gigs Completed
-                    </h4>
-                    <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                      {completedCount > 0 ? "Completed works" : "Ready to hire"}
-                    </p>
+
+                  {/* Botanical Sprig Accent on Right */}
+                  <div className="absolute -right-10 -bottom-6 z-20 pointer-events-none select-none">
+                    <BotanicalSprig className="w-24 h-48 text-[#4E8C7E]/70 rotate-6" />
                   </div>
+
+                  {/* Washi Tape Strip on lower stem */}
+                  <WashiTape className="absolute -right-6 bottom-14 w-24 z-30" />
+
+                  {/* Vertical Color Palette Dots on Left Edge */}
+                  <ColorPaletteDots className="absolute -left-3 top-1/2 -translate-y-1/2" />
+
+                  {/* Sparkle Star */}
+                  <div className="absolute -top-3 -left-3 z-20 text-[#1A312C]">
+                    <SparkleStar className="w-5 h-5" />
+                  </div>
+
                 </div>
               </div>
+
+              {/* Right Column: Title, Description, 3 Stat Cards Side-by-Side */}
+              <div className="lg:col-span-7 space-y-6 text-left">
+                
+                <div>
+                  <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#4E8C7E] mb-2">
+                    <SparkleStar className="w-3.5 h-3.5 text-[#4E8C7E]" />
+                    <span>Profile Status</span>
+                  </div>
+                  <h2 className="font-heading font-black text-3xl sm:text-4xl text-[#1A312C] tracking-tight leading-tight">
+                    Your Student Journey &amp; Performance
+                  </h2>
+                  <p className="text-slate-600 text-sm sm:text-base font-normal mt-3 max-w-xl leading-relaxed">
+                    Track your active profile status, client ratings, and verified completed gigs. Campus clients prefer students with high reliability and updated skills.
+                  </p>
+                </div>
+
+                {/* 3 Stat Cards Side-by-Side (matching the exact 3 cards in Reference) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                  
+                  {/* Card 1: Filled Accent Card with Arch Top */}
+                  <div className="bg-[#4E8C7E] text-white p-5 rounded-t-3xl rounded-b-xl shadow-md flex flex-col items-center justify-center text-center group hover:bg-[#1A312C] transition-colors">
+                    <div className="text-2xl sm:text-3xl font-heading font-black tracking-tight mb-1">
+                      {studentRating > 0 ? "Active" : "New"}
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-100">
+                      {studentRating > 0 ? "Experienced Student" : "Student Profile"}
+                    </p>
+                    <span className="text-[10px] text-white/70 font-medium mt-1">
+                      {studentRating > 0 ? "Active verified account" : "Fresh account"}
+                    </span>
+                  </div>
+
+                  {/* Card 2: Clean Light Card */}
+                  <div className="bg-white text-[#1A312C] p-5 rounded-t-3xl rounded-b-xl border border-slate-200/80 shadow-sm flex flex-col items-center justify-center text-center hover:border-[#4E8C7E] transition-colors">
+                    <div className="text-2xl sm:text-3xl font-heading font-black tracking-tight mb-1 flex items-baseline gap-1 text-slate-900">
+                      <span>{studentRating > 0 ? studentRating.toFixed(1) : "5.0"}</span>
+                      <span className="text-xs font-normal text-slate-400">/ 5.0</span>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Rating Score
+                    </p>
+                    <span className="text-[10px] text-slate-400 font-medium mt-1">
+                      {studentRating > 0 ? "High performance" : "First rating pending"}
+                    </span>
+                  </div>
+
+                  {/* Card 3: Clean Light Card */}
+                  <div className="bg-white text-[#1A312C] p-5 rounded-t-3xl rounded-b-xl border border-slate-200/80 shadow-sm flex flex-col items-center justify-center text-center hover:border-[#4E8C7E] transition-colors">
+                    <div className="text-2xl sm:text-3xl font-heading font-black tracking-tight mb-1 text-slate-900">
+                      {completedCount}
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Gigs Completed
+                    </p>
+                    <span className="text-[10px] text-slate-400 font-medium mt-1">
+                      {completedCount > 0 ? "Verified jobs delivered" : "Ready to hire"}
+                    </span>
+                  </div>
+
+                </div>
+
+              </div>
+
             </div>
           </div>
         </section>
@@ -882,88 +1181,6 @@ const LandingPage = () => {
                 })}
               </div>
             )}
-          </section>
-
-          {/* ── MID-PAGE BANNER (Outstanding Workmanship) ── */}
-          <section className="relative rounded-[2.5rem] overflow-hidden bg-black min-h-[400px] flex items-end shadow-lg">
-            <img
-              src={studentsStudying}
-              alt="Students collaborating"
-              className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-luminosity"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
-
-            <div className="relative z-10 m-6 sm:m-10 bg-white rounded-3xl p-8 max-w-2xl text-[#1A312C] shadow-2xl border border-[#4E8C7E]/20">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#1A312C] bg-white/45 px-2.5 py-1 rounded-full">
-                For Talent
-              </span>
-              <h3 className="font-heading font-black text-2xl sm:text-3xl lg:text-4xl text-[#1A312C] tracking-tight mt-4 mb-3 uppercase">
-                Find Outstanding Workmanship.
-              </h3>
-              <p className="text-[#1A312C] text-sm sm:text-base leading-relaxed font-semibold">
-                Our platform fosters cooperation between local employers and students. Work on projects tailored to your classes, prove your skills, and earn income.
-              </p>
-            </div>
-          </section>
-
-          {/* ── WHY CHOOSE US (Why GigConnect?) ── */}
-          <section className="py-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Image Column */}
-            <div className="lg:col-span-5 relative flex justify-center">
-              <div className="relative w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-lg border border-slate-200">
-                <img
-                  src={chefsEvent}
-                  alt="Chefs event"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-slate-900/10"></div>
-              </div>
-              {/* Guarantee Seal */}
-              <div className="absolute -bottom-6 -right-4 w-28 h-28 bg-primary-light rounded-full border-4 border-white shadow-xl flex items-center justify-center text-center p-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-900 leading-tight">
-                  100% Verified
-                </span>
-              </div>
-            </div>
-
-            {/* Right Features Column */}
-            <div className="lg:col-span-7 space-y-6">
-              <div>
-                <h3 className="font-heading font-black text-3xl sm:text-4xl text-slate-900 tracking-tight uppercase mb-2">
-                  Why Choose Us?
-                </h3>
-                <p className="text-slate-500 text-sm leading-relaxed max-w-xl font-light">
-                  Choose us for unmatched flexibility, verified opportunities, and a reliable platform designed specifically for students.
-                </p>
-              </div>
-
-              <div className="space-y-4 max-w-xl">
-                {[
-                  {
-                    title: 'Flexible Around Your Studies',
-                    desc: 'One-day and part-time jobs that fit your timetable, not the other way around.'
-                  },
-                  {
-                    title: 'Verified Job Providers Only',
-                    desc: 'Every job provider is verified with NIC and OTP, so you know who you\'re working with.'
-                  },
-                  {
-                    title: 'Safe, Monitored Chats & Deals',
-                    desc: 'All chats happen inside the platform — no sketchy off-platform deals.'
-                  }
-                ].map((item, idx) => (
-                  <div key={idx} className="bg-white border border-slate-200/60 p-5 rounded-2xl flex gap-4 hover:border-accent transition-all">
-                    <div className="w-8 h-8 rounded-full bg-primary-light border border-slate-200 flex items-center justify-center text-slate-800 text-xs font-black flex-shrink-0">
-                      {idx + 1}
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.title}</h4>
-                      <p className="text-slate-500 text-xs mt-1 leading-relaxed">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </section>
 
           {/* ── TESTIMONIALS (What Our Customers Say) ── */}
@@ -1241,105 +1458,107 @@ const LandingPage = () => {
             <div className="relative bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-100 flex flex-col z-10 my-auto max-h-[90vh]">
               
               {/* Modal Header */}
-              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-white">
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-white shrink-0">
                 <div>
                   <h3 className="font-bold text-lg text-slate-800">Apply for Job</h3>
                   <p className="text-xs text-slate-500 font-medium truncate max-w-[280px] mt-0.5">{applyModalJob.title}</p>
                 </div>
                 <button 
                   onClick={() => setApplyModalJob(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors font-bold text-sm"
+                  className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors font-bold text-sm cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
 
-              {/* Modal Body */}
-              <form onSubmit={handleConfirmApplication} className="p-6 space-y-5">
-                
-                {/* Job Details Summary Card */}
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2 text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span className="font-bold text-slate-400">Budget / Pay:</span>
-                    <span className="font-black text-slate-900">LKR {parseFloat(applyModalJob.payment || applyModalJob.pay || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span className="font-bold text-slate-400">Category:</span>
-                    <span className="font-semibold text-slate-800">{applyModalJob.category}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span className="font-bold text-slate-400">Location Type:</span>
-                    <span className="font-semibold text-slate-800">{applyModalJob.job_type || applyModalJob.type || 'Remote'}</span>
-                  </div>
-                </div>
-
-                {/* Delivery Option for Product-based jobs */}
-                {applyModalJob._isProduct && (
-                  <div className="space-y-4 bg-emerald-50/60 border border-emerald-200/70 p-4.5 rounded-2xl">
-                    <div className="flex items-center justify-between">
-                      <span className="block text-xs font-black text-emerald-950 uppercase tracking-wider">
-                        Product Delivery Option
-                      </span>
+              {/* Modal Form */}
+              <form onSubmit={handleConfirmApplication} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                {/* Scrollable Body */}
+                <div className="p-6 space-y-5 flex-1 overflow-y-auto">
+                  {/* Job Details Summary Card */}
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2 text-xs">
+                    <div className="flex justify-between text-slate-600">
+                      <span className="font-bold text-slate-400">Budget / Pay:</span>
+                      <span className="font-black text-slate-900">LKR {parseFloat(applyModalJob.payment || applyModalJob.pay || 0).toLocaleString()}</span>
                     </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span className="font-bold text-slate-400">Category:</span>
+                      <span className="font-semibold text-slate-800">{applyModalJob.category}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span className="font-bold text-slate-400">Location Type:</span>
+                      <span className="font-semibold text-slate-800">{applyModalJob.job_type || applyModalJob.type || 'Remote'}</span>
+                    </div>
+                  </div>
 
+                  {/* Delivery Option for Product-based jobs */}
+                  {applyModalJob._isProduct && (
+                    <div className="space-y-4 bg-emerald-50/60 border border-emerald-200/70 p-4.5 rounded-2xl">
+                      <div className="flex items-center justify-between">
+                        <span className="block text-xs font-black text-emerald-950 uppercase tracking-wider">
+                          Product Delivery Option
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-emerald-900 font-medium leading-relaxed">
+                        Select how the finished product item will be delivered to the client upon completion:
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryType('self')}
+                          className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                            deliveryType === 'self'
+                              ? 'bg-white border-emerald-600 ring-2 ring-emerald-500/30 text-slate-900 shadow-md scale-[1.02]'
+                              : 'bg-white/70 border-slate-200 text-slate-500 hover:bg-white hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="text-xs font-bold">Self Delivery</span>
+                          <span className="text-[10px] text-slate-400 mt-0.5 font-semibold">Hand-deliver directly</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryType('platform')}
+                          className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                            deliveryType === 'platform'
+                              ? 'bg-white border-emerald-600 ring-2 ring-emerald-500/30 text-slate-900 shadow-md scale-[1.02]'
+                              : 'bg-white/70 border-slate-200 text-slate-500 hover:bg-white hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="text-xs font-bold">Quick Rider Courier</span>
+                          <span className="text-[10px] text-slate-400 mt-0.5 font-semibold">GigConnect courier rider</span>
+                        </button>
+                      </div>
+
+                      {deliveryType === 'platform' ? (
+                        <p className="text-[11px] text-emerald-800 font-bold bg-emerald-100/70 border border-emerald-200/80 rounded-xl px-3 py-2 animate-fadeIn">
+                          ✓ A GigConnect rider will be assigned once your application is accepted. You can provide pickup &amp; delivery details upon job completion.
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-slate-600 font-bold bg-white border border-slate-200/80 rounded-xl px-3 py-2 animate-fadeIn">
+                          ✓ You will deliver the product yourself. An OTP will be shared upon job completion.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Confirmation Notice */}
+                  <div className="bg-emerald-50/70 border border-emerald-100 p-3.5 rounded-2xl flex items-start gap-2.5">
+                    <span className="text-base shrink-0">✅</span>
                     <p className="text-[11px] text-emerald-900 font-medium leading-relaxed">
-                      Select how the finished product item will be delivered to the client upon completion:
+                      By clicking confirm, your official student profile will be submitted directly to the job provider for review.
                     </p>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setDeliveryType('self')}
-                        className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
-                          deliveryType === 'self'
-                            ? 'bg-white border-emerald-600 ring-2 ring-emerald-500/30 text-slate-900 shadow-md scale-[1.02]'
-                            : 'bg-white/70 border-slate-200 text-slate-500 hover:bg-white hover:border-slate-300'
-                        }`}
-                      >
-                        <span className="text-xs font-bold">Self Delivery</span>
-                        <span className="text-[10px] text-slate-400 mt-0.5 font-semibold">Hand-deliver directly</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setDeliveryType('platform')}
-                        className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
-                          deliveryType === 'platform'
-                            ? 'bg-white border-emerald-600 ring-2 ring-emerald-500/30 text-slate-900 shadow-md scale-[1.02]'
-                            : 'bg-white/70 border-slate-200 text-slate-500 hover:bg-white hover:border-slate-300'
-                        }`}
-                      >
-                        <span className="text-xs font-bold">Quick Rider Courier</span>
-                        <span className="text-[10px] text-slate-400 mt-0.5 font-semibold">GigConnect courier rider</span>
-                      </button>
-                    </div>
-
-                    {deliveryType === 'platform' ? (
-                      <p className="text-[11px] text-emerald-800 font-bold bg-emerald-100/70 border border-emerald-200/80 rounded-xl px-3 py-2 animate-fadeIn">
-                        ✓ A GigConnect rider will be assigned once your application is accepted. You can provide pickup &amp; delivery details upon job completion.
-                      </p>
-                    ) : (
-                      <p className="text-[11px] text-slate-600 font-bold bg-white border border-slate-200/80 rounded-xl px-3 py-2 animate-fadeIn">
-                        ✓ You will deliver the product yourself. An OTP will be shared upon job completion.
-                      </p>
-                    )}
                   </div>
-                )}
-
-                {/* Confirmation Notice */}
-                <div className="bg-emerald-50/70 border border-emerald-100 p-3.5 rounded-2xl flex items-start gap-2.5">
-                  <span className="text-base shrink-0">✅</span>
-                  <p className="text-[11px] text-emerald-900 font-medium leading-relaxed">
-                    By clicking confirm, your official student profile will be submitted directly to the job provider for review.
-                  </p>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-2">
+                {/* Pinned Action Buttons Footer */}
+                <div className="p-4 px-6 border-t border-slate-100 bg-slate-50/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
                   <button
                     type="button"
                     onClick={() => setApplyModalJob(null)}
-                    className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-all"
+                    className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -1347,7 +1566,7 @@ const LandingPage = () => {
                   <button
                     type="submit"
                     disabled={applying}
-                    className="px-6 py-2.5 bg-[#1A312C] hover:bg-[#244b41] text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                    className="px-6 py-2.5 bg-[#1A312C] hover:bg-[#244b41] text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
                   >
                     {applying ? 'Submitting...' : 'Confirm Application →'}
                   </button>
@@ -1593,9 +1812,9 @@ const LandingPage = () => {
 
             {/* Scroll Down Indicators */}
             <div className="flex flex-col items-center gap-[-8px] text-white/50 animate-bounce cursor-pointer hover:text-white transition-colors" onClick={() => document.getElementById('about').scrollIntoView({ behavior: 'smooth' })}>
-              <ChevronDown size={24} className="-mb-4" />
-              <ChevronDown size={24} className="-mb-4 opacity-70" />
-              <ChevronDown size={24} className="opacity-40" />
+              <CaretDown size={24} className="-mb-4" />
+              <CaretDown size={24} className="-mb-4 opacity-70" />
+              <CaretDown size={24} className="opacity-40" />
             </div>
           </div>
         </div>
@@ -1657,7 +1876,7 @@ const LandingPage = () => {
                     className="flex gap-5 group cursor-default"
                   >
                     <div className="w-12 h-12 rounded-full border border-[#89D7B7] bg-white shadow-sm flex items-center justify-center text-[#4E8C7E] group-hover:bg-[#4E8C7E] group-hover:text-white group-hover:border-[#4E8C7E] transition-all duration-500">
-                      <Zap size={18} />
+                      <Lightning size={18} />
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 text-lg group-hover:text-[#1A312C] transition-colors duration-300">{item.title}</h4>
@@ -1776,7 +1995,7 @@ const LandingPage = () => {
                         <div className="flex items-center gap-2">
                           {isBoosted && (
                             <span className="hidden sm:inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300/70 text-[10px] font-black px-3 py-1 rounded-full shadow-sm">
-                              <Zap size={11} className="fill-amber-600 text-amber-600" /> Featured
+                              <Lightning size={11} weight="fill" className="text-amber-600" /> Featured
                             </span>
                           )}
                           <div className="bg-white/80 backdrop-blur-md border border-white/90 text-emerald-800 px-5 py-2 rounded-full shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_4px_16px_rgba(16,185,129,0.08)]">

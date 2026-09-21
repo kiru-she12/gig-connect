@@ -1,10 +1,34 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, Phone, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Envelope, Phone, FacebookLogo, TwitterLogo, InstagramLogo, LinkedinLogo } from '@phosphor-icons/react';
 import { useAuth } from '../../context/AuthContext';
 
 const Footer = () => {
-  const { setIsContactModalOpen } = useAuth();
+  const { setIsContactModalOpen, setIsTermsModalOpen, setIsPrivacyModalOpen } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavClick = (e, target) => {
+    e.preventDefault();
+    if (target === 'home') {
+      if (location.pathname === '/') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        navigate('/');
+      }
+    } else if (target === 'about') {
+      if (location.pathname === '/') {
+        const el = document.getElementById('about');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 600, behavior: 'smooth' });
+        }
+      } else {
+        navigate('/#about');
+      }
+    }
+  };
   
   return (
     <footer className="bg-black pt-20 pb-10 relative overflow-hidden text-white w-full mt-auto">
@@ -28,9 +52,41 @@ const Footer = () => {
           <div>
             <h4 className="text-white font-black mb-6 tracking-wide">Platform</h4>
             <ul className="space-y-4 text-sm text-slate-400 font-light">
-              <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
-              <li><Link to="/#about" className="hover:text-white transition-colors">Our Heritage</Link></li>
-              <li><Link to="/jobs" className="hover:text-white transition-colors">Opportunities</Link></li>
+              <li>
+                <a 
+                  href="/" 
+                  onClick={(e) => handleNavClick(e, 'home')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  Home
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="/#about" 
+                  onClick={(e) => handleNavClick(e, 'about')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  About
+                </a>
+              </li>
+              <li>
+                <Link 
+                  to="/jobs" 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  Find Jobs
+                </Link>
+              </li>
+              <li>
+                <button 
+                  type="button"
+                  onClick={() => setIsContactModalOpen(true)} 
+                  className="hover:text-white transition-colors text-left cursor-pointer"
+                >
+                  Contact
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -38,8 +94,24 @@ const Footer = () => {
           <div>
             <h4 className="text-white font-black mb-6 tracking-wide">Legal</h4>
             <ul className="space-y-4 text-sm text-slate-400 font-light">
-              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+              <li>
+                <button 
+                  type="button" 
+                  onClick={() => setIsPrivacyModalOpen(true)} 
+                  className="hover:text-white transition-colors text-left cursor-pointer"
+                >
+                  Privacy Policy
+                </button>
+              </li>
+              <li>
+                <button 
+                  type="button" 
+                  onClick={() => setIsTermsModalOpen(true)} 
+                  className="hover:text-white transition-colors text-left cursor-pointer"
+                >
+                  Terms of Service
+                </button>
+              </li>
               <li>
                 <button 
                   onClick={() => setIsContactModalOpen(true)} 
@@ -57,7 +129,7 @@ const Footer = () => {
               <h4 className="text-white font-black mb-6 tracking-wide">Contact Us</h4>
               <ul className="space-y-4 text-sm text-slate-400 font-light">
                 <li className="flex items-center gap-2.5">
-                  <Mail size={16} className="text-[#89D7B7]" />
+                  <Envelope size={16} className="text-[#89D7B7]" />
                   <a href="mailto:gigconnectsystem@gmail.com" className="hover:text-white transition-colors">
                     gigconnectsystem@gmail.com
                   </a>
@@ -74,16 +146,16 @@ const Footer = () => {
             <div className="pt-2">
               <div className="flex gap-4">
                 <a href="#" className="p-2 rounded-full bg-white/5 hover:bg-white/10 hover:text-[#89D7B7] transition-all text-slate-400">
-                  <Facebook size={18} />
+                  <FacebookLogo size={18} />
                 </a>
                 <a href="#" className="p-2 rounded-full bg-white/5 hover:bg-white/10 hover:text-[#89D7B7] transition-all text-slate-400">
-                  <Twitter size={18} />
+                  <TwitterLogo size={18} />
                 </a>
                 <a href="#" className="p-2 rounded-full bg-white/5 hover:bg-white/10 hover:text-[#89D7B7] transition-all text-slate-400">
-                  <Instagram size={18} />
+                  <InstagramLogo size={18} />
                 </a>
                 <a href="#" className="p-2 rounded-full bg-white/5 hover:bg-white/10 hover:text-[#89D7B7] transition-all text-slate-400">
-                  <Linkedin size={18} />
+                  <LinkedinLogo size={18} />
                 </a>
               </div>
             </div>

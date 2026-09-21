@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  CreditCard, Pencil, BadgeCheck, Receipt, X, User
-} from 'lucide-react';
+  CreditCard, PencilSimple, SealCheck, Receipt, X, User
+} from '@phosphor-icons/react';
 
 /**
  * Modern Centered Payment Modal for GigConnect
@@ -243,7 +243,7 @@ export default function PaymentModal({
                       }}
                       className="text-xs font-semibold text-teal-600 hover:text-teal-700 flex items-center gap-1 transition-colors"
                     >
-                      <Pencil size={12} />
+                      <PencilSimple size={12} />
                       <span>Edit</span>
                     </button>
                   </div>
@@ -264,7 +264,7 @@ export default function PaymentModal({
                     {/* Verified Theme Badge on Right */}
                     {isCardValid && (
                       <div className="shrink-0 text-emerald-600 animate-fadeIn ml-2">
-                        <BadgeCheck size={20} className="fill-emerald-600 text-white" />
+                        <SealCheck size={20} weight="fill" className="text-emerald-600" />
                       </div>
                     )}
                   </div>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, CheckCircle, Info, X } from 'lucide-react';
+import { WarningCircle, CheckCircle, Info, X } from '@phosphor-icons/react';
 
 const AlertContext = createContext(null);
 
@@ -116,8 +116,8 @@ export const AlertProvider = ({ children }) => {
                 'bg-blue-50 text-blue-600'
               }`}>
                 {alertState.type === 'success' && <CheckCircle size={28} />}
-                {alertState.type === 'error' && <AlertCircle size={28} />}
-                {alertState.type === 'warning' && <AlertCircle size={28} />}
+                {alertState.type === 'error' && <WarningCircle size={28} />}
+                {alertState.type === 'warning' && <WarningCircle size={28} />}
                 {alertState.type === 'info' && <Info size={28} />}
               </div>
               

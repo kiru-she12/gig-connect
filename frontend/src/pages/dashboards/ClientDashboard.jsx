@@ -10,10 +10,10 @@ import ChatTab from '../../components/shared/ChatTab';
 import ProfilePicManager from '../../components/shared/ProfilePicManager';
 import PaymentModal from '../../components/shared/PaymentModal';
 import {
-  PlusCircle, List, Users, MessageSquare, MapPin, Star, Settings,
-  ChevronRight, ChevronLeft, CreditCard, CheckCircle, Clock, DollarSign,
-  Plus, Truck, Bell, ShieldAlert, Upload, X
-} from 'lucide-react';
+  PlusCircle, List, Users, MapPin, Star,
+  CaretRight, CreditCard, CheckCircle, Clock, CurrencyDollar,
+  Plus, Truck, Bell, ShieldWarning, UploadSimple, X
+} from '@phosphor-icons/react';
 
 const getProfilePicUrl = (pic) => {
   if (!pic) return null;
@@ -153,27 +153,90 @@ const ClientDashboard = () => {
     }
   };
 
+  const [clientApps, setClientApps] = useState([]);
+
+  const fetchClientApps = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/get_applicants.php`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.applicants)) {
+          setClientApps(data.applicants.map(app => ({
+            ...app,
+            jobId: app.job_ID || app.jobId,
+            id: app.application_ID || app.id
+          })));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch client applications:", err);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
     fetchDeliveries();
+    fetchClientApps();
     if (refreshJobs) {
       refreshJobs();
     }
   }, []);
 
   const clientJobs = jobs.filter(j => j.clientId === user.id);
-  const clientApps = applications.filter(app => {
-    const job = jobs.find(j => j.id === app.jobId);
-    return job?.clientId === user.id;
-  });
+
+  const handlePayJob = async (job, passedApplicants = null) => {
+    if (!job) return;
+    const seekersNeeded = job.seekers_needed || 1;
+
+    let selectedCount = 0;
+    if (passedApplicants && Array.isArray(passedApplicants)) {
+      selectedCount = passedApplicants.filter(app =>
+        app.status === 'accepted' || app.status === 'Accepted' || app.status === 'pending_payment'
+      ).length;
+    } else {
+      const matched = clientApps.filter(app =>
+        (app.jobId === job.id || app.job_ID === job.id) &&
+        (app.status === 'accepted' || app.status === 'Accepted' || app.status === 'pending_payment')
+      );
+      if (matched.length >= seekersNeeded) {
+        selectedCount = matched.length;
+      } else {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/get_applicants.php?job_ID=${job.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && Array.isArray(data.applicants)) {
+              selectedCount = data.applicants.filter(app =>
+                app.status === 'accepted' || app.status === 'Accepted' || app.status === 'pending_payment'
+              ).length;
+            }
+          }
+        } catch (e) {
+          console.error("Error verifying applicants before payment:", e);
+        }
+      }
+    }
+
+    if (selectedCount < seekersNeeded) {
+      alert(`Please select all ${seekersNeeded} required students (${selectedCount}/${seekersNeeded} selected) before proceeding to payment.`);
+      return;
+    }
+    setPaymentJob(job);
+  };
 
   return (
     <DashboardLayout>
       <Routes>
-        <Route path="home" element={<HomeTab user={user} clientJobs={clientJobs} clientApps={clientApps} />} />
+        <Route path="home" element={<HomeTab user={user} clientJobs={clientJobs} clientApps={clientApps} deliveries={deliveries} />} />
         <Route path="post" element={<PostJobTab addJob={addJob} profile={profile} />} />
-        <Route path="listings" element={<ListingsTab clientJobs={clientJobs} clientApps={clientApps} onPayJob={setPaymentJob} />} />
-        <Route path="applicants" element={<ApplicantsTab clientJobs={clientJobs} updateStatus={updateApplicationStatus} onPayJob={setPaymentJob} />} />
+        <Route path="listings" element={<ListingsTab clientJobs={clientJobs} clientApps={clientApps} onPayJob={handlePayJob} />} />
+        <Route path="applicants" element={<ApplicantsTab clientJobs={clientJobs} updateStatus={updateApplicationStatus} onPayJob={handlePayJob} />} />
         <Route path="messages" element={<ChatTab />} />
         <Route path="delivery" element={
           <DeliveryTab
@@ -185,7 +248,7 @@ const ClientDashboard = () => {
         <Route path="ratings" element={<ReviewsTab receivedReviews={receivedReviews} givenReviews={givenReviews} />} />
         <Route path="notifications" element={<NotificationsTab />} />
         <Route path="settings" element={<SettingsTab user={user} onProfileUpdate={fetchProfile} />} />
-        <Route path="*" element={<HomeTab user={user} clientJobs={clientJobs} clientApps={clientApps} />} />
+        <Route path="*" element={<HomeTab user={user} clientJobs={clientJobs} clientApps={clientApps} deliveries={deliveries} />} />
       </Routes>
 
       {/* Modern AceCoinPay-Style Payment Gateway Modal */}
@@ -193,11 +256,12 @@ const ClientDashboard = () => {
         isOpen={Boolean(paymentJob)}
         onClose={() => setPaymentJob(null)}
         job={paymentJob}
-        clientName={profile?.name || user?.name || 'Client'}
+        clientName={profile?.name || user?.name || 'Job Provider'}
         onPaymentSuccess={async () => {
           if (refreshJobs) {
             await refreshJobs();
           }
+          await fetchClientApps();
         }}
       />
     </DashboardLayout>
@@ -551,24 +615,27 @@ const SettingsTab = ({ user, onProfileUpdate }) => {
   );
 };
 
-const HomeTab = ({ user, clientJobs, clientApps }) => {
+const HomeTab = ({ user, clientJobs, clientApps, deliveries = [] }) => {
   const totalSpent = clientJobs
     .filter(j => j.payment_status === 'paid')
     .reduce((sum, j) => sum + (Number(j.pay) * 0.05), 0);
+
+  const activeDeliveriesCount = (deliveries || []).filter(
+    d => (d.status || '').toLowerCase() !== 'delivered' && (d.status || '').toLowerCase() !== 'confirmed'
+  ).length;
 
   return (
     <div className="space-y-8 animate-fadeIn">
       <div>
         <h1 className="text-3xl font-heading font-bold text-text-primary">Welcome, {user.name.split(' ')[0]}!</h1>
-
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: 'Jobs Posted', value: clientJobs.length, icon: List, color: 'text-primary', bg: 'bg-primary-light' },
-          { label: 'Active Jobs', value: clientJobs.filter(j => j.status === 'Active').length, icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Pending Applicants', value: clientApps.filter(a => a.status === 'Applied').length, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Amount Spent', value: `LKR ${totalSpent.toFixed(2)}`, icon: DollarSign, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Active Jobs', value: clientJobs.filter(j => j.status === 'Active' || j.status === 'active' || j.status === 'in_progress').length, icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Active Deliveries', value: activeDeliveriesCount, icon: Truck, color: 'text-teal-600', bg: 'bg-teal-50' },
+          { label: 'Amount Spent', value: `LKR ${totalSpent.toFixed(2)}`, icon: CurrencyDollar, color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map((stat, i) => (
           <div key={i} className="card p-6 flex flex-col gap-1">
             <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-lg flex items-center justify-center mb-2`}>
@@ -580,12 +647,20 @@ const HomeTab = ({ user, clientJobs, clientApps }) => {
         ))}
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-4">
         <Link to="/dashboard/client/post" className="btn-primary py-3 px-6 flex items-center gap-2">
           <PlusCircle size={20} /> Post New Job
         </Link>
         <Link to="/dashboard/client/applicants" className="btn-secondary py-3 px-6 flex items-center gap-2">
           <Users size={20} /> View Applicants
+        </Link>
+        <Link to="/dashboard/client/delivery" className="btn-secondary py-3 px-6 flex items-center gap-2">
+          <Truck size={20} /> Delivery Orders
+          {activeDeliveriesCount > 0 && (
+            <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              {activeDeliveriesCount}
+            </span>
+          )}
         </Link>
       </div>
     </div>
@@ -1265,7 +1340,7 @@ const PostJobTab = ({ addJob, profile }) => {
               </div>
             </div>
             <button onClick={handleNext} disabled={loading} className="w-full btn-primary py-3 flex items-center justify-center gap-2">
-              {loading ? 'Posting...' : 'Post Job'} <ChevronRight size={18} />
+              {loading ? 'Posting...' : 'Post Job'} <CaretRight size={18} />
             </button>
           </div>
         )}
@@ -1499,12 +1574,22 @@ const ListingsTab = ({ clientJobs, clientApps, onPayJob }) => {
                   >
                     View Applicants
                   </button>
-                  {!isPaid && (hasPendingPayment || isFullySelected) && (
+                  {!isPaid && (hasPendingPayment || isFullySelected || selectedCount > 0) && (
                     <button
-                      onClick={() => onPayJob(job)}
-                      className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm animate-pulse"
+                      disabled={!isFullySelected}
+                      onClick={() => isFullySelected && onPayJob(job)}
+                      className={`w-full font-bold text-sm py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm ${
+                        isFullySelected
+                          ? 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer animate-pulse'
+                          : 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed'
+                      }`}
+                      title={!isFullySelected ? `Please select all ${seekersNeeded} required students (${selectedCount}/${seekersNeeded} selected) before paying platform commission.` : ''}
                     >
-                      💳 Pay Platform Commission (LKR {(job.pay * 0.05).toFixed(2)})
+                      {isFullySelected ? (
+                        <>💳 Pay Platform Commission (LKR {(job.pay * 0.05).toFixed(2)})</>
+                      ) : (
+                        <>🔒 Pay Commission ({selectedCount}/{seekersNeeded} Students Selected)</>
+                      )}
                     </button>
                   )}
                 </div>
@@ -1716,13 +1801,26 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
 
   const selectedJob = clientJobs.find(j => j.id === selectedJobId);
   const paymentStatus = selectedJob?.payment_status;
+  const seekersNeeded = selectedJob?.seekers_needed || 1;
+  const totalSelectedForJob = applicants.filter(app => app.status === 'accepted' || app.status === 'Accepted' || app.status === 'pending_payment').length;
+  const isJobFullySelected = totalSelectedForJob >= seekersNeeded;
 
   useEffect(() => {
     fetchApplicants(selectedJobId);
   }, [selectedJobId, paymentStatus]);
 
   const handleUpdateStatus = async (appId, action) => {
-    await updateStatus(appId, action);
+    if ((action === 'Accepted' || action === 'accept') && isJobFullySelected) {
+      alert(`This job requires only ${seekersNeeded} student(s). The required positions have already been selected.`);
+      return;
+    }
+    try {
+      await updateStatus(appId, action);
+    } catch (err) {
+      alert(err?.message || 'Failed to update application status');
+      await fetchApplicants(selectedJobId);
+      return;
+    }
     const updatedApplicants = await fetchApplicants(selectedJobId);
 
     if (action === 'Accepted' || action === 'accept') {
@@ -1732,7 +1830,7 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
         const hiredCount = updatedApplicants.filter(app => app.status === 'accepted' || app.status === 'Accepted' || app.status === 'pending_payment').length;
         if (hiredCount >= seekersNeeded) {
           if (onPayJob) {
-            onPayJob(currentJob);
+            onPayJob(currentJob, updatedApplicants);
           }
         }
       }
@@ -1758,8 +1856,26 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-heading font-bold text-text-primary">Review Applicants</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-heading font-bold text-text-primary">Review Applicants</h1>
+          {selectedJob && (
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <span className="text-xs text-text-muted font-medium">
+                Required Students: <strong className="text-slate-800 font-bold">{seekersNeeded}</strong>
+              </span>
+              <span className="text-slate-300">•</span>
+              <span className={`text-xs font-bold ${isJobFullySelected ? 'text-emerald-600' : 'text-amber-600'}`}>
+                Selected: {totalSelectedForJob} / {seekersNeeded}
+              </span>
+              {!isJobFullySelected && totalSelectedForJob > 0 && (
+                <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                  Select {seekersNeeded - totalSelectedForJob} more student{seekersNeeded - totalSelectedForJob > 1 ? 's' : ''} to unlock payment
+                </span>
+              )}
+            </div>
+          )}
+        </div>
         <select
           className="input-field max-w-xs"
           value={selectedJobId}
@@ -1885,13 +2001,24 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
                       ⏳ Selected (Pending Payment)
                     </span>
                     <button
+                      disabled={!isJobFullySelected}
                       onClick={() => {
+                        if (!isJobFullySelected) return;
                         const targetJob = clientJobs.find(j => j.id === app.job_ID || j.id === selectedJobId);
-                        if (targetJob) onPayJob(targetJob);
+                        if (targetJob) onPayJob(targetJob, applicants);
                       }}
-                      className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2 px-4 rounded-xl transition-all flex items-center gap-1 shadow-sm"
+                      className={`font-bold text-xs py-2 px-4 rounded-xl transition-all flex items-center gap-1 shadow-sm ${
+                        isJobFullySelected
+                          ? 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer animate-pulse'
+                          : 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed'
+                      }`}
+                      title={!isJobFullySelected ? `Please select all required students (${totalSelectedForJob}/${seekersNeeded} selected) before paying commission` : ''}
                     >
-                      💳 Pay Commission
+                      {isJobFullySelected ? (
+                        <>💳 Pay Commission</>
+                      ) : (
+                        <>🔒 Pay Commission ({totalSelectedForJob}/{seekersNeeded})</>
+                      )}
                     </button>
                   </div>
                 ) : (
@@ -1911,10 +2038,19 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
                       </button>
                     )}
                     <button
-                      onClick={() => handleUpdateStatus(app.application_ID, 'Accepted')}
-                      className="btn-primary py-2 px-6 text-sm"
+                      disabled={isJobFullySelected}
+                      onClick={() => {
+                        if (isJobFullySelected) return;
+                        handleUpdateStatus(app.application_ID, 'Accepted');
+                      }}
+                      className={`py-2 px-6 text-sm font-bold rounded-xl transition-all ${
+                        isJobFullySelected
+                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                          : 'btn-primary'
+                      }`}
+                      title={isJobFullySelected ? `Required quota filled (${totalSelectedForJob}/${seekersNeeded} selected)` : 'Hire Student'}
                     >
-                      Hire Student
+                      {isJobFullySelected ? 'Quota Filled' : 'Hire Student'}
                     </button>
                   </>
                 )}
@@ -1923,7 +2059,7 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
                   className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 font-bold text-xs py-2 px-3.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0"
                   title="Report student behavior to Admin"
                 >
-                  <ShieldAlert size={14} className="text-rose-500" />
+                  <ShieldWarning size={14} className="text-rose-500" />
                   <span>Report</span>
                 </button>
               </div>
@@ -1946,7 +2082,7 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
             <div className="flex justify-between items-start border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0">
-                  <ShieldAlert size={20} />
+                  <ShieldWarning size={20} />
                 </div>
                 <div>
                   <h3 className="font-heading font-black text-lg text-slate-800">File a Complaint against Student</h3>
@@ -2071,7 +2207,7 @@ const ApplicantsTab = ({ clientJobs, updateStatus, onPayJob }) => {
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      <Upload className="mx-auto text-slate-400" size={20} />
+                      <UploadSimple className="mx-auto text-slate-400" size={20} />
                       <p className="text-xs text-slate-500 font-bold">Upload screenshot or image evidence (Max 5MB)</p>
                     </div>
                   )}
@@ -2366,15 +2502,19 @@ const DeliveryTab = ({ deliveries, loading, refreshDeliveries }) => {
                       {del.delivery_ID}
                     </span>
                     <h3 className="font-bold text-text-primary text-base mt-2">{del.job_title}</h3>
-                    <span className={`badge ${del.status === 'delivered' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
-                      del.status === 'picked_up' ? 'bg-primary-light text-primary' :
-                        del.status === 'assigned' ? 'bg-primary-light text-primary' :
-                          'bg-amber-100 text-amber-700 border border-amber-100'
-                      } text-xs font-bold uppercase px-3 py-1 rounded-full mt-1.5 inline-block`}>
+                    <span className={`badge ${
+                      del.status === 'delivered' || del.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                      del.status === 'in_transit' ? 'bg-cyan-100 text-cyan-800 border border-cyan-200' :
+                      del.status === 'picked_up' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+                      del.status === 'assigned' ? 'bg-primary-light text-primary' :
+                      'bg-amber-100 text-amber-700 border border-amber-100'
+                    } text-xs font-bold uppercase px-3 py-1 rounded-full mt-1.5 inline-block`}>
                       {del.status === 'pending' ? '🕐 Preparing / Awaiting Action'
                         : del.status === 'assigned' ? '🚴 Rider Assigned'
-                          : del.status === 'picked_up' ? '📦 Verification Pending / In Transit'
-                            : '✅ Delivered'}
+                        : del.status === 'picked_up' ? '📦 Package Picked Up'
+                        : del.status === 'in_transit' ? '🚚 In Transit / On the Way'
+                        : del.status === 'delivered' ? '📍 Arrived / Awaiting OTP'
+                        : '✅ Delivered'}
                     </span>
                   </div>
                 </div>
@@ -2409,14 +2549,37 @@ const DeliveryTab = ({ deliveries, loading, refreshDeliveries }) => {
                       <span className="font-bold text-text-secondary">{parseFloat(del.distance).toFixed(1)} km</span>
                     </div>
                   )}
+
+                  <div className="flex justify-between text-xs">
+                    <span className="text-text-muted font-bold">Delivery Fee:</span>
+                    <span className="font-bold text-emerald-600">
+                      LKR {parseFloat(del.delivery_fee || (del.distance > 0 ? del.distance * 30 : 150)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Delivery Action Panel for Job Provider */}
                 <div className="pt-2 pl-2 border-t border-border">
                   {del.status === 'delivered' ? (
-                    <p className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                      ✓ Job and delivery completed successfully.
-                    </p>
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1.5">
+                      <p className="text-xs text-amber-900 font-bold flex items-center gap-1">
+                        📍 Rider has arrived at your destination!
+                      </p>
+                      {del.otp && (
+                        <p className="text-xs text-amber-800 font-semibold">
+                          Share this OTP with the rider to verify delivery: <span className="font-mono font-black text-sm bg-white px-2 py-0.5 rounded border border-amber-300 text-amber-950 tracking-widest">{del.otp}</span>
+                        </p>
+                      )}
+                    </div>
+                  ) : del.status === 'confirmed' ? (
+                    <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl space-y-1">
+                      <p className="text-xs text-emerald-800 font-bold flex items-center gap-1">
+                        ✓ Product delivered and confirmed successfully.
+                      </p>
+                      <p className="text-xs text-emerald-700 font-semibold">
+                        Delivery Fee to Pay: <strong className="text-emerald-950 font-black">LKR {parseFloat(del.delivery_fee || (del.distance > 0 ? del.distance * 30 : 150)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                      </p>
+                    </div>
                   ) : isSelf ? (
                     /* Self Delivery OTP Verification for Job Provider */
                     del.status === 'picked_up' ? (
@@ -2458,8 +2621,12 @@ const DeliveryTab = ({ deliveries, loading, refreshDeliveries }) => {
                         🚴 Rider assigned. Product is being picked up.
                       </p>
                     ) : del.status === 'picked_up' ? (
-                      <p className="text-xs text-primary font-bold bg-primary-light border border-primary/20 rounded-xl px-3 py-2">
-                        🚴 Rider is currently delivering the product to your destination.
+                      <p className="text-xs text-indigo-700 font-bold bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2">
+                        📦 Package picked up from student. Rider is preparing for transit.
+                      </p>
+                    ) : del.status === 'in_transit' ? (
+                      <p className="text-xs text-cyan-700 font-bold bg-cyan-50 border border-cyan-200 rounded-xl px-3 py-2">
+                        🚚 Rider is currently in transit and on the way to your destination.
                       </p>
                     ) : null
                   )}

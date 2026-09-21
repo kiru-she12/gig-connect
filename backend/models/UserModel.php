@@ -19,19 +19,14 @@ class UserModel extends BaseModel {
     }
 
     public function authenticate($email, $password) {
-        // find user by email
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
-        $stmt->execute([$email]);
+        // find user by email or username (name)
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ? OR name = ?");
+        $stmt->execute([$email, $email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // check if user exists
-        if(!$user) {
-            return ["error" => "User not found!"];
-        }
-
-        // check password
-        if(!password_verify($password, $user['password'])) {
-            return ["error" => "Wrong password!"];
+        // check if user exists and password is correct
+        if (!$user || !password_verify($password, $user['password'])) {
+            return ["error" => "Invalid username or password!"];
         }
 
         // check if pending

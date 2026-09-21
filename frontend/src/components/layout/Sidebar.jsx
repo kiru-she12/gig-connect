@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { getLinksByRole } from '../../data/navigation';
 import { useAuth } from '../../context/AuthContext';
-import { X, LogOut, ChevronRight } from 'lucide-react';
+import { X, SignOut, CaretRight } from '@phosphor-icons/react';
 import logoImage from '../../assets/logo/logo.png';
 
 /* ── Shared link list ── */
@@ -39,7 +39,7 @@ const LinkList = ({ links, onClose, handleLinkClick }) => (
             <>
               <link.icon size={18} className={`flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-teal-400'}`} />
               <span className={`text-[13.5px] flex-1 ${isActive ? 'text-white font-semibold' : ''}`}>{link.label}</span>
-              {isActive && <ChevronRight size={14} className="text-white/80 opacity-90" />}
+              {isActive && <CaretRight size={14} className="text-white/80 opacity-90" />}
             </>
           )}
         </NavLink>
@@ -101,7 +101,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
           
           <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 group-hover:border-rose-400/30 group-hover:bg-rose-500/20 text-slate-400 group-hover:text-rose-400 transition-all duration-300 flex items-center justify-center">
-            <LogOut size={14} className="transition-transform duration-300 group-hover:-translate-x-0.5" />
+            <SignOut size={14} className="transition-transform duration-300 group-hover:-translate-x-0.5" />
           </div>
           <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors tracking-wide">
             Log Out

@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
-  MessageSquare, Send, AlertTriangle, Check, Clock,
-  Search, Paperclip, Lock, Star, Award, User,
-  Pin, CheckCheck, CheckCircle2, ShieldAlert
-} from 'lucide-react';
+  ChatCircle, PaperPlaneRight, Warning,
+  MagnifyingGlass, Paperclip, Lock, Star, Medal, User,
+  PushPin, Checks, ShieldWarning
+} from '@phosphor-icons/react';
 
 const ChatTab = () => {
   const { user } = useAuth();
@@ -158,27 +158,101 @@ const ChatTab = () => {
     }
   };
 
-  // Stage Lock Evaluation
-  const appStatus = (activeChat?.application_status || '').toLowerCase();
-  const isLocked = ['completed', 'review_submitted', 'terminated'].includes(appStatus);
-  const isReviewSubmitted = appStatus === 'review_submitted';
+  // Stage Configuration with distinct color themes for each job stage
+  const STAGE_CONFIG = {
+    applied: {
+      label: 'Applied',
+      badge: 'bg-blue-50 text-blue-700 border border-blue-200/80',
+      selectedBadge: 'bg-blue-500/20 text-blue-300 border border-blue-400/30',
+      dot: 'bg-blue-500',
+      icon: '📄'
+    },
+    shortlisted: {
+      label: 'Shortlisted',
+      badge: 'bg-indigo-50 text-indigo-700 border border-indigo-200/80',
+      selectedBadge: 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30',
+      dot: 'bg-indigo-500',
+      icon: '🎯'
+    },
+    accepted: {
+      label: 'In Progress',
+      badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80',
+      selectedBadge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30',
+      dot: 'bg-emerald-500',
+      icon: '⚡'
+    },
+    completed: {
+      label: 'Completed',
+      badge: 'bg-purple-50 text-purple-700 border border-purple-200/80',
+      selectedBadge: 'bg-purple-500/20 text-purple-300 border border-purple-400/30',
+      dot: 'bg-purple-500',
+      icon: '🏁'
+    },
+    delivered: {
+      label: 'Delivered',
+      badge: 'bg-amber-50 text-amber-800 border border-amber-300/80',
+      selectedBadge: 'bg-amber-500/20 text-amber-300 border border-amber-400/30',
+      dot: 'bg-amber-500',
+      icon: '📦'
+    },
+    review_submitted: {
+      label: 'Reviewed',
+      badge: 'bg-teal-50 text-teal-700 border border-teal-200/80',
+      selectedBadge: 'bg-teal-500/20 text-teal-300 border border-teal-400/30',
+      dot: 'bg-teal-500',
+      icon: '⭐'
+    },
+    terminated: {
+      label: 'Terminated',
+      badge: 'bg-rose-50 text-rose-700 border border-rose-200/80',
+      selectedBadge: 'bg-rose-500/20 text-rose-300 border border-rose-400/30',
+      dot: 'bg-rose-500',
+      icon: '⛔'
+    },
+    rejected: {
+      label: 'Rejected',
+      badge: 'bg-rose-50 text-rose-700 border border-rose-200/80',
+      selectedBadge: 'bg-rose-500/20 text-rose-300 border border-rose-400/30',
+      dot: 'bg-rose-500',
+      icon: '✕'
+    }
+  };
 
-  // Group chats into Ongoing (Active) vs Finished (Completed/Archived)
+  const getStageInfo = (status) => {
+    const key = (status || '').toLowerCase().trim();
+    return STAGE_CONFIG[key] || {
+      label: key ? key.replace('_', ' ') : 'Active',
+      badge: 'bg-slate-100 text-slate-700 border border-slate-200',
+      selectedBadge: 'bg-white/10 text-slate-200 border border-white/10',
+      dot: 'bg-slate-400',
+      icon: '💬'
+    };
+  };
+
+  // Stage Lock Evaluation (Delivered, Completed, Reviewed, and Terminated are locked)
+  const appStatus = (activeChat?.application_status || '').toLowerCase();
+  const isLocked = ['completed', 'delivered', 'review_submitted', 'terminated'].includes(appStatus);
+  const isDelivered = appStatus === 'delivered';
+  const isReviewSubmitted = appStatus === 'review_submitted';
+  const activeStage = getStageInfo(appStatus);
+
+  // Group chats into Ongoing (Active) vs Finished (Completed/Delivered/Archived)
   const ongoingChats = chats.filter(chat => {
     const st = (chat.application_status || '').toLowerCase();
-    return !['completed', 'review_submitted', 'terminated'].includes(st);
+    return !['completed', 'delivered', 'review_submitted', 'terminated'].includes(st);
   });
 
   const finishedChats = chats.filter(chat => {
     const st = (chat.application_status || '').toLowerCase();
-    return ['completed', 'review_submitted', 'terminated'].includes(st);
+    return ['completed', 'delivered', 'review_submitted', 'terminated'].includes(st);
   });
 
   const renderChatItem = (chat) => {
     const isSelected = activeChat?.conversation_id === chat.conversation_id || activeChat?.job_ID === chat.job_ID;
     const statusStr = (chat.application_status || 'shortlisted').toLowerCase();
     const unreadCount = parseInt(chat.unread_count || 0);
-    const isFinished = ['completed', 'review_submitted', 'terminated'].includes(statusStr);
+    const stage = getStageInfo(statusStr);
+    const isFinished = ['completed', 'delivered', 'review_submitted', 'terminated'].includes(statusStr);
 
     return (
       <button
@@ -192,13 +266,11 @@ const ChatTab = () => {
       >
         <div className="relative shrink-0">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs ${
-            isSelected ? 'bg-emerald-500 text-slate-950 shadow-xs' : 'bg-emerald-100 text-emerald-800'
+            isSelected ? 'bg-emerald-500 text-slate-950 shadow-xs' : 'bg-slate-100 text-slate-700'
           }`}>
             {chat.partner_name ? chat.partner_name.charAt(0).toUpperCase() : <User size={18} />}
           </div>
-          {!isFinished && (
-            <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
-          )}
+          <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-white ${stage.dot}`} />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -217,13 +289,12 @@ const ChatTab = () => {
             {chat.last_message || 'No messages yet'}
           </p>
 
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
-              isSelected
-                ? 'bg-white/10 text-emerald-300 border border-white/10'
-                : isFinished ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md flex items-center gap-1 w-fit ${
+              isSelected ? stage.selectedBadge : stage.badge
             }`}>
-              {statusStr.replace('_', ' ')}
+              <span>{stage.icon}</span>
+              <span>{stage.label}</span>
             </span>
           </div>
         </div>
@@ -247,7 +318,7 @@ const ChatTab = () => {
 
           {/* Search Box */}
           <div className="relative">
-            <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
+            <MagnifyingGlass size={14} className="absolute left-3.5 top-3 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
@@ -263,7 +334,7 @@ const ChatTab = () => {
             {/* Section 1: Pinned / Ongoing Chats */}
             <div>
               <div className="flex items-center gap-1.5 px-2 mb-2 text-slate-400">
-                <Pin size={12} className="rotate-45" />
+                <PushPin size={12} className="rotate-45" />
                 <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Pinned / Ongoing Chats</h3>
                 <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full ml-auto border border-emerald-100">
                   {ongoingChats.length}
@@ -284,7 +355,7 @@ const ChatTab = () => {
             {/* Section 2: Finished / Past Chats */}
             <div className="pt-2 border-t border-slate-100">
               <div className="flex items-center gap-1.5 px-2 mb-2 text-slate-400">
-                <MessageSquare size={12} />
+                <ChatCircle size={12} />
                 <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Finished / Archived Chats</h3>
                 <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full ml-auto">
                   {finishedChats.length}
@@ -323,29 +394,31 @@ const ChatTab = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {isLocked ? (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold border border-slate-200">
-                      <Lock size={12} /> Finished / Archived
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100">
-                      Active Channel
-                    </span>
-                  )}
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs ${activeStage.badge}`}>
+                    <span>{activeStage.icon}</span>
+                    <span>{activeStage.label}</span>
+                    {isLocked ? (
+                      <span className="flex items-center gap-1 text-[11px] font-medium opacity-80 border-l border-current/20 pl-1.5 ml-0.5">
+                        <Lock size={11} /> Locked
+                      </span>
+                    ) : (
+                      <span className={`w-1.5 h-1.5 rounded-full ${activeStage.dot} animate-pulse ml-0.5`} />
+                    )}
+                  </span>
                 </div>
               </div>
 
               {/* Warnings */}
               {systemWarning && (
                 <div className="mx-2 mt-2 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-2xl flex items-center gap-2 font-medium shrink-0">
-                  <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+                  <Warning size={16} className="text-amber-600 shrink-0" />
                   <span>{systemWarning}</span>
                 </div>
               )}
 
               {error && (
                 <div className="mx-2 mt-2 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-2xl flex items-center gap-2 font-medium shrink-0">
-                  <AlertTriangle size={16} className="text-rose-600 shrink-0" />
+                  <Warning size={16} className="text-rose-600 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
@@ -383,7 +456,7 @@ const ChatTab = () => {
                           <div className={`text-[10px] text-slate-400 font-medium mb-1 flex items-center gap-1 px-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
                             {isMe ? (
                               <>
-                                <CheckCheck size={12} className="text-emerald-600" />
+                                <Checks size={12} className="text-emerald-600" />
                                 <span>{msgTime}</span>
                                 <span className="font-bold text-slate-700">Me</span>
                               </>
@@ -403,7 +476,7 @@ const ChatTab = () => {
 
                           {msg.flagged == 1 && (
                             <span className="text-[9px] text-rose-500 font-bold mt-1 flex items-center gap-1">
-                              <ShieldAlert size={10} /> Flagged for review
+                              <ShieldWarning size={10} /> Flagged for review
                             </span>
                           )}
                         </div>
@@ -420,25 +493,32 @@ const ChatTab = () => {
 
               {/* Stage Locking & Bottom Controls */}
               {isLocked ? (
-                <div className="p-3.5 bg-slate-100/90 border border-slate-200 rounded-2xl text-center space-y-2 shrink-0">
-                  <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-600">
-                    <Lock size={14} className="text-slate-500" />
+                <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl text-center space-y-2.5 shrink-0">
+                  <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
+                    <Lock size={15} className="text-amber-600" />
                     <span>
-                      {isReviewSubmitted
-                        ? "This job is completed. Messaging is locked and read-only."
-                        : "This job is completed/archived. Messaging is locked and read-only."}
+                      {isDelivered
+                        ? "This product has been delivered successfully. The conversation is locked and read-only."
+                        : isReviewSubmitted
+                        ? "Review has been submitted. The conversation is locked and read-only."
+                        : "This job has been completed. The conversation is locked and read-only."}
                     </span>
                   </div>
                   {isReviewSubmitted ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold border border-emerald-200">
-                      <Award size={14} /> Review Submitted
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-xs font-bold border border-teal-200">
+                      <Medal size={14} /> Review Submitted
                     </span>
                   ) : (
                     <button
-                      onClick={() => navigate('/my-reviews')}
-                      className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition-all inline-flex items-center gap-1.5"
+                      onClick={() => {
+                        if (user?.role === 'student') navigate('/dashboard/student/past-history');
+                        else if (user?.role === 'client' || user?.role === 'job_provider') navigate('/dashboard/client/manage-jobs');
+                        else navigate('/dashboard');
+                      }}
+                      className="px-4 py-1.5 bg-[#1A312C] hover:bg-[#244b41] text-white rounded-xl font-bold text-xs shadow-sm transition-all inline-flex items-center gap-1.5 cursor-pointer"
                     >
-                      <Star size={14} /> Leave Review
+                      <Star size={14} className="fill-amber-400 text-amber-400" />
+                      <span>{isDelivered ? "Rate Experience & Provider" : "Leave Review"}</span>
                     </button>
                   )}
                 </div>
@@ -468,7 +548,7 @@ const ChatTab = () => {
                       disabled={sending || !newMessage.trim()}
                       className="px-4 py-2 bg-[#1A312C] hover:bg-[#244b41] text-white rounded-xl transition-all flex items-center justify-center shrink-0 disabled:opacity-50 font-bold text-xs gap-1.5 shadow-xs"
                     >
-                      <Send size={14} />
+                      <PaperPlaneRight size={14} />
                       <span>Send</span>
                     </button>
                   </div>
@@ -478,7 +558,7 @@ const ChatTab = () => {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 space-y-3">
               <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
-                <MessageSquare size={32} />
+                <ChatCircle size={32} />
               </div>
               <div>
                 <p className="font-bold text-sm text-slate-700">Select a Conversation</p>
